@@ -7,7 +7,7 @@ bt = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bt)
 
 ROWS, CHAINS = bt.ROWS, bt.CHAINS
-assert len(ROWS) == 90 and len(CHAINS) == 36
+assert len(ROWS) == 92 and len(CHAINS) == 80
 
 D = {"type": "daily"}
 N = {"type": "none"}
@@ -34,12 +34,14 @@ RULES = [
  # --- Cả 2: 89-90
  N, N,
 ]
-assert len(RULES) == 90, len(RULES)
+# dòng 81 gốc (Ngày test) đã tách thành 3 dòng: chèn thêm 2 quy tắc "none" sau dòng 81
+RULES[81:81] = [N, N]
+assert len(RULES) == 92, len(RULES)
 WS = {"type": "weekstart"}
 # các việc do lịch lớp từng cơ sở quyết định ngày nào có việc: quy tắc = mỗi ngày, bộ lọc = lịch lớp
-for _i in (51, 67, 70, 71, 77, 83, 86):
+for _i in (51, 67, 70, 71, 77, 85, 88):
     RULES[_i - 1] = D
-RULES[82 - 1] = WS
+RULES[84 - 1] = WS
 
 SCHED_KEYS = {
     51: ("summary", "monthday"),
@@ -47,9 +49,9 @@ SCHED_KEYS = {
     70: ("test", "weekday"),
     71: ("video", "weekday"),
     77: ("limevoice", "weekday"),
-    82: ("flashcard", "weekidx"),
-    83: ("askReview", "weekday"),
-    86: ("report", "monthday"),
+    84: ("flashcard", "weekidx"),
+    85: ("askReview", "weekday"),
+    88: ("report", "monthday"),
 }
 
 GROUP = {"Chuyên môn": "cm", "Trợ giảng": "ta", "Cả 2": "both"}
@@ -70,7 +72,7 @@ for i, r in enumerate(ROWS, start=1):
         "content": noidung,
         "needsReview": duyet.startswith("Có"),
         "reviewText": duyet,
-        "sendCSKH": i == 86,
+        "sendCSKH": i == 88,
         "facilities": ["yenhoa", "trunghoa"],
         "note": ghichu,
     }
@@ -78,75 +80,13 @@ for i, r in enumerate(ROWS, start=1):
         t["scheduleKey"], t["scheduleMode"] = SCHED_KEYS[i]
     templates.append(t)
 
-# ---- chuỗi
-TITLES = [
- "Trước khai giảng: Zalo lớp, LP giáo viên, tài liệu, mã Khan Kids",
- "Xin giáo viên nhận xét buổi 1",
- "Xin giáo viên nhận xét buổi 2",
- "Sau 2 buổi: kiểm tra Khan Kids, bài tập, sách vở",
- "Học sinh mới từ buổi 3: kiểm tra việc làm bài tập",
- "Buổi 6: hướng dẫn quay video, xin nhận xét lớp",
- "Kiểm tra video test và nhận xét của giáo viên",
- "Kết thúc theo dõi 1 tháng: rà soát công tác lớp mới",
- "Theo dõi lớp CAM mới sau 2,5 tháng: test cả lớp",
- "Lên nội dung ôn bù bài, date lịch test lại",
- "Test lại sau 6 buổi ôn, hỏi giáo viên",
- "Kiểm tra công tác học sinh mới từ buổi 3",
- "Học thử buổi 1 / 2: hỏi giáo viên, kết luận chuyển lớp",
- "Kết thúc 8 buổi đầu: xin nhận xét, test, chữa nhận xét",
- "Chuẩn bị test: gửi nội dung, hướng dẫn giáo viên, phiếu test nói",
- "Cập nhật danh sách lớp test lên nhóm LIME SCHOOL TEACHERS",
- "Kiểm tra file test (online với phiếu offline)",
- "Ngày test: nhắc giáo viên, chấm bài, nhập điểm",
- "Xin giáo viên điểm test (sau 1 tuần)",
- "Xin file nhận xét test (sau 2 tuần)",
- "Kết thúc lớp test: đánh giá mức độ tiếp thu, biện pháp",
- "Kiểm tra lớp chuyển cấp độ đã học Unit cuối chưa",
- "Chuẩn bị họp phụ huynh",
- "Dự trù nhân sự buổi họp + xếp phòng",
- "Xin nhận xét cuối khóa, gửi Alice check",
- "Sau họp: báo cáo kết quả, giải pháp, gửi PH tóm tắt",
- "Sau 2 buổi đầu khóa mới: Khan Kids, bài tập, sách vở",
- "Tạo bộ câu hỏi chủ đề sự kiện",
- "Media đăng video truyền thông",
- "Chốt đăng ký lần 1, tổng hợp nội dung luyện tập gửi PH",
- "Tìm nhân sự cho sự kiện",
- "Chốt đăng ký lần cuối",
- "Họp và gửi tài liệu cho nhân sự",
- "Chuẩn bị thẻ, in tài liệu",
- "CSKH gửi PH địa điểm sự kiện",
- "Sự kiện diễn ra",
-]
-OFFS = [-5, 1, 4, 5, 7, 14, 28, 30, 75,
-        0, 14, 7, 2, 28,
-        -20, -14, -7, 0, 7, 14, 15,
-        -21, -14, -1, -14, 1, 7,
-        -12, -10, -7, -6, -4, -3, -2, -2, 0]
-GROUPS = ["cm"] * 9 + ["ta", "ta", "cm", "cm", "cm"] + ["cm", "cm", "ta", "ta", "cm", "cm", "cm"] + ["cm"] * 6 + ["cm"] * 8 + ["both"]
-assert len(TITLES) == len(OFFS) == len(GROUPS) == 36, (len(TITLES), len(OFFS), len(GROUPS))
-
-CHAIN_META = [
- ("c1", "Lớp khai giảng", "Ngày khai giảng", "Mỗi lớp mới, theo dõi từ trước khai giảng đến 2,5 tháng"),
- ("c2", "Học sinh mới / chuyển lớp", "Ngày nhận danh sách học sinh", "Ôn bù bài, test lại, theo dõi 8 buổi đầu"),
- ("c3", "Lớp test", "Ngày test", "Chuẩn bị test, ngày test, xin điểm và nhận xét"),
- ("c4", "Lớp chuyển cấp độ + họp phụ huynh", "Ngày họp phụ huynh", "Chuẩn bị, tổ chức, sau họp, sau 2 buổi đầu khóa mới"),
- ("c5", "Sự kiện (mẫu: Hồ Gươm)", "Ngày diễn ra sự kiện", "Mẫu timeline sự kiện, sửa lại theo từng sự kiện"),
-]
-chains = []
-for ci, (cid, cname, anchor, desc) in enumerate(CHAIN_META, start=1):
-    steps = []
-    for k, c in enumerate(CHAINS):
-        if c[0].startswith("%d." % ci):
-            steps.append({
-                "title": TITLES[k],
-                "off": OFFS[k],
-                "group": GROUPS[k],
-                "desc": c[5],
-                "needsReview": c[6].startswith("Có"),
-                "who": c[4],
-            })
-    chains.append({"id": cid, "name": cname, "anchor": anchor, "desc": desc, "steps": steps})
-assert [len(c["steps"]) for c in chains] == [9, 5, 7, 6, 9]
+# ---- chuỗi (đã tách từng giai đoạn, xem chains_data.py)
+import importlib.util as _iu
+_sp = _iu.spec_from_file_location("cd", "/tmp/chains_data.py"); _cd = _iu.module_from_spec(_sp); _sp.loader.exec_module(_cd)
+chains = [{"id": c["id"], "name": c["name"], "anchor": c["anchor"], "desc": c["desc"],
+           "steps": [{"title": x["title"], "off": x["off"], "group": x["group"], "desc": x["desc"],
+                      "needsReview": x["needsReview"]} for x in c["steps"]]} for c in _cd.CHAINS]
+assert sum(len(c["steps"]) for c in chains) == 80
 
 # ---- lịch lớp Yên Hòa
 report = {}

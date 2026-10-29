@@ -1882,7 +1882,7 @@
   {
    "id": "t81",
    "order": 81,
-   "name": "Ngày test (nhắc GV, chấm bài, nhập điểm, cho HS làm bù…)",
+   "name": "Ngày test: nhắc GV tải file nghe, thu lại bài của GV",
    "group": "ta",
    "repeatText": "Theo lịch test",
    "scheduleText": "Ngày test của lớp",
@@ -1891,7 +1891,7 @@
    },
    "auto": false,
    "time": "",
-   "content": "Nhắc giáo viên tải sẵn file nghe. Nhắc giáo viên thu lại bài và gửi cho mình chấm (TUYỆT ĐỐI KHÔNG CHO GIÁO VIÊN MANG VỀ TỰ CHẤM); có thể tranh thủ chấm trong lúc trông lớp cho giáo viên đi test; nên giao thêm bài tập cho học sinh làm để dễ kiểm soát lớp hơn. Cập nhật bảng nhận xét Excel. Nhập điểm bài TEST vào file của cơ sở. Cho học sinh làm bù bài test nếu hôm lớp test có học sinh nghỉ.",
+   "content": "Nhắc giáo viên tải sẵn file nghe. Nhắc giáo viên thu lại bài và gửi cho mình chấm (TUYỆT ĐỐI KHÔNG CHO GIÁO VIÊN MANG VỀ TỰ CHẤM); có thể tranh thủ chấm trong lúc trông lớp cho giáo viên đi test; nên giao thêm bài tập cho học sinh làm để dễ kiểm soát lớp hơn.",
    "needsReview": false,
    "reviewText": "Không",
    "sendCSKH": false,
@@ -1899,11 +1899,55 @@
     "yenhoa",
     "trunghoa"
    ],
-   "note": ""
+   "note": "Tách từ dòng gộp 'Ngày test (nhắc GV, chấm bài, nhập điểm, cho HS làm bù…)'"
   },
   {
    "id": "t82",
    "order": 82,
+   "name": "Sau ngày test: chấm bài, cập nhật bảng nhận xét, nhập điểm",
+   "group": "ta",
+   "repeatText": "Ngày hôm sau ngày test",
+   "scheduleText": "Ngày sau ngày test của lớp",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Chấm bài test đã thu. Cập nhật bảng nhận xét Excel. Nhập điểm bài TEST vào file của cơ sở.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "Tách từ dòng gộp ngày test"
+  },
+  {
+   "id": "t83",
+   "order": 83,
+   "name": "Cho học sinh nghỉ làm bù bài test",
+   "group": "ta",
+   "repeatText": "Ngày học tiếp theo của lớp",
+   "scheduleText": "Buổi học kế tiếp sau ngày test",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Cho học sinh làm bù bài test nếu hôm lớp test có học sinh nghỉ.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "Tách từ dòng gộp ngày test"
+  },
+  {
+   "id": "t84",
+   "order": 84,
    "name": "Kiểm tra folder tranh/thẻ chữ",
    "group": "ta",
    "repeatText": "Định kỳ",
@@ -1926,8 +1970,8 @@
    "scheduleMode": "weekidx"
   },
   {
-   "id": "t83",
-   "order": 83,
+   "id": "t85",
+   "order": 85,
    "name": "Xin DS ôn bù bài tuần sau",
    "group": "ta",
    "repeatText": "Hàng tuần",
@@ -1950,8 +1994,8 @@
    "scheduleMode": "weekday"
   },
   {
-   "id": "t84",
-   "order": 84,
+   "id": "t86",
+   "order": 86,
    "name": "Lịch làm key",
    "group": "ta",
    "repeatText": "Theo lịch BTVN",
@@ -1972,8 +2016,8 @@
    "note": "Người làm: Trợ giảng/Chuyên môn"
   },
   {
-   "id": "t85",
-   "order": 85,
+   "id": "t87",
+   "order": 87,
    "name": "Đầu tháng: Kiểm tra + nhắc GV giao bài Khan Kids trong tháng",
    "group": "ta",
    "repeatText": "Hàng tháng (đầu tháng)",
@@ -1999,8 +2043,8 @@
    "note": ""
   },
   {
-   "id": "t86",
-   "order": 86,
+   "id": "t88",
+   "order": 88,
    "name": "Viết báo cáo + soạn văn (2 tuần 1 lần)",
    "group": "ta",
    "repeatText": "2 tuần/lần",
@@ -2023,8 +2067,8 @@
    "scheduleMode": "monthday"
   },
   {
-   "id": "t87",
-   "order": 87,
+   "id": "t89",
+   "order": 89,
    "name": "Handout lỗi cần sửa",
    "group": "ta",
    "repeatText": "Theo phát sinh",
@@ -2045,8 +2089,8 @@
    "note": ""
   },
   {
-   "id": "t88",
-   "order": 88,
+   "id": "t90",
+   "order": 90,
    "name": "Điểm danh lại HS trên phòng bù bài",
    "group": "ta",
    "repeatText": "Hàng ngày (khi ôn bù)",
@@ -2067,8 +2111,8 @@
    "note": ""
   },
   {
-   "id": "t89",
-   "order": 89,
+   "id": "t91",
+   "order": 91,
    "name": "Công việc phát sinh",
    "group": "both",
    "repeatText": "Theo phát sinh",
@@ -2089,8 +2133,8 @@
    "note": ""
   },
   {
-   "id": "t90",
-   "order": 90,
+   "id": "t92",
+   "order": 92,
    "name": "Công việc sự kiện",
    "group": "both",
    "repeatText": "Theo sự kiện",
@@ -2115,192 +2159,353 @@
   {
    "id": "c1",
    "name": "Lớp khai giảng",
-   "anchor": "Ngày khai giảng",
-   "desc": "Mỗi lớp mới, theo dõi từ trước khai giảng đến 2,5 tháng",
+   "anchor": "Ngày khai giảng (buổi học đầu tiên)",
+   "desc": "Từ 5 ngày trước khai giảng đến 2,5 tháng sau. Ngày của buổi 2, buổi 3, buổi 6 phụ thuộc lịch lớp nên là ngày ước tính, hãy chỉnh lại ngày ngay trên màn hình trước khi đẩy.",
    "steps": [
     {
-     "title": "Trước khai giảng: Zalo lớp, LP giáo viên, tài liệu, mã Khan Kids",
+     "title": "Xin vào Zalo lớp, xin lesson plan (LP) của giáo viên",
      "off": -5,
      "group": "cm",
-     "desc": "Công tác 5 ngày trước ngày khai giảng (ghi rõ ngày + tên lớp ngay khi có thông tin lớp khai giảng): 1. Xin vào Zalo lớp. 2. Xin lesson plan (LP) của giáo viên. 3. Kiểm tra lại xem đã gửi giáo viên tài liệu khóa học chưa (syllabus, file sách, link nghe, folder BTVN, link Speaking Circle time, yêu cầu vở viết, học sinh học vượt tuổi được miễn giảm bài tập). 4. Kiểm tra lại công tác của trợ giảng và giáo viên với học sinh vượt tuổi / cần lưu ý (đã nắm được hết chưa). 5. Lập mã Khan Kids gửi giáo viên và CSKH, cập nhật vào bảng Chuyên môn, Khan Kids.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Công tác 5 ngày trước ngày khai giảng (ghi rõ ngày + tên lớp ngay khi có thông tin lớp khai giảng): xin vào Zalo lớp; xin lesson plan (LP) của giáo viên.",
+     "needsReview": false
     },
     {
-     "title": "Xin giáo viên nhận xét buổi 1",
+     "title": "Gửi và kiểm tra tài liệu khóa học của giáo viên",
+     "off": -5,
+     "group": "cm",
+     "desc": "Kiểm tra lại xem đã gửi giáo viên toàn bộ hệ thống tài liệu chưa: syllabus, file sách, link nghe, folder BTVN, link Speaking Circle time, yêu cầu vở viết, học sinh học vượt tuổi được miễn giảm bài tập.",
+     "needsReview": false
+    },
+    {
+     "title": "Kiểm tra công tác của trợ giảng và giáo viên với học sinh vượt tuổi / cần lưu ý",
+     "off": -5,
+     "group": "cm",
+     "desc": "Kiểm tra lại xem đã nắm được hết chưa.",
+     "needsReview": false
+    },
+    {
+     "title": "Lập mã Khan Kids của lớp",
+     "off": -5,
+     "group": "cm",
+     "desc": "Lập mã Khan Kids gửi giáo viên và CSKH, cập nhật vào bảng Chuyên môn, Khan Kids.",
+     "needsReview": false
+    },
+    {
+     "title": "Xin giáo viên nhận xét sau buổi học thứ 1",
      "off": 1,
      "group": "cm",
-     "desc": "Học buổi 1: xin giáo viên nhận xét học buổi 1 (ghi đúng ngày học sinh học, sau 1 ngày hỏi giáo viên tình hình lớp thế nào: tính cách học sinh, độ tiếp thu, cần hỗ trợ thêm gì không, kiểm tra giáo viên giao bài cẩn thận không, có video quay mẫu chưa).",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Ghi đúng ngày học. Sau 1 ngày hỏi giáo viên tình hình lớp: tính cách học sinh, độ tiếp thu, cần hỗ trợ thêm gì không, giáo viên giao bài có cẩn thận không, đã có video quay mẫu chưa.",
+     "needsReview": false
     },
     {
-     "title": "Xin giáo viên nhận xét buổi 2",
+     "title": "Xin giáo viên nhận xét sau buổi học thứ 2",
      "off": 4,
      "group": "cm",
-     "desc": "Học buổi 2: xin giáo viên nhận xét học buổi 2 (cùng nội dung hỏi như buổi 1).",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Hỏi giáo viên cùng nội dung như buổi 1. Ngày buổi 2 theo lịch lớp.",
+     "needsReview": false
     },
     {
-     "title": "Sau 2 buổi: kiểm tra Khan Kids, bài tập, sách vở",
+     "title": "Sau 2 buổi: kiểm tra tài khoản Khan Kids",
      "off": 5,
      "group": "cm",
-     "desc": "Kiểm tra tài khoản Khan Kids (giáo viên giao bài chưa, học sinh làm chưa). Tình hình bài tập (gồm cả bài KHAN và Video). Tình hình sách vở của học sinh (đủ sách và vở ghi không, biết dùng sách và vở chưa; hỏi CSKH về việc học sinh mua sách chưa; nhắn giáo viên động viên học sinh mua sách để học).",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Giáo viên đã giao bài chưa, học sinh đã làm chưa.",
+     "needsReview": false
     },
     {
-     "title": "Học sinh mới từ buổi 3: kiểm tra việc làm bài tập",
+     "title": "Sau 2 buổi: kiểm tra tình hình bài tập",
+     "off": 5,
+     "group": "cm",
+     "desc": "Gồm cả bài KHAN và Video.",
+     "needsReview": false
+    },
+    {
+     "title": "Sau 2 buổi: kiểm tra sách vở của học sinh",
+     "off": 5,
+     "group": "cm",
+     "desc": "Đủ sách và vở ghi không, biết dùng sách và vở chưa. Hỏi CSKH về việc học sinh mua sách chưa; nhắn giáo viên động viên học sinh mua sách để học.",
+     "needsReview": false
+    },
+    {
+     "title": "Từ buổi học thứ 3: kiểm tra việc làm bài tập của học sinh mới",
      "off": 7,
      "group": "cm",
-     "desc": "Công tác với học sinh mới (ngay từ buổi thứ 3): học sinh có làm bài tập không (có biết làm, khó khăn gì không; cần nhắc phụ huynh cho con làm bài không).",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Học sinh có làm bài tập không (có biết làm, khó khăn gì), kiểm tra trên ảnh giáo viên. Cần nhắc phụ huynh cho con làm bài không.",
+     "needsReview": false
     },
     {
-     "title": "Buổi 6: hướng dẫn quay video, xin nhận xét lớp",
+     "title": "Buổi học thứ 6: hướng dẫn giáo viên quay video sau 1 tháng",
      "off": 14,
      "group": "cm",
-     "desc": "Hướng dẫn công tác quay video sau 1 tháng. Xin nhận xét lớp luôn cho sớm. Ghi rõ ngày học buổi thứ 6 ngay từ khi có lịch lớp khai giảng.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Ghi rõ ngày học buổi thứ 6 ngay từ khi có lịch lớp khai giảng.",
+     "needsReview": false
     },
     {
-     "title": "Kiểm tra video test và nhận xét của giáo viên",
+     "title": "Buổi học thứ 6: xin nhận xét lớp",
+     "off": 14,
+     "group": "cm",
+     "desc": "Xin nhận xét lớp luôn cho sớm.",
+     "needsReview": false
+    },
+    {
+     "title": "Kiểm tra hình thức và chất lượng video test của giáo viên",
      "off": 28,
      "group": "cm",
-     "desc": "Kiểm tra hình thức và chất lượng quay video test của giáo viên. Check nhận xét của giáo viên.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Kiểm tra hình thức và chất lượng quay video test.",
+     "needsReview": false
     },
     {
-     "title": "Kết thúc theo dõi 1 tháng: rà soát công tác lớp mới",
+     "title": "Kiểm tra nhận xét của giáo viên sau test",
+     "off": 28,
+     "group": "cm",
+     "desc": "Check nhận xét của giáo viên.",
+     "needsReview": false
+    },
+    {
+     "title": "Kết thúc theo dõi 1 tháng lớp mới",
      "off": 30,
      "group": "cm",
      "desc": "Kết thúc theo dõi 1 tháng: rà soát lại toàn bộ công tác với lớp mới: video 1 tháng đủ chưa, nhận xét đủ chưa, Khan Kids, bài tập, sách vở, phản hồi của phụ huynh.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "needsReview": false
     },
     {
-     "title": "Theo dõi lớp CAM mới sau 2,5 tháng: test cả lớp",
+     "title": "Theo dõi học sinh lớp CAM mới sau 2,5 tháng: test cả lớp",
      "off": 75,
      "group": "cm",
-     "desc": "Theo dõi học sinh các lớp CAM mới khai giảng / chuyển cấp độ xem có theo được lớp hay không. Ghi trước ngày bắt đầu test, test cả lớp và ghi lại kết quả vào danh sách theo dõi.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Theo dõi học sinh các lớp CAM mới khai giảng / chuyển cấp độ xem có theo được lớp hay không (2,5 tháng sau khai giảng). Ghi trước ngày bắt đầu test, test cả lớp và ghi lại kết quả vào danh sách theo dõi.",
+     "needsReview": false
     }
    ]
   },
   {
    "id": "c2",
    "name": "Học sinh mới / chuyển lớp",
-   "anchor": "Ngày nhận danh sách học sinh",
-   "desc": "Ôn bù bài, test lại, theo dõi 8 buổi đầu",
+   "anchor": "Ngày nhận danh sách học sinh mới / chuyển ngang",
+   "desc": "Bỏ chọn các bước không áp dụng (ví dụ bước học thử chỉ dành cho học sinh chuyển lớp). Ngày test lại phụ thuộc lịch lớp, ví dụ trong file: nhận danh sách 6/9, test lại 27/9.",
    "steps": [
     {
-     "title": "Lên nội dung ôn bù bài, date lịch test lại",
+     "title": "Lên nội dung ôn bù bài cho học sinh mới / chuyển ngang",
      "off": 0,
      "group": "ta",
-     "desc": "Hỏi Vận hành + CSKH có học sinh mới / chuyển ngang không (Chủ nhật hàng tuần). Có danh sách thì lên nội dung ôn bù bài cho học sinh, gửi Chuyên môn check, và date lịch test lại.",
-     "needsReview": true,
-     "who": "Trợ giảng"
+     "desc": "Hỏi Vận hành + CSKH có học sinh mới / chuyển ngang không (Chủ nhật hàng tuần). Có danh sách thì lên nội dung ôn bù bài cho học sinh (cần có trước buổi học tiếp theo của lớp), gửi Chuyên môn check nội dung ôn bài.",
+     "needsReview": true
     },
     {
-     "title": "Test lại sau 6 buổi ôn, hỏi giáo viên",
-     "off": 14,
+     "title": "Date lịch test lại cho học sinh",
+     "off": 0,
      "group": "ta",
-     "desc": "6 buổi ôn + 1 buổi test tổng hợp. Sau 6 buổi ôn thì buổi thứ 7 test lại. Nhắn hỏi giáo viên có cần ôn thêm không; BTVN đã hoàn thành đủ bài cũ chưa; kỹ năng nào ổn; kỹ năng nào vẫn cần theo dõi. Báo CM học sinh cần theo dõi.",
-     "needsReview": false,
-     "who": "Trợ giảng"
+     "desc": "Buổi thứ 7 test lại (đếm theo lịch lớp của bạn và lên lịch ngay từ ngày nhận được tên học sinh mới).",
+     "needsReview": false
     },
     {
-     "title": "Kiểm tra công tác học sinh mới từ buổi 3",
+     "title": "Test lại học sinh sau 6 buổi ôn",
+     "off": 21,
+     "group": "ta",
+     "desc": "6 buổi ôn + 1 buổi test tổng hợp. Sau 6 buổi ôn thì buổi thứ 7 test lại; ghi lại tên bạn đã test.",
+     "needsReview": false
+    },
+    {
+     "title": "Hỏi giáo viên sau khi test lại",
+     "off": 21,
+     "group": "ta",
+     "desc": "Nhắn hỏi giáo viên có cần ôn thêm hay không; BTVN đã hoàn thành đủ hết bài cũ chưa; kỹ năng nào ổn; kỹ năng nào vẫn cần theo dõi. Ghi học sinh có cần ôn tiếp hay không.",
+     "needsReview": false
+    },
+    {
+     "title": "Kiểm tra công tác với học sinh mới từ buổi học thứ 3",
      "off": 7,
      "group": "cm",
-     "desc": "Kiểm tra các công tác với học sinh mới (hoặc học sinh chuyển lớp): tài khoản Khan Kids; sách vở; có làm bài tập không (có biết làm, khó khăn gì khi làm). Kiểm tra lịch bù bài cho học sinh, kiểm tra chéo xem trợ giảng bù bài đủ theo kế hoạch không.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Kiểm tra tài khoản Khan Kids; sách vở (kiểm tra trên ảnh Giáo vụ); có làm bài tập không (có biết làm hay khó khăn gì, kiểm tra trên ảnh giáo viên).",
+     "needsReview": false
     },
     {
-     "title": "Học thử buổi 1 / 2: hỏi giáo viên, kết luận chuyển lớp",
-     "off": 2,
+     "title": "Kiểm tra lịch bù bài, kiểm tra chéo trợ giảng",
+     "off": 7,
      "group": "cm",
-     "desc": "Học thử buổi 1 và buổi 2 (học sinh chuyển lớp): ghi đúng ngày học thử; sau 1 ngày hỏi giáo viên xem học sinh có theo được lớp không, có cần chuyển lớp khác không. Chuyên môn ghi ngày học thử + tên học sinh + tên lớp, trong phần tiến độ ghi đã xin nhận xét chưa và đã cập nhật danh sách học sinh cần theo dõi chưa. Sau buổi học thử thứ 2: trao đổi với giáo viên + test học sinh để kết luận học sinh có chuyển lớp được hay không; ghi rõ ngày và kết luận với từng học sinh.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Kiểm tra lịch bù bài cho học sinh; kiểm tra chéo xem trợ giảng có bù bài đủ cho học sinh theo kế hoạch không.",
+     "needsReview": false
     },
     {
-     "title": "Kết thúc 8 buổi đầu: xin nhận xét, test, chữa nhận xét",
+     "title": "Học sinh chuyển lớp: hỏi giáo viên sau học thử buổi 1",
+     "off": 1,
+     "group": "cm",
+     "desc": "Ghi đúng ngày học thử. Sau 1 ngày hỏi giáo viên xem học sinh có theo được lớp không, có cần chuyển lớp khác không.",
+     "needsReview": false
+    },
+    {
+     "title": "Học sinh chuyển lớp: hỏi giáo viên sau học thử buổi 2",
+     "off": 3,
+     "group": "cm",
+     "desc": "Hỏi giáo viên cùng nội dung như buổi 1.",
+     "needsReview": false
+    },
+    {
+     "title": "Học sinh chuyển lớp: trao đổi giáo viên + test để kết luận",
+     "off": 4,
+     "group": "cm",
+     "desc": "Sau buổi học thử thứ 2: trao đổi với giáo viên và test học sinh để kết luận học sinh có chuyển lớp được hay không. Ghi rõ ngày và kết luận với từng học sinh.",
+     "needsReview": false
+    },
+    {
+     "title": "Kết thúc 8 buổi đầu: xin giáo viên nhận xét",
      "off": 28,
      "group": "cm",
-     "desc": "Cần xin nhận xét giáo viên, test học sinh, chữa nhận xét giáo viên, ghi lịch là từ buổi thứ 6. Ngày 12 hàng tháng xin CSKH danh sách học sinh. Làm theo Tuần 1, 2, 3, chi tiết như nhận xét test.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Xin nhận xét giáo viên sau 8 buổi đầu.",
+     "needsReview": false
+    },
+    {
+     "title": "Kết thúc 8 buổi đầu: test học sinh",
+     "off": 28,
+     "group": "cm",
+     "desc": "Test học sinh sau 8 buổi đầu.",
+     "needsReview": false
+    },
+    {
+     "title": "Kết thúc 8 buổi đầu: chữa nhận xét của giáo viên",
+     "off": 29,
+     "group": "cm",
+     "desc": "Chữa nhận xét giáo viên.",
+     "needsReview": false
     }
    ]
   },
   {
    "id": "c3",
    "name": "Lớp test",
-   "anchor": "Ngày test",
-   "desc": "Chuẩn bị test, ngày test, xin điểm và nhận xét",
+   "anchor": "Ngày test của lớp",
+   "desc": "Các việc chuẩn bị trước test, ngày test (nhắc giáo viên, thu bài), hôm sau chấm bài và nhập điểm, rồi xin điểm và nhận xét. Các mốc -7, 0, +7, +14 theo file gốc, các mốc còn lại là ước tính.",
    "steps": [
     {
-     "title": "Chuẩn bị test: gửi nội dung, hướng dẫn giáo viên, phiếu test nói",
+     "title": "Gửi nội dung chuyển cấp cho giáo viên kèm lịch test",
      "off": -20,
      "group": "cm",
-     "desc": "Chuẩn bị cho test: gửi nội dung chuyển cấp cho giáo viên từ ngày 25-28 hàng tháng, gửi cùng lịch test. Hỏi chị Alice lớp nào cần làm circle time không, có cần training không. Gửi trước cho giáo viên link nội dung bài kiểm tra và yêu cầu giáo viên cho học sinh làm quen với dạng bài và độ khó tương tự. Gửi hướng dẫn giáo viên test (link hướng dẫn cho giáo viên test sau 1 tháng: BI0, BI1 và Cam1). Cùng giáo viên thống nhất ngày quay video, báo Marketing, Quản lý, CSKH, Vận hành. Chuẩn bị phiếu cho lớp test nói.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Gửi nội dung chuyển cấp cho giáo viên (từ ngày 25-28 hàng tháng), gửi cùng lịch test. Hỏi chị Alice lớp nào cần làm circle time không, có cần training không.",
+     "needsReview": false
+    },
+    {
+     "title": "Gửi giáo viên link nội dung bài kiểm tra",
+     "off": -20,
+     "group": "cm",
+     "desc": "Gửi trước cho giáo viên link nội dung bài kiểm tra và yêu cầu giáo viên cho học sinh làm quen với dạng bài và độ khó tương tự.",
+     "needsReview": false
+    },
+    {
+     "title": "Gửi hướng dẫn giáo viên test",
+     "off": -20,
+     "group": "cm",
+     "desc": "Gửi link hướng dẫn cho giáo viên test sau 1 tháng (BI0, BI1 và Cam1).",
+     "needsReview": false
     },
     {
      "title": "Cập nhật danh sách lớp test lên nhóm LIME SCHOOL TEACHERS",
      "off": -14,
      "group": "cm",
-     "desc": "Cập nhật danh sách các lớp test lên nhóm LIME SCHOOL TEACHERS (ghi rõ tên lớp, bài test số, thời gian test, link). Gửi danh sách test trên nhóm, bắt các đội confirm, gửi lại thông tin bài viết báo nhóm chat LIME GIÁO VIÊN để mọi người biết có bài. Nếu sửa đổi lịch test các lớp thì comment lại lịch ở mục 'Lịch test các lớp' trong nhóm LIME SCHOOL TEACHERS và báo lại các đội CSKH, Chuyên môn, Marketing, Vận hành để đảm bảo các đội đều nắm thông tin.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Ghi rõ tên lớp, bài test số, thời gian test, link. Cập nhật từ ngày 25-28 hàng tháng.",
+     "needsReview": false
     },
     {
-     "title": "Kiểm tra file test (online với phiếu offline)",
+     "title": "Gửi danh sách test trên nhóm, bắt các đội confirm",
+     "off": -14,
+     "group": "cm",
+     "desc": "Nếu sửa đổi lịch test các lớp thì comment lại ở mục 'Lịch test các lớp' trong nhóm LIME SCHOOL TEACHERS và báo lại các đội CSKH, Chuyên môn, Marketing, Vận hành để đảm bảo các đội đều nắm thông tin.",
+     "needsReview": false
+    },
+    {
+     "title": "Báo thông tin bài viết vào nhóm chat LIME GIÁO VIÊN",
+     "off": -14,
+     "group": "cm",
+     "desc": "Gửi lại thông tin bài viết báo nhóm chat LIME GIÁO VIÊN để mọi người biết có bài.",
+     "needsReview": false
+    },
+    {
+     "title": "Cùng giáo viên thống nhất ngày quay video",
+     "off": -14,
+     "group": "cm",
+     "desc": "Cùng giáo viên thống nhất ngày quay video, báo Marketing, Quản lý, CSKH, Vận hành.",
+     "needsReview": false
+    },
+    {
+     "title": "Chuẩn bị phiếu cho lớp test nói",
+     "off": -14,
+     "group": "cm",
+     "desc": "Chuẩn bị phiếu cho lớp test nói.",
+     "needsReview": false
+    },
+    {
+     "title": "Kiểm tra file test của lớp (1 tuần trước test)",
      "off": -7,
      "group": "ta",
-     "desc": "Kiểm tra file test của lớp (1 tuần trước test): đối chiếu file test online và phiếu offline, báo Vận hành in lại bổ sung phiếu.",
-     "needsReview": false,
-     "who": "Trợ giảng"
+     "desc": "Đối chiếu file test online và phiếu offline. Nếu khác thì báo Vận hành in lại bổ sung phiếu.",
+     "needsReview": false
     },
     {
-     "title": "Ngày test: nhắc giáo viên, chấm bài, nhập điểm",
+     "title": "Ngày test: nhắc giáo viên tải sẵn file nghe",
      "off": 0,
      "group": "ta",
-     "desc": "Ngày test: nhắc giáo viên tải sẵn file nghe; nhắc giáo viên thu lại bài và gửi cho mình chấm (tuyệt đối không cho giáo viên mang về tự chấm); khi check nhận xét test: dùng sổ điểm danh để kiểm tra số học sinh trong sổ điểm danh khớp với số lượng học sinh trong nhận xét test; tính lịch test, gửi file nhận xét; cập nhật bảng nhận xét Excel; nhập điểm bài test; cho học sinh làm bù bài test nếu hôm test có học sinh nghỉ.",
-     "needsReview": false,
-     "who": "Trợ giảng"
+     "desc": "Nhắc giáo viên tải sẵn file nghe trước giờ test.",
+     "needsReview": false
+    },
+    {
+     "title": "Ngày test: thu lại bài của giáo viên",
+     "off": 0,
+     "group": "ta",
+     "desc": "Nhắc giáo viên thu lại bài và gửi cho mình chấm (TUYỆT ĐỐI KHÔNG CHO GIÁO VIÊN MANG VỀ TỰ CHẤM). Có thể trông lớp cho giáo viên đi test; nên giao thêm bài tập cho học sinh làm để dễ kiểm soát lớp hơn.",
+     "needsReview": false
+    },
+    {
+     "title": "Chấm bài test",
+     "off": 1,
+     "group": "ta",
+     "desc": "Chấm bài test đã thu hôm trước (không để giáo viên mang về tự chấm).",
+     "needsReview": false
+    },
+    {
+     "title": "Nhập điểm bài test và cập nhật bảng nhận xét",
+     "off": 1,
+     "group": "ta",
+     "desc": "Nhập điểm bài TEST vào file của cơ sở; cập nhật bảng nhận xét Excel.",
+     "needsReview": false
+    },
+    {
+     "title": "Cho học sinh nghỉ làm bù bài test",
+     "off": 3,
+     "group": "ta",
+     "desc": "Nếu hôm lớp test có học sinh nghỉ thì cho học sinh làm bù bài test (theo ngày học tiếp theo của lớp).",
+     "needsReview": false
     },
     {
      "title": "Xin giáo viên điểm test (sau 1 tuần)",
      "off": 7,
      "group": "cm",
-     "desc": "Xin giáo viên kết quả test (điểm và nhận xét): sau 1 tuần kể từ ngày test thì xin nhập điểm. Lucie xin nhận xét, check font size, số lượng; Ruby, Mai Phương check nội dung. Làm riêng cho từng cơ sở.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Sau 1 tuần kể từ ngày test thì xin giáo viên điểm.",
+     "needsReview": false
+    },
+    {
+     "title": "Xin nhận xét test của giáo viên và kiểm tra",
+     "off": 7,
+     "group": "cm",
+     "desc": "Lucie xin nhận xét, check font size, số lượng; Ruby, Mai Phương check nội dung. Làm riêng cho từng cơ sở.",
+     "needsReview": false
     },
     {
      "title": "Xin file nhận xét test (sau 2 tuần)",
      "off": 14,
      "group": "cm",
-     "desc": "Sau 2 tuần kể từ ngày test thì xin file nhận xét (từng cơ sở).",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Sau 2 tuần kể từ ngày test thì xin file nhận xét (từng cơ sở). Khi check nhận xét test: dùng sổ điểm danh để kiểm tra số học sinh khớp với số lượng học sinh trong nhận xét test.",
+     "needsReview": false
     },
     {
-     "title": "Kết thúc lớp test: đánh giá mức độ tiếp thu, biện pháp",
+     "title": "Kết thúc lớp test: đánh giá mức độ tiếp thu",
      "off": 15,
      "group": "cm",
-     "desc": "Kết thúc công tác lớp test: kiểm tra kết quả kiểm tra để đánh giá mức độ tiếp thu của lớp, đưa biện pháp khắc phục. Cập nhật bảng nhận xét sau test.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Kết thúc công tác lớp test: kiểm tra kết quả kiểm tra để đánh giá mức độ tiếp thu của lớp, đưa biện pháp khắc phục.",
+     "needsReview": false
+    },
+    {
+     "title": "Cập nhật bảng nhận xét sau test",
+     "off": 15,
+     "group": "cm",
+     "desc": "Cập nhật bảng nhận xét sau test.",
+     "needsReview": false
     }
    ]
   },
@@ -2308,55 +2513,154 @@
    "id": "c4",
    "name": "Lớp chuyển cấp độ + họp phụ huynh",
    "anchor": "Ngày họp phụ huynh",
-   "desc": "Chuẩn bị, tổ chức, sau họp, sau 2 buổi đầu khóa mới",
+   "desc": "Từ lúc lớp học Unit cuối cùng đến sau họp và sau 2 buổi đầu khóa mới. Việc trong ngày họp (mốc 0) theo file gốc, các mốc còn lại là ước tính.",
    "steps": [
     {
-     "title": "Kiểm tra lớp chuyển cấp độ đã học Unit cuối chưa",
+     "title": "Kiểm tra lớp đã học Unit cuối cùng chưa",
      "off": -21,
      "group": "cm",
-     "desc": "Danh sách các lớp chuyển cấp độ: trong lúc check lịch test thì tranh thủ kiểm tra xem các lớp đã bắt đầu học Unit cuối cùng chưa. Các lớp bắt đầu học bài cuối cùng là phải cho vào danh sách ngay. Hỏi chị Alice xem giáo viên cần training không, có cần gửi tài liệu Circle time không.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Trong lúc check lịch test (ngày 25-28) tranh thủ kiểm tra xem các lớp đã bắt đầu học Unit cuối cùng chưa. Lớp bắt đầu học bài cuối cùng là phải cho vào danh sách lớp chuyển cấp độ ngay.",
+     "needsReview": false
     },
     {
-     "title": "Chuẩn bị họp phụ huynh",
+     "title": "Hỏi chị Alice: giáo viên cần training, tài liệu Circle time",
+     "off": -21,
+     "group": "cm",
+     "desc": "Hỏi chị Alice xem giáo viên cần training không, có cần gửi tài liệu Circle time không.",
+     "needsReview": false
+    },
+    {
+     "title": "Xin nhận xét cuối khóa và nhận xét học sinh đọc trong buổi họp",
      "off": -14,
      "group": "cm",
-     "desc": "Chuẩn bị cho họp phụ huynh: trao đổi với giáo viên về nội dung bài kiểm tra cuối cùng và hình thức quay video; hướng dẫn giáo viên họp PH và gửi tài liệu họp; cùng giáo viên thống nhất ngày quay video, báo Marketing, Quản lý, CSKH, Vận hành; dự trù nhân sự trong buổi họp và sắp xếp phòng, báo nhóm chung; order Marketing Certificate (trước ngày họp PH đã phát chưa); lập mã Khan Kids gửi giáo viên và CSKH, cập nhật vào bảng Chuyên môn, Khan Kids.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Làm trước ngày họp 3 buổi học (2 tuần trước họp).",
+     "needsReview": false
     },
     {
-     "title": "Dự trù nhân sự buổi họp + xếp phòng",
-     "off": -1,
+     "title": "Gửi Alice check nhận xét cuối khóa",
+     "off": -12,
      "group": "cm",
-     "desc": "Dự trù nhân sự buổi họp + xếp phòng: báo lên LIME GIÁO VỤ. Thay đổi phòng học (nếu có), nhờ vận hành nhắc thêm giáo viên khi giáo viên đến. Trước giờ họp: giáo viên hỗ trợ học sinh lên phòng khác, marketing tiếp tục trông lớp; CSKH, Vận hành phân công quét lại phòng họp, bê ghế (đếm số ghế); Alice set up máy tính và kiểm tra lại tài liệu gồm thông tin khóa học + nhận xét học sinh cuối khóa (số bản theo sĩ số lớp); sau đó họp phụ huynh. (Ví dụ trong file: họp phụ huynh lớp CAM1A lúc 19h, mốc 18h30 đến 18h45, 18h45 đến 19h.)",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Gửi Alice check nhận xét cuối khóa và nhận xét học sinh đọc trong buổi họp.",
+     "needsReview": false
     },
     {
-     "title": "Xin nhận xét cuối khóa, gửi Alice check",
+     "title": "Trao đổi giáo viên về nội dung bài kiểm tra cuối cùng và hình thức quay video",
      "off": -14,
      "group": "cm",
-     "desc": "Xin nhận xét cuối khóa và nhận xét học sinh đọc trong buổi họp, gửi Alice check. Làm trước ngày họp 3 buổi học (2 tuần trước họp).",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Trao đổi với giáo viên về nội dung bài kiểm tra cuối cùng và hình thức quay video.",
+     "needsReview": false
     },
     {
-     "title": "Sau họp: báo cáo kết quả, giải pháp, gửi PH tóm tắt",
+     "title": "Hướng dẫn giáo viên họp phụ huynh, gửi tài liệu họp",
+     "off": -7,
+     "group": "cm",
+     "desc": "Hướng dẫn giáo viên họp PH và gửi tài liệu họp.",
+     "needsReview": false
+    },
+    {
+     "title": "Cùng giáo viên thống nhất ngày quay video",
+     "off": -7,
+     "group": "cm",
+     "desc": "Báo Marketing, Quản lý, CSKH, Vận hành.",
+     "needsReview": false
+    },
+    {
+     "title": "Order Marketing Certificate",
+     "off": -7,
+     "group": "cm",
+     "desc": "Kiểm tra trước ngày họp PH đã phát chưa.",
+     "needsReview": false
+    },
+    {
+     "title": "Lập mã Khan Kids của khóa mới",
+     "off": -3,
+     "group": "cm",
+     "desc": "Lập mã Khan Kids gửi giáo viên và CSKH, cập nhật vào bảng Chuyên môn, Khan Kids.",
+     "needsReview": false
+    },
+    {
+     "title": "Dự trù nhân sự buổi họp + xếp phòng, báo LIME GIÁO VỤ",
+     "off": -3,
+     "group": "cm",
+     "desc": "Thay đổi phòng học (nếu có), nhờ Vận hành nhắc thêm giáo viên khi giáo viên đến.",
+     "needsReview": false
+    },
+    {
+     "title": "Trước giờ họp: giáo viên hỗ trợ học sinh lên phòng khác",
+     "off": 0,
+     "group": "both",
+     "desc": "Giáo viên hỗ trợ học sinh lên phòng khác, Marketing tiếp tục trông lớp.",
+     "needsReview": false
+    },
+    {
+     "title": "Trước giờ họp: quét lại phòng họp, bê ghế",
+     "off": 0,
+     "group": "both",
+     "desc": "CSKH, Vận hành phân công quét lại phòng họp, bê ghế (đếm số ghế).",
+     "needsReview": false
+    },
+    {
+     "title": "Set up máy tính và kiểm tra tài liệu họp",
+     "off": 0,
+     "group": "cm",
+     "desc": "Alice set up máy tính và kiểm tra lại tài liệu gồm thông tin khóa học + nhận xét học sinh cuối khóa (số bản theo sĩ số lớp).",
+     "needsReview": false
+    },
+    {
+     "title": "Họp phụ huynh",
+     "off": 0,
+     "group": "both",
+     "desc": "Ví dụ trong file: họp phụ huynh lớp CAM1A lúc 19h, các mốc chuẩn bị 18h30 đến 18h45 và 18h45 đến 19h.",
+     "needsReview": false
+    },
+    {
+     "title": "Báo cáo lại kết quả cuộc họp",
      "off": 1,
      "group": "cm",
-     "desc": "Báo cáo lại kết quả cuộc họp. Đưa ra các giải pháp cho góp ý từ phụ huynh, báo nhóm chung; nếu cần thực hiện công việc gì thì thêm vào CVPS. Gửi phụ huynh tóm tắt nội dung buổi họp phụ huynh.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Báo cáo lại kết quả cuộc họp.",
+     "needsReview": false
     },
     {
-     "title": "Sau 2 buổi đầu khóa mới: Khan Kids, bài tập, sách vở",
-     "off": 7,
+     "title": "Đưa giải pháp cho góp ý của phụ huynh",
+     "off": 1,
      "group": "cm",
-     "desc": "Kiểm tra tài khoản Khan Kids (giáo viên giao bài chưa, học sinh làm chưa). Tình hình bài tập (gồm cả bài Khan và Video). Tình hình sách vở của học sinh (đủ sách và vở ghi, biết dùng sách và vở chưa; hỏi CSKH học sinh mua sách chưa; nhắn giáo viên động viên học sinh mua sách). Theo dõi tình hình đáp ứng khóa mới của giáo viên và học sinh.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Đưa ra các giải pháp cho góp ý từ phụ huynh, báo nhóm chung; nếu cần thực hiện công việc gì thì thêm vào CVPS.",
+     "needsReview": false
+    },
+    {
+     "title": "Gửi phụ huynh tóm tắt nội dung buổi họp",
+     "off": 1,
+     "group": "cm",
+     "desc": "Gửi phụ huynh tóm tắt nội dung buổi họp phụ huynh.",
+     "needsReview": false
+    },
+    {
+     "title": "Sau 2 buổi đầu khóa mới: kiểm tra tài khoản Khan Kids",
+     "off": 10,
+     "group": "cm",
+     "desc": "Giáo viên giao bài chưa, học sinh làm chưa.",
+     "needsReview": false
+    },
+    {
+     "title": "Sau 2 buổi đầu khóa mới: kiểm tra tình hình bài tập",
+     "off": 10,
+     "group": "cm",
+     "desc": "Gồm cả bài Khan và Video.",
+     "needsReview": false
+    },
+    {
+     "title": "Sau 2 buổi đầu khóa mới: kiểm tra sách vở",
+     "off": 10,
+     "group": "cm",
+     "desc": "Đủ sách và vở ghi, biết dùng sách và vở chưa; hỏi CSKH học sinh mua sách chưa; nhắn giáo viên động viên học sinh mua sách để học.",
+     "needsReview": false
+    },
+    {
+     "title": "Theo dõi tình hình đáp ứng khóa mới của giáo viên và học sinh",
+     "off": 10,
+     "group": "cm",
+     "desc": "Theo dõi tình hình đáp ứng khóa mới của giáo viên và học sinh.",
+     "needsReview": false
     }
    ]
   },
@@ -2364,79 +2668,91 @@
    "id": "c5",
    "name": "Sự kiện (mẫu: Hồ Gươm)",
    "anchor": "Ngày diễn ra sự kiện",
-   "desc": "Mẫu timeline sự kiện, sửa lại theo từng sự kiện",
+   "desc": "Mẫu timeline sự kiện, sửa lại theo từng sự kiện.",
    "steps": [
     {
-     "title": "Tạo bộ câu hỏi chủ đề sự kiện",
+     "title": "Tạo bộ câu hỏi theo chủ đề sự kiện",
      "off": -12,
      "group": "cm",
-     "desc": "Tạo bộ câu hỏi theo chủ đề sự kiện (ví dụ trong file: bộ câu hỏi chủ đề Phụ nữ Việt Nam).",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Ví dụ trong file: bộ câu hỏi chủ đề Phụ nữ Việt Nam.",
+     "needsReview": false
     },
     {
      "title": "Media đăng video truyền thông",
      "off": -10,
-     "group": "cm",
-     "desc": "Media đăng video truyền thông.",
-     "needsReview": false,
-     "who": "Bộ phận Media"
+     "group": "both",
+     "desc": "Bộ phận Media đăng video truyền thông.",
+     "needsReview": false
     },
     {
-     "title": "Chốt đăng ký lần 1, tổng hợp nội dung luyện tập gửi PH",
+     "title": "Chốt đăng ký lần 1",
      "off": -7,
      "group": "cm",
-     "desc": "Chốt đăng ký lần 1 và tổng hợp lại nội dung luyện tập gửi lại phụ huynh.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Chốt đăng ký lần 1.",
+     "needsReview": false
+    },
+    {
+     "title": "Tổng hợp nội dung luyện tập gửi lại phụ huynh",
+     "off": -7,
+     "group": "cm",
+     "desc": "Tổng hợp lại nội dung luyện tập gửi lại phụ huynh.",
+     "needsReview": false
     },
     {
      "title": "Tìm nhân sự cho sự kiện",
      "off": -6,
-     "group": "cm",
-     "desc": "Tìm nhân sự cho sự kiện.",
-     "needsReview": false,
-     "who": "Quản lý / người phụ trách"
+     "group": "both",
+     "desc": "Quản lý / người phụ trách tìm nhân sự cho sự kiện.",
+     "needsReview": false
     },
     {
      "title": "Chốt đăng ký lần cuối",
      "off": -4,
      "group": "cm",
      "desc": "Chốt đăng ký lần cuối.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "needsReview": false
     },
     {
-     "title": "Họp và gửi tài liệu cho nhân sự",
+     "title": "Họp nhân sự sự kiện",
      "off": -3,
      "group": "cm",
-     "desc": "Họp và gửi tài liệu cho nhân sự.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Họp với nhân sự tham gia sự kiện.",
+     "needsReview": false
     },
     {
-     "title": "Chuẩn bị thẻ, in tài liệu",
-     "off": -2,
+     "title": "Gửi tài liệu cho nhân sự",
+     "off": -3,
      "group": "cm",
-     "desc": "Chuẩn bị thẻ và in tài liệu.",
-     "needsReview": false,
-     "who": "Chuyên môn"
+     "desc": "Gửi tài liệu cho nhân sự.",
+     "needsReview": false
     },
     {
-     "title": "CSKH gửi PH địa điểm sự kiện",
+     "title": "Chuẩn bị thẻ",
      "off": -2,
      "group": "cm",
+     "desc": "Chuẩn bị thẻ.",
+     "needsReview": false
+    },
+    {
+     "title": "In tài liệu",
+     "off": -2,
+     "group": "cm",
+     "desc": "In tài liệu.",
+     "needsReview": false
+    },
+    {
+     "title": "CSKH gửi phụ huynh địa điểm sự kiện",
+     "off": -2,
+     "group": "both",
      "desc": "CSKH gửi phụ huynh địa điểm sự kiện.",
-     "needsReview": false,
-     "who": "CSKH"
+     "needsReview": false
     },
     {
      "title": "Sự kiện diễn ra",
      "off": 0,
      "group": "both",
      "desc": "Sự kiện diễn ra.",
-     "needsReview": false,
-     "who": "Cả 2"
+     "needsReview": false
     }
    ]
   }
