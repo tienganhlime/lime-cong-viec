@@ -41,7 +41,7 @@ export function viewStats(root) {
 
   function render() {
     const people = S.users.filter((u) => !u.disabled && (u.role === 'ta' || (withCM && (u.role === 'cm'))));
-    const inRange = tasks.filter((t) => t.date >= from && t.date <= to && t.status !== 'na');
+    const inRange = tasks.filter((t) => t.date >= from && t.date <= to && t.status !== 'na' && t.status !== 'partial');
     const rows = people.map((u) => {
       const mine = inRange.filter((t) => t.assignee === u.id);
       const done = mine.filter((t) => t.status === 'done').length;

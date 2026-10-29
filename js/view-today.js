@@ -1,5 +1,5 @@
 import { h, mount, modal, toast, fmtDM, fmtDMY, makeRedraw, sortBy } from './ui.js';
-import { S, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
+import { S, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
 import { taskCard } from './taskui.js';
 import { todayStr, addDays, isOpen, DOW_NAMES, dow, monthOf, addMonths, generateMonth } from './rules.js';
 
@@ -86,28 +86,37 @@ export function addTaskModal({ date = todayStr(), onDone } = {}) {
 
 /* ---------- Kết thúc ca: cập nhật checklist và báo cáo ---------- */
 function reportModal({ date, fac, mine, existing }) {
-  const total = mine.filter((t) => t.status !== 'na').length;
+  const total = mine.filter((t) => t.status !== 'na' && t.status !== 'partial').length;
   const done = mine.filter((t) => t.status === 'done').length;
   const review = mine.filter((t) => t.status === 'review').length;
   const openT = mine.filter((t) => isOpen(t) || t.status === 'approved');
   const note = h('textarea', { rows: 3, placeholder: 'Ghi chú bàn giao cho ca sau (việc dở dang, lưu ý với giáo viên/học sinh…)', value: existing ? existing.note : '' });
-  const dates = new Map();
+  const dates = new Map(); const prog = new Map();
   const rows = openT.map((t) => {
     const inp = h('input', { type: 'date', min: todayStr(), onChange: (e) => dates.set(t.id, e.target.value) });
-    return h('div', { class: 'rep-row' }, h('div', { class: 'rep-title' }, t.title, t.extra && h('span', { class: 'extra' }, t.extra)),
+    const pg = h('input', { type: 'text', placeholder: 'Đã làm được đến đâu / còn gì…', class: 'rep-prog', onInput: (e) => prog.set(t.id, e.target.value) });
+    return h('div', { class: 'rep-row' }, h('div', { class: 'rep-title' }, t.title, t.extra && h('span', { class: 'extra' }, t.extra)), pg,
       h('label', { class: 'rep-date' }, 'Làm tiếp ngày', inp));
   });
   modal({
     title: 'Kết thúc ca & cập nhật checklist', wide: true,
     body: h('div', { class: 'stack' },
       h('div', { class: 'sumline' }, h('b', null, `${done}/${total}`), ' việc của bạn đã xong', review ? ` · ${review} việc chờ duyệt` : '', openT.length ? ` · ${openT.length} việc chưa xong` : ' · không còn việc tồn'),
-      openT.length ? h('div', null, h('p', { class: 'hint' }, 'Việc chưa xong sẽ tự đẩy sang ngày làm việc tiếp theo. Nếu muốn ghi rõ ngày cần làm thì chọn ngày bên cạnh từng việc.'), rows) : null,
+      openT.length ? h('div', null, h('p', { class: 'hint' }, 'Việc chưa xong (kể cả việc hàng ngày) sẽ tự chuyển sang ngày làm việc tiếp theo dưới dạng việc "Làm bù". Ghi rõ đã làm được đến đâu và chọn ngày nếu muốn làm vào ngày khác.'), rows) : null,
       h('label', null, 'Ghi chú bàn giao', note)),
     actions: [{ label: 'Để sau', kind: 'ghost' }, {
       label: 'Nộp báo cáo', kind: 'primary',
       onClick: async () => {
         const ops = [];
-        for (const [id, d] of dates) if (d) ops.push({ op: 'update', col: 'tasks', id, data: { date: d, month: d.slice(0, 7) } });
+        const next = addDays(date, 1);
+        for (const t of openT) {
+          if (t.status === 'approved') continue;
+          const d = dates.get(t.id) || (t.carry ? '' : next);
+          const pr = (prog.get(t.id) || '').trim();
+          if (!d && !pr) continue;
+          if (!t.carry || d) await postpone(t, d || t.date, pr);
+          else await S.db.update('tasks', t.id, { note: [t.note, `[${date.slice(8)}/${date.slice(5, 7)} · ${S.user.name}] ${pr}`].filter(Boolean).join('\n') });
+        }
         ops.push({
           op: 'set', col: 'reports', id: `${fac}_${date}_${S.user.id}`,
           data: { facility: fac, date, month: date.slice(0, 7), uid: S.user.id, userName: S.user.name, role: S.user.role, total, done, review, open: openT.length, note: note.value.trim(), at: Date.now() },
@@ -152,7 +161,7 @@ export function viewToday(root, params) {
     const mine = sortBy(all.filter((t) => t.assignee === S.user.id), taskKey);
     const free = sortBy(all.filter((t) => !t.assignee), taskKey);
     const others = sortBy(all.filter((t) => t.assignee && t.assignee !== S.user.id), taskKey);
-    const relevantTotal = all.filter((t) => t.status !== 'na');
+    const relevantTotal = all.filter((t) => t.status !== 'na' && t.status !== 'partial');
     const doneN = relevantTotal.filter((t) => t.status === 'done').length;
     const pct = relevantTotal.length ? Math.round((doneN / relevantTotal.length) * 100) : 0;
     const myReport = reports.find((r) => r.id === `${fac}_${date}_${S.user.id}`);

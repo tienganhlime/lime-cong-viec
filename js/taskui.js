@@ -1,14 +1,14 @@
 // Thẻ công việc dùng chung cho các màn hình
 import { h, modal, toast, confirmDlg, fmtDM } from './ui.js';
 import { S, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, reopen, markNA, moveDate, approve, requestFix,
-  removeTask, saveNote, unclaim, assignTo, claim, isOverdue } from './core.js';
+  removeTask, saveNote, postpone, unclaim, assignTo, claim, isOverdue } from './core.js';
 import { todayStr, addDays } from './rules.js';
 
 export const expanded = new Set();
-const ICON = { todo: '', done: '✓', review: '◔', fix: '!', approved: '✉', na: '–' };
+const ICON = { todo: '', done: '✓', review: '◔', fix: '!', approved: '✉', na: '–', partial: '◐' };
 const STATUS_TEXT = {
   todo: 'Chưa làm', done: 'Đã xong', review: 'Chờ chuyên môn duyệt', fix: 'Cần sửa lại',
-  approved: 'Đã duyệt, chờ gửi CSKH', na: 'Không áp dụng',
+  approved: 'Đã duyệt, chờ gửi CSKH', na: 'Không áp dụng', partial: 'Làm dở, đã chuyển sang ngày khác',
 };
 export const statusText = (s) => STATUS_TEXT[s] || s;
 
@@ -42,6 +42,24 @@ function moveModal(t, redraw) {
     actions: [{ label: 'Hủy', kind: 'ghost' }, {
       label: 'Dời việc', kind: 'primary',
       onClick: async () => { if (!inp.value) return false; await moveDate(t, inp.value); redraw && redraw(); toast('Đã dời việc sang ' + fmtDM(inp.value)); },
+    }],
+  });
+}
+
+export function postponeModal(t, redraw) {
+  const inp = h('input', { type: 'date', value: addDays(todayStr(), 1), min: todayStr() });
+  const ta = h('textarea', { rows: 4, placeholder: 'Đã làm được gì, còn lại gì, cần lưu ý gì (ví dụ: đã check 5/8 lớp, còn CAM1T, CAM2M, FCE B2A)…' });
+  modal({
+    title: 'Làm dở / chưa kịp làm: chuyển sang ngày khác',
+    body: h('div', { class: 'stack' }, h('p', { class: 'muted' }, t.title), h('label', null, 'Đã làm được đến đâu', ta), h('label', null, 'Làm tiếp ngày', inp),
+      h('p', { class: 'hint' }, t.carry ? 'Việc được dời sang ngày đó, kèm ghi chú tiến độ để người sau làm tiếp.'
+        : 'Việc hàng ngày hôm nay sẽ được đóng lại là "làm dở", và tạo một việc "Làm bù" ở ngày đã chọn kèm ghi chú tiến độ.')),
+    actions: [{ label: 'Hủy', kind: 'ghost' }, {
+      label: 'Chuyển việc', kind: 'primary',
+      onClick: async () => {
+        if (!inp.value) return false;
+        await postpone(t, inp.value, ta.value); redraw && redraw(); toast('Đã chuyển sang ' + fmtDM(inp.value));
+      },
     }],
   });
 }
@@ -116,6 +134,7 @@ export function taskCard(t, o = {}) {
   if (t.status === 'done' && isCM()) row.append(h('button', { class: 'btn sm danger', type: 'button', onClick: () => feedbackModal(t, { flag: true, onDone: redraw }) }, 'Đánh dấu lỗi / gửi feedback'));
   if (t.status === 'done' && allowed) row.append(btn('Mở lại', 'ghost', () => reopen(t)));
   if ((t.status === 'todo' || t.status === 'fix') && allowed) {
+    row.append(h('button', { class: 'btn sm', type: 'button', onClick: () => postponeModal(t, redraw) }, 'Làm dở / chuyển ngày'));
     row.append(h('button', { class: 'btn sm ghost', type: 'button', onClick: () => moveModal(t, redraw) }, 'Dời ngày'));
     row.append(btn('Không áp dụng', 'ghost', () => markNA(t)));
   }

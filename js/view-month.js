@@ -3,7 +3,7 @@ import { S, facName, GROUP_LABEL, isOverdue, taskKey } from './core.js';
 import { taskModal } from './taskui.js';
 import { todayStr, addMonths, daysInMonth, pad, dow, DOW_NAMES, monthOf, isOpen } from './rules.js';
 
-const SYMBOL = { done: '✓', todo: '·', review: '◔', fix: '!', approved: '✉', na: '–' };
+const SYMBOL = { done: '✓', todo: '·', review: '◔', fix: '!', approved: '✉', na: '–', partial: '◐' };
 
 export function viewMonth(root, params) {
   const fac = S.facility;
@@ -70,7 +70,7 @@ export function viewMonth(root, params) {
         bodyRows.push(h('tr', { class: 'grp' }, h('td', { colspan: n + 2 }, 'Việc của ' + (GROUP_LABEL[r.group] || r.group))));
       }
       const all = Object.values(r.byDay).flat();
-      const doneN = all.filter((t) => t.status === 'done' || t.status === 'na').length;
+      const doneN = all.filter((t) => t.status === 'done' || t.status === 'na' || t.status === 'partial').length;
       bodyRows.push(h('tr', null,
         h('td', { class: 'stick rowname', title: r.title }, r.title),
         days.map((d) => {
@@ -101,7 +101,7 @@ export function viewMonth(root, params) {
           h('button', { class: 'seg-b' + (groupFilter === v ? ' on' : ''), type: 'button', onClick: () => { groupFilter = v; render(); } }, l))),
         h('input', { type: 'search', placeholder: 'Tìm công việc…', value: q, class: 'search', onInput: (e) => { q = e.target.value; redraw(); } }),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: onlyOpen, onChange: (e) => { onlyOpen = e.target.checked; render(); } }), 'Chỉ việc chưa xong')),
-      h('div', { class: 'legend' }, [['✓', 'Đã xong'], ['·', 'Chưa làm'], ['✗', 'Quá hạn chưa làm'], ['◔', 'Chờ duyệt'], ['!', 'Cần sửa'], ['✉', 'Chờ gửi CSKH'], ['–', 'Không áp dụng']].map(([s, l]) => h('span', null, h('i', null, s), l))),
+      h('div', { class: 'legend' }, [['✓', 'Đã xong'], ['·', 'Chưa làm'], ['✗', 'Quá hạn chưa làm'], ['◔', 'Chờ duyệt'], ['!', 'Cần sửa'], ['✉', 'Chờ gửi CSKH'], ['◐', 'Làm dở, đã chuyển ngày'], ['–', 'Không áp dụng']].map(([s, l]) => h('span', null, h('i', null, s), l))),
       tasks.length ? h('div', { class: 'matrix-wrap' }, h('table', { class: 'matrix' }, h('thead', null, head), h('tbody', null, repRow, bodyRows)))
         : h('div', { class: 'empty-state' }, h('h3', null, 'Tháng này chưa có việc nào'),
           h('p', null, 'Hệ thống tự tạo checklist từ mẫu việc khi mở tháng mới. Quản lý và Chuyên môn có thể tạo thủ công ở mục Mẫu việc → Khởi tạo checklist tháng.')));

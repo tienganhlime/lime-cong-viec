@@ -84,6 +84,28 @@ export const reopen = (t) => patchTask(t, { status: 'todo', doneAt: null });
 export const markNA = (t) => patchTask(t, { status: 'na' });
 export const moveDate = (t, date) => patchTask(t, { date });
 
+/* Làm dở / chưa kịp làm: ghi tiến độ và chuyển sang ngày khác.
+   - Việc đang tự chuyển tiếp (carry): giữ nguyên 1 việc, dời ngày, nối tiến độ vào ghi chú.
+   - Việc hàng ngày (không tự chuyển tiếp): đóng việc hôm nay ở trạng thái "partial", tạo việc "Làm bù" ở ngày mới. */
+export async function postpone(t, date, progress = '') {
+  const d = t.date;
+  const line = progress.trim() ? `[${d.slice(8)}/${d.slice(5, 7)} · ${S.user.name}] ${progress.trim()}` : '';
+  const note = [t.note, line].filter(Boolean).join('\n');
+  if (t.carry) return patchTask(t, { date, note, assignee: t.assignee || S.user.id, assigneeName: t.assignee ? t.assigneeName : S.user.name });
+  const id = S.db.newId();
+  const { id: _omit, ...rest } = t;
+  await S.db.batch([
+    { op: 'update', col: 'tasks', id: t.id, data: { status: 'partial', open: false, note, doneBy: S.user.id, doneByName: S.user.name, movedTo: date } },
+    { op: 'set', col: 'tasks', id, data: {
+      ...rest, title: t.title.startsWith('Làm bù: ') ? t.title : `Làm bù: ${t.title}`, date, month: date.slice(0, 7), tplId: '', source: 'makeup', refId: t.id,
+      status: 'todo', open: true, carry: true, note: line ? `Từ ${d.slice(8)}/${d.slice(5, 7)}: ${progress.trim()}` : `Chưa kịp làm ngày ${d.slice(8)}/${d.slice(5, 7)}`,
+      feedback: '', flagged: false, doneAt: null, doneBy: null, doneByName: '', movedTo: null,
+      assignee: t.assignee || S.user.id, assigneeName: t.assignee ? t.assigneeName : S.user.name,
+      createdBy: S.user.id, createdAt: Date.now(),
+    } },
+  ]);
+}
+
 export async function approve(t) {
   const next = t.sendCSKH ? 'approved' : 'done';
   await patchTask(t, { status: next, flagged: false, feedback: '' });
