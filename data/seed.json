@@ -1,0 +1,2629 @@
+{
+ "version": 1,
+ "facilities": [
+  {
+   "id": "yenhoa",
+   "name": "Yên Hòa"
+  },
+  {
+   "id": "trunghoa",
+   "name": "Trung Hòa"
+  }
+ ],
+ "templates": [
+  {
+   "id": "t01",
+   "order": 1,
+   "name": "Check công việc phát sinh (CVPS) đầu ngày",
+   "group": "cm",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Check công việc phát sinh. Ghi chép lại các công việc phát sinh trong quá trình làm việc (kèm ngày phát sinh) vào dòng CVPS. Confirm vào bài đăng FB.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t02",
+   "order": 2,
+   "name": "Đọc lại tin nhắn trên nhóm Chuyên môn / Lime Giảng viên / Lime Trợ giảng và confirm",
+   "group": "cm",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Đọc lại tin nhắn trên nhóm Chuyên môn / Lime Giáo viên / Lime Trợ giảng (check tin nhắn công việc) và confirm thông tin (nếu có).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Lime Giáo viên', danh sách của bạn ghi 'Lime Giảng viên'"
+  },
+  {
+   "id": "t03",
+   "order": 3,
+   "name": "Kiểm tra những lớp hôm qua bị bảo chưa nộp bài VN cho hs",
+   "group": "cm",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Ghi lớp chưa giao bài và đã nhắc giáo viên chưa. Văn giao BTVN mẫu: 'Ms đáng yêu ơi, lớp ___ đang mong đợi từng ngày để nhận bài tập từ Ms đó ạ! Ms giao bài tập về nhà sớm cho các bạn làm bài nhé. Cả lớp hứa sẽ làm chăm chỉ luôn nè! Cảm ơn Ms iu thương lắm!'",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'bị báo'"
+  },
+  {
+   "id": "t04",
+   "order": 4,
+   "name": "Kiểm tra GV gửi link video theo syllabus",
+   "group": "cm",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra giáo viên gửi link video theo syllabus. Ghi lớp còn thiếu (thiếu phiếu chấm, thiếu link video, quiz) và đã nhắc giáo viên chưa.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t05",
+   "order": 5,
+   "name": "Kiểm tra GV up slide bài dạy (1 lần/tuần)",
+   "group": "cm",
+   "repeatText": "Hàng tuần",
+   "scheduleText": "1 lần/tuần",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     3
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra giáo viên up slide bài dạy 1 lần/tuần lên folder Drive gốc. Ghi lớp nào đã up đến bài nào, giáo viên đã giao đến bài nào; lớp đã lên khóa mới nhưng chưa up slide, chưa có folder lớp mới thì ghi lại.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t06",
+   "order": 6,
+   "name": "Kiểm tra checklist trợ giảng viết kèm đủ công việc chưa",
+   "group": "cm",
+   "repeatText": "Hàng ngày/Hàng tuần",
+   "scheduleText": "Theo lịch kiểm tra",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra checklist trợ giảng viết đủ công việc chưa. Ghi ngày kiểm tra; nếu chưa liệt kê đủ công tác thì nhắc trợ giảng điều chỉnh; ghi lại kết quả (ok / đã nhắc TG).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Kiểm tra checklist trợ giảng viết xem đủ công việc chưa'"
+  },
+  {
+   "id": "t07",
+   "order": 7,
+   "name": "Kiểm tra danh sách học sinh cần thêm công việc hay giấy có làm chưa?",
+   "group": "cm",
+   "repeatText": "Hàng ngày/Hàng tuần",
+   "scheduleText": "Theo lịch kiểm tra",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra danh sách học sinh cần test trong ngày của trợ giảng: có làm chưa, có đầy đủ chưa. Ghi ngày và kết quả (ok / thiếu tên học sinh test thì đã nhắc). Kết quả test ghi vào file Lime Học Thuật.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Kiểm tra danh sách học sinh cần test trong ngày của trợ giảng (có làm chưa? Có đầy đủ chưa?)'. Danh sách của bạn có vẻ bị lỗi chữ, bạn xác nhận giúp"
+  },
+  {
+   "id": "t08",
+   "order": 8,
+   "name": "Kiểm tra hoạt động ôn bài, bù bài của trợ giảng",
+   "group": "cm",
+   "repeatText": "Hàng ngày/Hàng tuần",
+   "scheduleText": "Theo lịch kiểm tra",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra trợ giảng ôn bài, bù bài đúng quy trình: có chuẩn bị nội dung ôn cho học sinh, có kiểm tra bài tập của học sinh đến sớm. Ghi ngày, tên trợ giảng, nhận xét. Xem file LIME Checklist trợ giảng.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t09",
+   "order": 9,
+   "name": "Kiểm tra trợ giảng có đi hỗ trợ lớp / nhắc các Ms đúng các mốc giờ ra chơi, 30p cuối giờ v.v.",
+   "group": "cm",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra trợ giảng có đi hỗ trợ lớp, nhắc các Ms đúng mốc giờ ra chơi, 30 phút cuối giờ hay không. Ghi ngày, lớp, nhận xét; nếu không thấy nhắc thì ghi rõ lớp nào.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t10",
+   "order": 10,
+   "name": "Kiểm tra cập nhật tình hình trao đổi của giáo viên theo danh sách ngày thứ 1",
+   "group": "cm",
+   "repeatText": "Định kỳ (15/22/29 hàng tháng)",
+   "scheduleText": "Ngày 15, 22, 29 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     15,
+     22,
+     29
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Theo danh sách CSKH gửi, 2 file riêng cho từng cơ sở. Ngày 15: gửi danh sách trao đổi cho giáo viên. Ngày 22: hỏi thăm giáo viên cập nhật. Ngày 29: hỏi thăm giáo viên cập nhật. Các lần nhắn: Gửi lần 1 (gửi danh sách học sinh cần trao đổi; yêu cầu báo lại: 1. Thời gian trao đổi + nội dung trao đổi + phản hồi của PH; 2. Trao đổi bằng danh nghĩa cá nhân, gặp mặt hoặc gọi bằng HOTLINE TRUNG TÂM, không qua trao đổi gấp hay người khác truyền tin; lưu ý khi trao đổi với PH không chỉ nêu vấn đề của con mà phải đưa cách giải quyết và biện pháp hỗ trợ). Hỏi lần 2 (nhắc giáo viên đã trao đổi được với ai thì cập nhật luôn để tránh bị quên). Hỏi gần ngày lần 1 (xin thông tin trao đổi với PH trong tháng cao điểm, học sinh có nguy cơ nghỉ nhiều, trao đổi tích cực ít nhất hết bảng). Hỏi gần ngày lần 2 (chuẩn bị có danh sách học sinh cần trao đổi tháng mới; ngày 15-17 hàng tháng gửi danh sách mới).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'theo danh sách CSKH gửi'; danh sách của bạn ghi 'ngày thứ 1'"
+  },
+  {
+   "id": "t11",
+   "order": 11,
+   "name": "Định kỳ cuối tháng 8 & tháng 1: PL chương trình trường cho HS mầm non + lớp 1",
+   "group": "cm",
+   "repeatText": "Định kỳ (T8 & T1)",
+   "scheduleText": "Cuối tháng 8 và tháng 1",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     28
+    ],
+    "months": [
+     8,
+     1
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Chuyên môn follow danh sách, đi hỏi đội vận hành đã hoàn thành công việc chưa. Hỏi cả lớp xem học trường nào, xem đánh giá các học sinh mầm non, lớp 1, xem chương trình có phù hợp với chương trình trường của học sinh không.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'FL chương trình trên trường của HS mầm non + lớp 1', danh sách của bạn ghi 'PL'"
+  },
+  {
+   "id": "t12",
+   "order": 12,
+   "name": "Kiểm tra báo cáo trợ giảng hàng tuần",
+   "group": "cm",
+   "repeatText": "Hàng tuần",
+   "scheduleText": "Hàng tuần, chia lớp theo từng tuần",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     1
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Chia các lớp từng tuần để check báo cáo của trợ giảng (báo cáo lớp học). Ghi rõ ngày và lớp. Kết quả: đủ / thiếu báo cáo / thiếu soạn văn, đã nhắc trợ giảng, ngày check lại.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t13",
+   "order": 13,
+   "name": "Ngày 30 tháng trước tạo lịch cho tháng mới",
+   "group": "cm",
+   "repeatText": "Hàng tháng (ngày 30)",
+   "scheduleText": "Ngày 30 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     30
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Ngày 30 của tháng trước tạo lịch kiểm tra cho tháng mới.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t14",
+   "order": 14,
+   "name": "Lịch kiểm tra tuần 1/2/3 (báo cáo + soạn văn)",
+   "group": "cm",
+   "repeatText": "Hàng tuần",
+   "scheduleText": "Tuần 1, 2, 3 (và tuần 4 hoàn thành phần còn thiếu)",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Ghi rõ ngày + lớp vào ô của mình. Tuần 1: kiểm tra báo cáo + soạn văn L1. Tuần 2 và tuần 3: kiểm tra báo cáo + soạn văn L2. Tuần 4: kiểm tra các báo cáo còn thiếu. Kết quả ghi: đủ / thiếu test / thiếu soạn văn, nhắc lại, ngày check lại.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t15",
+   "order": 15,
+   "name": "Check Test cập nhật bản tin và tin tứcHàng ngày",
+   "group": "cm",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Học sinh Test: cập nhật liên tục và kiểm tra lại vào một thứ cố định trong tuần (ví dụ thứ 4). Mỗi cơ sở có file cập nhật hằng ngày trong nhóm Mess. Ghi: ngày test, giờ, tên học sinh, năm sinh, đã đến hay chưa.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "Dòng này trong danh sách của bạn bị lỗi chữ, mình đoán là mục 'Học sinh Test' trong file gốc. Bạn xác nhận giúp"
+  },
+  {
+   "id": "t16",
+   "order": 16,
+   "name": "Feedback to PH (Alice + Mai Phương)",
+   "group": "cm",
+   "repeatText": "Định kỳ",
+   "scheduleText": "1,5 tháng sau khi học sinh nhập học (khoảng 10 buổi)",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Hỗ trợ tuyển sinh xử lý các feedback của PH. Đọc kết quả trong 'Content nháp của tuyển sinh' trong tab 'hẹn test / học thử'. Xử lý feedback chưa tích cực của PH và học sinh. Học thử buổi 1 (hàng ngày, theo từng cơ sở): ghi đúng ngày học thử, sau 1 ngày hỏi giáo viên xem học sinh có theo được lớp không, có cần chuyển lớp khác không. Học thử buổi 2: tương tự; nếu học sinh nghỉ buổi 2 thì Chuyên môn phải hỏi CSKH lý do nghỉ là gì, có phải do bên mình không, để nói chuyện với giáo viên.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Feedback từ PH'"
+  },
+  {
+   "id": "t17",
+   "order": 17,
+   "name": "Kiểm tra các công tác với học sinh mới (từ buổi học thứ 3 của hs)",
+   "group": "cm",
+   "repeatText": "Theo HS mới",
+   "scheduleText": "Từ buổi học thứ 3 của học sinh",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Từ buổi học thứ 3 của học sinh: kiểm tra tài khoản Khan Kids; sách vở (kiểm tra trên ảnh Giáo vụ); có làm bài tập không (có biết làm hay khó khăn gì, kiểm tra trên ảnh giáo viên). Kiểm tra lịch bù bài cho học sinh, kiểm tra chéo xem trợ giảng có bù bài đủ cho học sinh theo kế hoạch không. Ghi theo từng cơ sở.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t18",
+   "order": 18,
+   "name": "Kết thúc 8 buổi đầu tiên (xin nhận xét GV, test HS…)",
+   "group": "cm",
+   "repeatText": "Theo lịch lớp mới",
+   "scheduleText": "Sau 8 buổi đầu; xin danh sách ngày 12 hàng tháng",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Cần xin nhận xét giáo viên, test học sinh, chữa nhận xét giáo viên, ghi lịch từ buổi thứ 6. Ngày 12 hàng tháng xin CSKH danh sách học sinh. Làm theo Tuần 1, 2, 3, chi tiết như nhận xét test. Ghi theo từng cơ sở.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t19",
+   "order": 19,
+   "name": "Học sinh nghỉ học/bảo lưu (thứ 2 hàng tuần)",
+   "group": "cm",
+   "repeatText": "Hàng tuần (thứ 2)",
+   "scheduleText": "Thứ 2 hàng tuần",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     1
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Cập nhật hàng tuần (thứ 2). Hỏi lý do, nguyên nhân, phối hợp với giáo viên giải quyết để hạn chế tình trạng nghỉ học / bảo lưu. Checklist này dùng để ghi chép các ngày thứ 2 trong tháng Chuyên môn đã xin danh sách chưa và đã đưa học sinh vào danh sách theo dõi để tìm hiểu nguyên nhân chưa. Chia Tuần 1 đến Tuần 5.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t20",
+   "order": 20,
+   "name": "Alice & Mai Phương follow + xử lý PH xin nghỉ học",
+   "group": "cm",
+   "repeatText": "Theo sự kiện",
+   "scheduleText": "Khi có phụ huynh xin nghỉ học",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Follow và xử lý sự từ chối của phụ huynh xin nghỉ học.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'ALICE và MAI PHƯƠNG follow và xử lý sự từ chối của PH xin nghỉ học'"
+  },
+  {
+   "id": "t21",
+   "order": 21,
+   "name": "Tình hình lớp khai giảng + lịch khai giảng (mùng 5)",
+   "group": "cm",
+   "repeatText": "Hàng tháng",
+   "scheduleText": "Mùng 5 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     5
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Hỏi Quản lý xem có lớp nào dự kiến khai giảng trong tháng không, ghi rõ ngày giờ lớp học. 1. Chuẩn bị giáo viên: báo giáo viên, hỏi chị Alice có cần training không, bảo giáo viên chuẩn bị lesson plan nộp lại, gửi giáo viên toàn bộ hệ thống tài liệu (syllabus, file sách, link nghe, folder BTVN, link Speaking Circle time, yêu cầu vở viết, học sinh học vượt tuổi được miễn giảm bài tập). 2. Phân công trợ giảng chuẩn bị theo dõi lớp. 3. Kiểm tra lại tài liệu chuyên môn cho lớp mới (file in sách BTBT đã sửa lỗi cũ chưa, tranh ảnh đủ chưa). Ghi rõ ngày + tên lớp. Chi tiết các bước tiếp theo xem sheet 'Chuỗi theo mốc'.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t22",
+   "order": 22,
+   "name": "Mùng 6: Lên danh sách HS học vượt tuổi + miễn bài tập",
+   "group": "cm",
+   "repeatText": "Hàng tháng (mùng 6)",
+   "scheduleText": "Mùng 6 hàng tháng (sau khi có danh sách lớp mới)",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     6
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Lên danh sách các bạn học sinh học vượt tuổi và được hỗ trợ miễn bài tập (nếu có), gửi các đội thực hiện công tác của mình.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t23",
+   "order": 23,
+   "name": "5 ngày trước khai giảng (xin Zalo lớp, LP GV, tải tài liệu…)",
+   "group": "cm",
+   "repeatText": "Theo lịch khai giảng",
+   "scheduleText": "Chuỗi lớp khai giảng: 5 ngày trước ngày khai giảng",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Xem sheet 'Chuỗi theo mốc', chuỗi 1, bước 1.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t24",
+   "order": 24,
+   "name": "Học buổi 1 & buổi 2: Xin GV nhận xét",
+   "group": "cm",
+   "repeatText": "Theo lịch lớp mới",
+   "scheduleText": "Chuỗi lớp khai giảng: sau buổi 1 và sau buổi 2",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Xem sheet 'Chuỗi theo mốc', chuỗi 1, bước 2 và 3.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t25",
+   "order": 25,
+   "name": "Sau 2 buổi học: Kiểm tra Khan Kids, bài tập, sách vở",
+   "group": "cm",
+   "repeatText": "Theo lịch lớp mới",
+   "scheduleText": "Chuỗi lớp khai giảng: sau 2 buổi học",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Xem sheet 'Chuỗi theo mốc', chuỗi 1, bước 4.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t26",
+   "order": 26,
+   "name": "Buổi học thứ 6: Hướng dẫn quay video test",
+   "group": "cm",
+   "repeatText": "Theo lịch lớp mới",
+   "scheduleText": "Chuỗi lớp khai giảng: buổi học thứ 6",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Xem sheet 'Chuỗi theo mốc', chuỗi 1, bước 6.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t27",
+   "order": 27,
+   "name": "Kiểm tra hình thức + chất lượng video test của GV",
+   "group": "cm",
+   "repeatText": "Theo lịch test",
+   "scheduleText": "Chuỗi lớp khai giảng / lớp test",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Kiểm tra hình thức và chất lượng quay video test của giáo viên. Check nhận xét của giáo viên.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t28",
+   "order": 28,
+   "name": "Kết thúc theo dõi 1 tháng lớp mới",
+   "group": "cm",
+   "repeatText": "Theo lịch lớp mới",
+   "scheduleText": "Chuỗi lớp khai giảng: 1 tháng sau khai giảng",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Xem sheet 'Chuỗi theo mốc', chuỗi 1, bước 8.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t29",
+   "order": 29,
+   "name": "Theo dõi HS các lớp CAM mới (2,5 tháng sau khai giảng)",
+   "group": "cm",
+   "repeatText": "Theo lịch lớp CAM",
+   "scheduleText": "Chuỗi lớp khai giảng: 2,5 tháng sau khai giảng",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Theo dõi học sinh các lớp CAM mới khai giảng / chuyển cấp độ xem có theo được lớp hay không. Ghi trước ngày bắt đầu test, test cả lớp và ghi lại kết quả vào danh sách theo dõi.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t30",
+   "order": 30,
+   "name": "Lớp chuyên cấp độ",
+   "group": "cm",
+   "repeatText": "Theo lịch",
+   "scheduleText": "Ngày 25 đến 28 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     25
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Danh sách các lớp chuyển cấp độ: ngày 25-28 trong lúc check lịch test thì tranh thủ kiểm tra xem các lớp đã bắt đầu học Unit cuối cùng chưa. Các lớp bắt đầu học bài cuối cùng là phải cho vào danh sách này ngay. Hỏi chị Alice xem giáo viên cần training không, có cần gửi tài liệu Circle time không. Các bước tiếp theo xem sheet 'Chuỗi theo mốc', chuỗi 4.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Lớp chuyển cấp độ'"
+  },
+  {
+   "id": "t31",
+   "order": 31,
+   "name": "Chuẩn bị cho họp phụ huynh",
+   "group": "cm",
+   "repeatText": "Theo lịch",
+   "scheduleText": "Ngay khi có lịch họp PH",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Xem sheet 'Chuỗi theo mốc', chuỗi 4.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t32",
+   "order": 32,
+   "name": "Lịch dạy trong buổi họp + test HS dự phòng",
+   "group": "cm",
+   "repeatText": "Theo lịch",
+   "scheduleText": "Chuỗi họp phụ huynh",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Dự trù nhân sự buổi họp + xếp phòng. Xem sheet 'Chuỗi theo mốc', chuỗi 4.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Dự trù nhân sự buổi họp + xếp phòng', danh sách của bạn ghi 'Lịch dạy trong buổi họp + test HS dự phòng'. Bạn xác nhận giúp"
+  },
+  {
+   "id": "t33",
+   "order": 33,
+   "name": "Sau 2 buổi đầu sau họp chuyên cấp độ",
+   "group": "cm",
+   "repeatText": "Theo lịch",
+   "scheduleText": "Sau 2 buổi đầu khi lớp chuyển cấp độ",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Kiểm tra tài khoản Khan Kids (giáo viên giao bài chưa, học sinh làm chưa); tình hình bài tập (cả bài Khan và Video); tình hình sách vở (đủ sách và vở ghi không, biết dùng chưa; hỏi CSKH học sinh mua sách chưa, nhắn giáo viên động viên mua sách để học). Theo dõi tình hình đáp ứng khóa mới của giáo viên và học sinh.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Sau 2 buổi đầu sau khi lớp chuyển cấp độ'"
+  },
+  {
+   "id": "t34",
+   "order": 34,
+   "name": "Danh sách các lớp test mới + chuẩn bị file test/flashcard",
+   "group": "cm",
+   "repeatText": "1 tuần trước test",
+   "scheduleText": "1 tuần trước ngày test; cập nhật danh sách lớp test ngày 25 đến 28",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     25
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Chuẩn bị phiếu cho lớp test nói. Danh sách các lớp test: ghi rõ tên lớp, bài test số, thời gian test. Ngày 25-28 cập nhật lên nhóm LIME SCHOOL TEACHERS. Gửi danh sách test trên nhóm, bắt các đội confirm, gửi lại thông tin bài viết báo nhóm chat LIME GIÁO VIÊN. Chi tiết xem sheet 'Chuỗi theo mốc', chuỗi 3.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t35",
+   "order": 35,
+   "name": "Nhận xét tháng",
+   "group": "cm",
+   "repeatText": "Hàng tháng",
+   "scheduleText": "Ngày 15, 18, 20, 22 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     15,
+     18,
+     20,
+     22
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Ngày 15: (Chuyên môn hành chính) lập danh sách các lớp cần gửi nhận xét tháng trong tháng tiếp theo, gửi nhóm Leaders và nhờ mọi người thả tim confirm. Ngày 18: hỏi Vận hành xem file nhận xét được cập nhật và đủ ảnh chưa. Ngày 20: kiểm tra file nhận xét tháng của lớp cần nhận xét đã được Vận hành ghép ảnh đủ chưa. Ngày 22: gửi link nhận xét tháng cho giáo viên để nhận xét, đăng nhóm LIME SCHOOL TEACHERS (kèm mẫu: nhận xét sau test, nhận xét cuối khóa học, nhận xét tháng). Văn đòi nhận xét mẫu: 'Ms đáng yêu ơi, Lucie đang mong ngóng từng ngày để nhận được nhận xét tháng và nhận xét test của lớp ___ từ Ms. Nhờ Ms gửi sớm cho Lucie với nha, để Lucie hiểu rõ hơn về tiến bộ của các bạn. Lucie cảm ơn Ms nhiều lắm luôn, yêu thương Ms vô cùng!'",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t36",
+   "order": 36,
+   "name": "Kiểm tra checklist soát lại hàng tuần",
+   "group": "cm",
+   "repeatText": "Hàng tuần",
+   "scheduleText": "Thứ 2 hàng tuần",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     1
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra checklist online / offline hàng tuần vào thứ 2. Ghi kết quả (ok / chưa thấy cập nhật checklist / cơ sở chỉ ghi được một số ngày thì đã nhắc trợ giảng bổ sung, ngày check lại).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'kiểm tra checklist onl/off hàng tuần vào thứ 2'"
+  },
+  {
+   "id": "t37",
+   "order": 37,
+   "name": "Kiểm tra danh sách HS mới + tình hình HS ngang (thứ 4 hàng tuần)",
+   "group": "cm",
+   "repeatText": "Hàng tuần (thứ 4)",
+   "scheduleText": "Thứ 4 hàng tuần",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     3
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra danh sách ôn bài, form danh sách ôn bài, kiểm tra học sinh mới vào ngang. Ghi kết quả (đủ / thiếu kết quả ôn / test, ngày check lại).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Kiểm tra danh sách ôn bài, form danh sách ôn bài, kiểm tra học sinh mới vào ngang thứ 4 hàng tuần'"
+  },
+  {
+   "id": "t38",
+   "order": 38,
+   "name": "Kiểm tra session chất lượng chấm video (thứ 4 hàng tuần)",
+   "group": "cm",
+   "repeatText": "Hàng tuần (thứ 4)",
+   "scheduleText": "Thứ 4 hàng tuần",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     3
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra random chất lượng chấm video.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Kiểm tra random chất lượng chấm video'"
+  },
+  {
+   "id": "t39",
+   "order": 39,
+   "name": "Kiểm tra tình hình làm handout (circle time) + key của TG (thứ 2 hàng tháng)",
+   "group": "cm",
+   "repeatText": "Hàng tháng (thứ 2)",
+   "scheduleText": "Thứ 2",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     1
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra tình hình làm handout (circle time) và key của trợ giảng. Kiểm tra KEY CLC A1. Ghi kết quả (ok / chưa thấy cập nhật checklist).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'thứ 2 hàng tuần' và nhật ký có các ngày 5/10, 12/10, 19/10, 26/10 (đều là thứ 2 hàng tuần); danh sách của bạn ghi 'hàng tháng'. Bạn xác nhận giúp"
+  },
+  {
+   "id": "t40",
+   "order": 40,
+   "name": "Mùng 3: Kiểm tra LIME VOICE + KHAN KIDS",
+   "group": "cm",
+   "repeatText": "Hàng tháng (mùng 3)",
+   "scheduleText": "Mùng 3 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     3
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra công tác LIME VOICE (đếm đúng chưa, random). KHAN KIDS: phân tích kết quả, lớp nào làm đều, lớp nào không làm, tại sao; hỏi thăm giáo viên và hỗ trợ; đưa giải pháp.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t41",
+   "order": 41,
+   "name": "Đăng bài HS vượt tuổi (tháng 1,4,5,8,11)",
+   "group": "cm",
+   "repeatText": "Định kỳ",
+   "scheduleText": "Mùng 2 hàng tháng; ngày 26 lọc danh sách học sinh vượt tuổi",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     2,
+     26
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Đăng bài học sinh vượt tuổi trên FB LIME SCHOOL TEACHER (ví dụ: tháng 6, học sinh lớp 1 sẽ lên lớp 2). Ngày 26 lọc danh sách học sinh vượt tuổi.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "Danh sách của bạn có ghi các tháng 1, 4, 5, 8, 11 nhưng file gốc không thể hiện. Bạn xác nhận các tháng này"
+  },
+  {
+   "id": "t42",
+   "order": 42,
+   "name": "Mùng 5: Đăng bài cách khen HS được certi",
+   "group": "cm",
+   "repeatText": "Hàng tháng (mùng 5)",
+   "scheduleText": "Mùng 5 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     5
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Đăng bài cách khen học sinh được certificate.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t43",
+   "order": 43,
+   "name": "Kiểm tra GV giao bài Khan Kids chưa",
+   "group": "cm",
+   "repeatText": "Hàng tháng",
+   "scheduleText": "Mùng 4 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     4
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra giáo viên giao bài Khan Kids chưa. Lớp chưa giao: đăng bài + nhắn tin nhắc các Ms, hôm sau check lại.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t44",
+   "order": 44,
+   "name": "Kiểm tra mục Trao đổi gặp",
+   "group": "cm",
+   "repeatText": "Định kỳ",
+   "scheduleText": "Mùng 4 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     4
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra mục Trao đổi gấp, đánh giá tình hình Ss yếu và hỗ trợ. Xin Chuyên môn hành chính danh sách lớp test và chuyển cấp độ.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Trao đổi gấp'"
+  },
+  {
+   "id": "t45",
+   "order": 45,
+   "name": "Có kết quả KPI → báo Hiến đăng bài khen + gửi GV lý do chưa đạt",
+   "group": "cm",
+   "repeatText": "Hàng tháng",
+   "scheduleText": "Mùng 5 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     5
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Có kết quả KPI thì báo Hiền để Hiền đăng bài khen. Gửi giáo viên lý do chưa đạt Nhất KPI tháng vừa qua.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Hiền'"
+  },
+  {
+   "id": "t46",
+   "order": 46,
+   "name": "Mùng 10: Trao đổi/báo cáo ý kiến giữa kỳ/cuối kỳ, thi…",
+   "group": "cm",
+   "repeatText": "Hàng tháng (mùng 10)",
+   "scheduleText": "Mùng 10 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     10
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Theo dõi lịch các kỳ thi giữa kỳ / cuối kỳ, thi Toefl Primary, thi Chuyên, thi các kỳ thi tiếng Anh quốc tế. Báo lại Quản lý Chuyên môn và Quản lý cơ sở. Tìm đề, lên kế hoạch tổ chức ôn tập / thi thử. Hỏi thăm học sinh mang đề cương tới Ms chữa, chụp lại đề để lấy mẫu tham khảo làm đề luyện tập. Hỏi thăm học sinh có ai tham gia kỳ thi tiếng Anh nào không, ghi chép lại và đề xuất Quản lý cơ sở xem có hỗ trợ gì không. Hỏi thăm học sinh thi trên lớp được bao nhiêu điểm, phản ánh lại chất lượng handout và hoạt động ngữ pháp của mình.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Theo dõi lịch các kỳ thi...'"
+  },
+  {
+   "id": "t47",
+   "order": 47,
+   "name": "Cuối tháng: Kiểm tra chéo các đội + lập KPI tháng + lập checklist CM mới",
+   "group": "cm",
+   "repeatText": "Hàng tháng",
+   "scheduleText": "Ngày 28 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     28
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra chéo các đội Vận hành, Trợ giảng, CSKH, Marketing trong công tác chấm KPI. Lập bảng KPI tháng (file gốc làm cho 3 cơ sở). Lập checklist chuyên môn mới cho tháng sau.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t48",
+   "order": 48,
+   "name": "Xin Văn hành danh sách các lớp sắp thi vào lớp sau",
+   "group": "cm",
+   "repeatText": "Định kỳ",
+   "scheduleText": "Mùng 7 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     7
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Xin Vận hành danh sách các lớp sắp hết khóa (đã học hết U6). Hỏi giáo viên có học sinh nào học yếu có thể không lên được cấp không, thêm vào danh sách theo dõi để test và báo phụ huynh tình hình học luôn.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "File gốc ghi 'Xin Vận hành danh sách các lớp sắp hết khoá (đã học hết U6)'"
+  },
+  {
+   "id": "t49",
+   "order": 49,
+   "name": "Làm key",
+   "group": "cm",
+   "repeatText": "Theo lịch BTVN",
+   "scheduleText": "Ngày 28 hàng tháng: làm danh sách đòi KEY cho tháng sau",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     28
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Ngày 28 làm danh sách đòi KEY cho tháng sau. Làm key theo lịch BTVN của từng tuần.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t50",
+   "order": 50,
+   "name": "Handout cần sửa",
+   "group": "cm",
+   "repeatText": "Theo phát sinh",
+   "scheduleText": "2 tuần 1 lần ghi nhận lỗi handout",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Handout sai cần sửa (do giáo viên report, trợ giảng làm nhưng ghi lại để kiểm tra). 2 tuần 1 lần ghi nhận lỗi handout và viết vào checklist. 1. Ghi nhận handout lỗi. 2. Báo trợ giảng sửa. 3. Kiểm tra lại chất lượng sửa chữa (1 tuần sau khi gửi). 4. Cập nhật file gốc và gửi cho Vận hành. 5. Kiểm tra chéo Vận hành.",
+   "needsReview": true,
+   "reviewText": "Có (báo CM check lại)",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t51",
+   "order": 51,
+   "name": "Tổng kết Limevoice + Khankids (3 ngày đầu tháng)",
+   "group": "ta",
+   "repeatText": "Hàng tháng (3 ngày đầu)",
+   "scheduleText": "Mùng 1, 2, 3 hàng tháng (chia nhóm lớp theo ngày, xem sheet 'Lịch lớp Yên Hòa')",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Tổng kết Limevoice, Khankids của các lớp theo nhóm lớp từng ngày. Nhiều người chia nhau thì ghi tên người đã tổng kết các lớp nào.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "",
+   "scheduleKey": "summary",
+   "scheduleMode": "monthday"
+  },
+  {
+   "id": "t52",
+   "order": 52,
+   "name": "Check CVPS",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "Đầu ca",
+   "content": "Check công việc phát sinh. Ghi lại kết quả (không có / có việc gì). Việc chưa kịp làm thì date sang ngày hôm sau.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t53",
+   "order": 53,
+   "name": "Gửi DS ôn bài + Mang folder về phòng ôn",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "Ca sáng 7h30; ca chiều tối 16h30",
+   "content": "Gửi danh sách cần đến ôn bài cho CSKH. Với ca chiều tối: mang hết folder lên phòng ôn / bù bài. Ghi ai gửi, ai cầm folder.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t54",
+   "order": 54,
+   "name": "Chuẩn bị tài liệu ôn bài bù bài / kiểm tra tài liệu đã ghi tên HS chưa",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Chuẩn bị tài liệu ôn bài bù bài, kiểm tra tài liệu đã ghi sẵn tên học sinh chưa. Ghi bút chì tên học sinh vào phát cho dễ.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t55",
+   "order": 55,
+   "name": "Nội dung ôn bài",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Chuẩn bị nội dung ôn bài (xem file NỘI DUNG ÔN BÀI của cơ sở). Khi nhận danh sách bù bài thì chuẩn bị nội dung bù bài luôn (theo quy trình).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t56",
+   "order": 56,
+   "name": "Tài liệu cần in cho ôn bài",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Chuẩn bị tài liệu cần in cho ôn bài (xem file Tài liệu cần in cho ôn bài).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t57",
+   "order": 57,
+   "name": "Check CAM (kiểm tra công tác GV + 5p trước tan học)",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "5 phút trước giờ tan học",
+   "content": "Kiểm tra công tác giáo viên và ghi báo cáo. Check cả 5 phút trước giờ tan học xem Ms có cho học sinh về sớm không. Ghi rõ lớp đã check và kết quả ngắn gọn (Ms ok / Ms chưa hỗ trợ). Nếu Ms có vấn đề thì note lại luôn và nhắn tin báo lại CHUYÊN MÔN để xử lý.",
+   "needsReview": false,
+   "reviewText": "Không (báo CM nếu có vấn đề)",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t58",
+   "order": 58,
+   "name": "Ôn bù bài",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "Ca sáng: bù bài 10h30; ca chiều: bù bài 16h30; ca tối: 4h30",
+   "content": "Ôn bù bài cho học sinh. Ghi ai ôn bù bài. Đặc biệt với ca sáng và ca chiều vì bù bài sau giờ học thường rất đủ học sinh.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "Giờ 'ca tối: 4h30' trong file gốc ghi không rõ, bạn xác nhận giúp"
+  },
+  {
+   "id": "t59",
+   "order": 59,
+   "name": "Confirm danh sách ôn bù bài lần 1",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "Sáng 11h30; chiều tối 17h45",
+   "content": "Confirm danh sách học sinh ôn bù bài lần 1. Ghi ai confirm.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t60",
+   "order": 60,
+   "name": "Mang folder lớp về từng lớp + nhắc GV + xin slide bài dạy",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc (ca sáng không có công tác này)",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "Ca chiều tối 17h45 đến 17h55 (trước giờ vào lớp 5 phút)",
+   "content": "Mang từng folder lớp về từng lớp, nhắc nhở giáo viên, xin slide bài dạy. Ghi lớp đã xin slide.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t61",
+   "order": 61,
+   "name": "Tổng hợp Slide dạy của các khối",
+   "group": "ta",
+   "repeatText": "Hàng ngày/Hàng tuần",
+   "scheduleText": "Theo ngày dạy",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Giáo viên up slide dạy học hàng buổi lên 1 folder Drive gốc; trợ giảng dùng slide để ôn bài đối với các khối CLC và các khối CAM. Tổng hợp slide dạy của các khối vào file tổng hợp.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t62",
+   "order": 62,
+   "name": "Kiểm tra + nhắc GV giao BTVN + phiếu chấm/nhận xét (bắt buộc GRAM/CLC/PET/FCE)",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra và nhắc giáo viên giao BTVN, phiếu chấm / nhận xét (bắt buộc với khối GRAM, CLC, PET, FCE). Gửi tin nhắn nhắc trong nhóm LIME GIÁO VIÊN và nhắn riêng các Ms. Mẫu: 'Em cảm ơn các Ms ___ đã gửi bài tập cho lớp ___. Ms ___ giao bài tập cho lớp ___ để các bạn có thời gian làm bài nhé ạ. Ms ___ gửi phiếu chấm cho lớp ___ để bố mẹ theo dõi tình hình học của con nhé ạ!' Ghi lớp đã kiểm tra, lớp chưa giao đã nhắc, hôm sau check lại.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t63",
+   "order": 63,
+   "name": "Kiểm tra bài tập về nhà",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra bài tập về nhà (nhớ kiểm tra đủ số lượng và chất lượng giao bài). Ghi lớp đã kiểm tra và kết quả (đủ / chưa giao thì đã nhắc).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t64",
+   "order": 64,
+   "name": "Chấm KPI giáo viên",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Chấm KPI giáo viên của các lớp buổi hôm trước. Công tác giao bài (kiểm tra đủ số lượng và chất lượng). Với các lớp GRAM, CLC, PET, FCE bắt buộc phải có nhận xét lớp học.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t65",
+   "order": 65,
+   "name": "Nhắc nhở công tác GV giờ ra chơi",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "Sau khi vào học 1 tiếng với lớp DORY1/CAM1 trở lên; 45 phút với lớp DORY0 và DORY02",
+   "content": "Kiểm tra giờ ra chơi các Ms có ngồi xem điện thoại hay ngồi 1 chỗ không, nhắc các Ms trông học sinh, hỗ trợ học sinh. Nếu có vấn đề thì nhắc Ms và báo CM.",
+   "needsReview": false,
+   "reviewText": "Không (báo CM nếu có vấn đề)",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t66",
+   "order": 66,
+   "name": "Check slide các buổi học của lớp",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "30 phút cuối giờ học",
+   "content": "Check slide các buổi học của lớp. Gửi lại Ms link, 30 phút cuối lớp làm bài tập check lại. Ms chưa up thì lên tận lớp xin, nhìn tận mắt Ms up lên là OK.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t67",
+   "order": 67,
+   "name": "Hỗ trợ lớp đông (30p cuối giờ)",
+   "group": "ta",
+   "repeatText": "Hàng ngày (khi sĩ số ≥12)",
+   "scheduleText": "Ngày có lớp sĩ số trên 12 học sinh",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "30 phút cuối giờ",
+   "content": "Ngày hôm đó có lớp sĩ số trên 12 bạn đi học thì lên hỏi Ms xem lớp có cần hỗ trợ không. Ví dụ: lớp có 13 bạn thì hỏi Ms; lớp có 9 bạn thì không cần hỗ trợ. Ghi lớp đã hỗ trợ và hỗ trợ việc gì (ví dụ hỗ trợ Ms quay test).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "",
+   "scheduleKey": "support",
+   "scheduleMode": "weekday"
+  },
+  {
+   "id": "t68",
+   "order": 68,
+   "name": "Nhắc HS ở lại ôn bù bài lần 2",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Nhắc học sinh ở lại ôn bù bài lần 2. Ghi ai nhắc.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t69",
+   "order": 69,
+   "name": "Confirm HS bù bài lần 2",
+   "group": "ta",
+   "repeatText": "Hàng ngày",
+   "scheduleText": "Mỗi ngày làm việc",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "Chiều tối 20h30",
+   "content": "Confirm danh sách học sinh ôn bù bài lần 2. Ghi ai confirm.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t70",
+   "order": 70,
+   "name": "Test học sinh hàng tuần",
+   "group": "ta",
+   "repeatText": "Hàng tuần (theo lịch thứ)",
+   "scheduleText": "Theo thứ trong tuần, theo lịch lớp (xem sheet 'Lịch lớp Yên Hòa')",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Test học sinh hàng tuần, ghi lại kết quả test vào file Lime Học Thuật. Ví dụ ghi: ngày test; lớp nào đã test ai; chưa test được ai (nghỉ học) thì ghi ngày học tiếp theo của lớp để test tiếp.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "",
+   "scheduleKey": "test",
+   "scheduleMode": "weekday"
+  },
+  {
+   "id": "t71",
+   "order": 71,
+   "name": "Chấm video (1 tuần 1 lần)",
+   "group": "ta",
+   "repeatText": "Hàng tuần",
+   "scheduleText": "Theo thứ trong tuần, theo lớp (xem sheet 'Lịch lớp Yên Hòa')",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Chấm video của các lớp theo lịch từng thứ trong tuần. Ghi lớp đã chấm.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "",
+   "scheduleKey": "video",
+   "scheduleMode": "weekday"
+  },
+  {
+   "id": "t72",
+   "order": 72,
+   "name": "Công việc Chủ nhật: Hỏi VH+CSKH có HS mới/chuyển lớp không",
+   "group": "ta",
+   "repeatText": "Hàng tuần (CN)",
+   "scheduleText": "Chủ nhật hàng tuần",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     7
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Hỏi Vận hành + CSKH trong tuần này có học sinh mới vào ngang / học sinh chuyển lớp không. Sau khi có danh sách học sinh mới / chuyển ngang cần lên nội dung ôn bài trước khi lớp học buổi tiếp theo. Ví dụ: có danh sách ngày 6/9, lớp CAM1N phải có nội dung trước ngày 11/9 (buổi tiếp theo của lớp).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t73",
+   "order": 73,
+   "name": "Công tác HS mới/chuyển ngang (lên ND ôn bài + date lịch test lại)",
+   "group": "ta",
+   "repeatText": "Theo HS mới",
+   "scheduleText": "Chuỗi học sinh mới / chuyển lớp (xem sheet 'Chuỗi theo mốc', chuỗi 2)",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Lên nội dung ôn bù bài cho học sinh mới / chuyển ngang. Date lịch test lại. Gửi Chuyên môn check. Test lại sau 6 buổi ôn (6 buổi ôn + 1 buổi test tổng hợp, buổi thứ 7 test): nhắn hỏi giáo viên có cần ôn thêm không; BTVN đã hoàn thành đủ hết bài cũ chưa; kỹ năng nào ổn; kỹ năng nào vẫn cần theo dõi; học sinh yếu / tốt thì làm gì (phần này trong file gốc bị mất chữ, bạn bổ sung giúp). Ví dụ trong file: lên nội dung cho học sinh mới trước buổi học tiếp theo của lớp, gửi Chuyên môn check, test lại và hỏi giáo viên, ghi bạn cần ôn tiếp hay không.",
+   "needsReview": true,
+   "reviewText": "Có (gửi CM check ND ôn bài)",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t74",
+   "order": 74,
+   "name": "Mùng 7: Lớp chuyển cấp độ",
+   "group": "ta",
+   "repeatText": "Theo lịch",
+   "scheduleText": "Mùng 7 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     7
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Nhận danh sách lớp chuyển cấp trong nhóm Mess CHUYÊN MÔN (nhanh nhẹn). Không nhận được thì hỏi trực tiếp các Ms Vận hành.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t75",
+   "order": 75,
+   "name": "Nhận DS lớp chuyển cấp + thêm vào DS theo dõi để test",
+   "group": "ta",
+   "repeatText": "Theo lịch",
+   "scheduleText": "Sau khi nhận danh sách lớp chuyển cấp",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Thêm cả lớp vào danh sách theo dõi để test kiến thức (test 3 unit bất kỳ). Ghi ngày test từng lớp. Học sinh cần báo CM thì ghi tên và báo giáo viên + Chuyên môn.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t76",
+   "order": 76,
+   "name": "Theo dõi HS lớp CAM mới khai giảng/chuyển cấp độ",
+   "group": "ta",
+   "repeatText": "Theo lịch lớp CAM",
+   "scheduleText": "2,5 tháng sau khai giảng",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Theo dõi học sinh các lớp CAM mới khai giảng / chuyển cấp độ xem có theo được lớp hay không. Test và ghi lại kết quả, soạn văn gửi PH (nhận xét test sau 3 tháng, lớp CAM).",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t77",
+   "order": 77,
+   "name": "Thứ 2–Thứ 3 hàng tuần: Đếm Limevoices",
+   "group": "ta",
+   "repeatText": "Hàng tuần (T2-T3)",
+   "scheduleText": "Thứ 2 và thứ 3 hàng tuần (chia nhóm lớp, xem sheet 'Lịch lớp Yên Hòa')",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Đếm Limevoice của các lớp (đếm video của tuần trước). Các bạn phân chia các lớp cho nhau để đếm cho nhanh. Ghi ai đã đếm lớp nào.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "",
+   "scheduleKey": "limevoice",
+   "scheduleMode": "weekday"
+  },
+  {
+   "id": "t78",
+   "order": 78,
+   "name": "Check sổ điểm danh (T6, T7 hàng tuần)",
+   "group": "ta",
+   "repeatText": "Hàng tuần (T6-T7)",
+   "scheduleText": "Thứ 6 và thứ 7 hàng tuần",
+   "rule": {
+    "type": "weekly",
+    "dow": [
+     5,
+     6
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Mượn Classlist của CSKH. Với học sinh nghỉ: 1. Xóa tên học sinh trong danh sách Lime Voice. 2. Xóa tên học sinh trong lớp trong app Khan Kids. 3. Xóa tên học sinh trong danh sách thống kê Khan Kids. 4. Xóa tên học sinh trong danh sách học sinh cần đến sớm ôn bài. Với học sinh chuyển lớp: 1. Chuyển tên học sinh và kết quả sang danh sách Lime Voice lớp mới, xóa ở lớp cũ. 2. Chuyển tên học sinh sang lớp mới trong app Khan Kids, xóa ở lớp cũ. 3. Chuyển tên học sinh và kết quả Khan Kids sang danh sách thống kê Khan Kids lớp mới, xóa ở lớp cũ. 4. Chuyển tên học sinh sang lớp mới trong danh sách học sinh cần đến sớm ôn bài, xóa ở lớp cũ.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t79",
+   "order": 79,
+   "name": "Date lịch test các lớp của cơ sở",
+   "group": "ta",
+   "repeatText": "Hàng tháng",
+   "scheduleText": "Mùng 1 hàng tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     1
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Date lịch test của các lớp trong cơ sở, ghi theo thứ tự ngày. Lịch test xem bài đăng trên nhóm LIME SCHOOL TEACHERS hoặc trong link.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t80",
+   "order": 80,
+   "name": "Kiểm tra file test của lớp (1 tuần trước test)",
+   "group": "ta",
+   "repeatText": "1 tuần trước test",
+   "scheduleText": "1 tuần trước ngày test của lớp",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Đối chiếu file test online và phiếu offline. Nếu khác thì báo Vận hành in lại bổ sung phiếu.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t81",
+   "order": 81,
+   "name": "Ngày test (nhắc GV, chấm bài, nhập điểm, cho HS làm bù…)",
+   "group": "ta",
+   "repeatText": "Theo lịch test",
+   "scheduleText": "Ngày test của lớp",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Nhắc giáo viên tải sẵn file nghe. Nhắc giáo viên thu lại bài và gửi cho mình chấm (TUYỆT ĐỐI KHÔNG CHO GIÁO VIÊN MANG VỀ TỰ CHẤM); có thể tranh thủ chấm trong lúc trông lớp cho giáo viên đi test; nên giao thêm bài tập cho học sinh làm để dễ kiểm soát lớp hơn. Cập nhật bảng nhận xét Excel. Nhập điểm bài TEST vào file của cơ sở. Cho học sinh làm bù bài test nếu hôm lớp test có học sinh nghỉ.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t82",
+   "order": 82,
+   "name": "Kiểm tra folder tranh/thẻ chữ",
+   "group": "ta",
+   "repeatText": "Định kỳ",
+   "scheduleText": "Theo lịch định kỳ",
+   "rule": {
+    "type": "weekstart"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra túi tranh / thẻ chữ theo từng unit (ví dụ Unit 1-3, 4-6, 7-9). Tổng kết thiếu tranh gì (ghi rõ tranh gì của unit nào), nhờ Media in; lấy tranh, cắt bo góc, cho vào túi tranh.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "",
+   "scheduleKey": "flashcard",
+   "scheduleMode": "weekidx"
+  },
+  {
+   "id": "t83",
+   "order": 83,
+   "name": "Xin DS ôn bù bài tuần sau",
+   "group": "ta",
+   "repeatText": "Hàng tuần",
+   "scheduleText": "Hàng tuần, theo giáo viên (xem sheet 'Lịch lớp Yên Hòa')",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Xin trực tiếp các Ms ca sáng; tối nhắn tin xin các Ms dạy tối. Check lại danh sách ôn bài và tin nhắn đã hỏi. Follow đến tận khi giáo viên giao đủ bài.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "",
+   "scheduleKey": "askReview",
+   "scheduleMode": "weekday"
+  },
+  {
+   "id": "t84",
+   "order": 84,
+   "name": "Lịch làm key",
+   "group": "ta",
+   "repeatText": "Theo lịch BTVN",
+   "scheduleText": "Theo lịch BTVN từng tuần (nhóm lớp Chuyên môn BTVN)",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Làm key theo lịch BTVN. Ghi bài đã làm key (ví dụ: PET Practice Test, Cam2 Unit Starter L1) và bài chưa làm thì date sang ngày hôm sau.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "Người làm: Trợ giảng/Chuyên môn"
+  },
+  {
+   "id": "t85",
+   "order": 85,
+   "name": "Đầu tháng: Kiểm tra + nhắc GV giao bài Khan Kids trong tháng",
+   "group": "ta",
+   "repeatText": "Hàng tháng (đầu tháng)",
+   "scheduleText": "Đầu tháng",
+   "rule": {
+    "type": "monthly",
+    "days": [
+     1,
+     2,
+     3
+    ]
+   },
+   "auto": true,
+   "time": "",
+   "content": "Kiểm tra và nhắc giáo viên giao bài Khan Kids trong tháng cho từng lớp (mỗi lớp có một mã Khan Kids). Lớp giáo viên đã giao đủ thì ghi ok; lớp chưa giao thì đã nhắc, hôm sau kiểm tra và nhắc giao bổ sung. Ghi tên người check.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t86",
+   "order": 86,
+   "name": "Viết báo cáo + soạn văn (2 tuần 1 lần)",
+   "group": "ta",
+   "repeatText": "2 tuần/lần",
+   "scheduleText": "Mỗi lớp 2 lần/tháng: L1 từ ngày 5 đến 14, L2 từ ngày 15 đến 25, ngày 26 đến 31 hoàn thành phần thiếu (xem sheet 'Lịch lớp Yên Hòa')",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Viết báo cáo bài tập và soạn văn cho từng lớp theo lịch L1 / L2. Xong báo CM check. Ghi: đã xong báo cáo hay chưa, đã soạn văn hay chưa, nếu thiếu thì ngày bổ sung. Các lớp thứ 5, thứ 7, Chủ nhật chưa hoàn thành thì làm bù vào ngày tương ứng.",
+   "needsReview": true,
+   "reviewText": "Có (báo CM check)",
+   "sendCSKH": true,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": "",
+   "scheduleKey": "report",
+   "scheduleMode": "monthday"
+  },
+  {
+   "id": "t87",
+   "order": 87,
+   "name": "Handout lỗi cần sửa",
+   "group": "ta",
+   "repeatText": "Theo phát sinh",
+   "scheduleText": "Khi có handout lỗi",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Sửa handout lỗi do Chuyên môn ghi nhận. Sửa xong up lại file, báo Chuyên môn check lại, cập nhật file gốc và gửi Vận hành. Ghi: lỗi gì, sửa xong ngày nào.",
+   "needsReview": true,
+   "reviewText": "Có (up lại file báo CM check)",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t88",
+   "order": 88,
+   "name": "Điểm danh lại HS trên phòng bù bài",
+   "group": "ta",
+   "repeatText": "Hàng ngày (khi ôn bù)",
+   "scheduleText": "Ngày có ôn bù bài",
+   "rule": {
+    "type": "daily"
+   },
+   "auto": true,
+   "time": "",
+   "content": "Điểm danh lại học sinh trên phòng bù bài. Thiếu học sinh thì đi tìm hoặc gọi CSKH hỏi.",
+   "needsReview": false,
+   "reviewText": "Không",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t89",
+   "order": 89,
+   "name": "Công việc phát sinh",
+   "group": "both",
+   "repeatText": "Theo phát sinh",
+   "scheduleText": "Bất kỳ lúc nào",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Ai cũng thêm được. Ghi ngày phát sinh, nội dung, người làm, hạn làm. Việc chưa xong tự chuyển sang ngày làm tiếp theo.",
+   "needsReview": false,
+   "reviewText": "Tùy việc",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  },
+  {
+   "id": "t90",
+   "order": 90,
+   "name": "Công việc sự kiện",
+   "group": "both",
+   "repeatText": "Theo sự kiện",
+   "scheduleText": "Theo timeline sự kiện (chuỗi 5 là mẫu ví dụ)",
+   "rule": {
+    "type": "none"
+   },
+   "auto": false,
+   "time": "",
+   "content": "Mỗi sự kiện có timeline các đầu việc theo ngày; khi tải timeline lên thì việc tự đẩy về checklist từng đội. Mẫu ví dụ trong file: sự kiện Hồ Gươm (xem sheet 'Chuỗi theo mốc', chuỗi 5).",
+   "needsReview": false,
+   "reviewText": "Tùy việc",
+   "sendCSKH": false,
+   "facilities": [
+    "yenhoa",
+    "trunghoa"
+   ],
+   "note": ""
+  }
+ ],
+ "chains": [
+  {
+   "id": "c1",
+   "name": "Lớp khai giảng",
+   "anchor": "Ngày khai giảng",
+   "desc": "Mỗi lớp mới, theo dõi từ trước khai giảng đến 2,5 tháng",
+   "steps": [
+    {
+     "title": "Trước khai giảng: Zalo lớp, LP giáo viên, tài liệu, mã Khan Kids",
+     "off": -5,
+     "group": "cm",
+     "desc": "Công tác 5 ngày trước ngày khai giảng (ghi rõ ngày + tên lớp ngay khi có thông tin lớp khai giảng): 1. Xin vào Zalo lớp. 2. Xin lesson plan (LP) của giáo viên. 3. Kiểm tra lại xem đã gửi giáo viên tài liệu khóa học chưa (syllabus, file sách, link nghe, folder BTVN, link Speaking Circle time, yêu cầu vở viết, học sinh học vượt tuổi được miễn giảm bài tập). 4. Kiểm tra lại công tác của trợ giảng và giáo viên với học sinh vượt tuổi / cần lưu ý (đã nắm được hết chưa). 5. Lập mã Khan Kids gửi giáo viên và CSKH, cập nhật vào bảng Chuyên môn, Khan Kids.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Xin giáo viên nhận xét buổi 1",
+     "off": 1,
+     "group": "cm",
+     "desc": "Học buổi 1: xin giáo viên nhận xét học buổi 1 (ghi đúng ngày học sinh học, sau 1 ngày hỏi giáo viên tình hình lớp thế nào: tính cách học sinh, độ tiếp thu, cần hỗ trợ thêm gì không, kiểm tra giáo viên giao bài cẩn thận không, có video quay mẫu chưa).",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Xin giáo viên nhận xét buổi 2",
+     "off": 4,
+     "group": "cm",
+     "desc": "Học buổi 2: xin giáo viên nhận xét học buổi 2 (cùng nội dung hỏi như buổi 1).",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Sau 2 buổi: kiểm tra Khan Kids, bài tập, sách vở",
+     "off": 5,
+     "group": "cm",
+     "desc": "Kiểm tra tài khoản Khan Kids (giáo viên giao bài chưa, học sinh làm chưa). Tình hình bài tập (gồm cả bài KHAN và Video). Tình hình sách vở của học sinh (đủ sách và vở ghi không, biết dùng sách và vở chưa; hỏi CSKH về việc học sinh mua sách chưa; nhắn giáo viên động viên học sinh mua sách để học).",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Học sinh mới từ buổi 3: kiểm tra việc làm bài tập",
+     "off": 7,
+     "group": "cm",
+     "desc": "Công tác với học sinh mới (ngay từ buổi thứ 3): học sinh có làm bài tập không (có biết làm, khó khăn gì không; cần nhắc phụ huynh cho con làm bài không).",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Buổi 6: hướng dẫn quay video, xin nhận xét lớp",
+     "off": 14,
+     "group": "cm",
+     "desc": "Hướng dẫn công tác quay video sau 1 tháng. Xin nhận xét lớp luôn cho sớm. Ghi rõ ngày học buổi thứ 6 ngay từ khi có lịch lớp khai giảng.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Kiểm tra video test và nhận xét của giáo viên",
+     "off": 28,
+     "group": "cm",
+     "desc": "Kiểm tra hình thức và chất lượng quay video test của giáo viên. Check nhận xét của giáo viên.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Kết thúc theo dõi 1 tháng: rà soát công tác lớp mới",
+     "off": 30,
+     "group": "cm",
+     "desc": "Kết thúc theo dõi 1 tháng: rà soát lại toàn bộ công tác với lớp mới: video 1 tháng đủ chưa, nhận xét đủ chưa, Khan Kids, bài tập, sách vở, phản hồi của phụ huynh.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Theo dõi lớp CAM mới sau 2,5 tháng: test cả lớp",
+     "off": 75,
+     "group": "cm",
+     "desc": "Theo dõi học sinh các lớp CAM mới khai giảng / chuyển cấp độ xem có theo được lớp hay không. Ghi trước ngày bắt đầu test, test cả lớp và ghi lại kết quả vào danh sách theo dõi.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    }
+   ]
+  },
+  {
+   "id": "c2",
+   "name": "Học sinh mới / chuyển lớp",
+   "anchor": "Ngày nhận danh sách học sinh",
+   "desc": "Ôn bù bài, test lại, theo dõi 8 buổi đầu",
+   "steps": [
+    {
+     "title": "Lên nội dung ôn bù bài, date lịch test lại",
+     "off": 0,
+     "group": "ta",
+     "desc": "Hỏi Vận hành + CSKH có học sinh mới / chuyển ngang không (Chủ nhật hàng tuần). Có danh sách thì lên nội dung ôn bù bài cho học sinh, gửi Chuyên môn check, và date lịch test lại.",
+     "needsReview": true,
+     "who": "Trợ giảng"
+    },
+    {
+     "title": "Test lại sau 6 buổi ôn, hỏi giáo viên",
+     "off": 14,
+     "group": "ta",
+     "desc": "6 buổi ôn + 1 buổi test tổng hợp. Sau 6 buổi ôn thì buổi thứ 7 test lại. Nhắn hỏi giáo viên có cần ôn thêm không; BTVN đã hoàn thành đủ bài cũ chưa; kỹ năng nào ổn; kỹ năng nào vẫn cần theo dõi. Báo CM học sinh cần theo dõi.",
+     "needsReview": false,
+     "who": "Trợ giảng"
+    },
+    {
+     "title": "Kiểm tra công tác học sinh mới từ buổi 3",
+     "off": 7,
+     "group": "cm",
+     "desc": "Kiểm tra các công tác với học sinh mới (hoặc học sinh chuyển lớp): tài khoản Khan Kids; sách vở; có làm bài tập không (có biết làm, khó khăn gì khi làm). Kiểm tra lịch bù bài cho học sinh, kiểm tra chéo xem trợ giảng bù bài đủ theo kế hoạch không.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Học thử buổi 1 / 2: hỏi giáo viên, kết luận chuyển lớp",
+     "off": 2,
+     "group": "cm",
+     "desc": "Học thử buổi 1 và buổi 2 (học sinh chuyển lớp): ghi đúng ngày học thử; sau 1 ngày hỏi giáo viên xem học sinh có theo được lớp không, có cần chuyển lớp khác không. Chuyên môn ghi ngày học thử + tên học sinh + tên lớp, trong phần tiến độ ghi đã xin nhận xét chưa và đã cập nhật danh sách học sinh cần theo dõi chưa. Sau buổi học thử thứ 2: trao đổi với giáo viên + test học sinh để kết luận học sinh có chuyển lớp được hay không; ghi rõ ngày và kết luận với từng học sinh.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Kết thúc 8 buổi đầu: xin nhận xét, test, chữa nhận xét",
+     "off": 28,
+     "group": "cm",
+     "desc": "Cần xin nhận xét giáo viên, test học sinh, chữa nhận xét giáo viên, ghi lịch là từ buổi thứ 6. Ngày 12 hàng tháng xin CSKH danh sách học sinh. Làm theo Tuần 1, 2, 3, chi tiết như nhận xét test.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    }
+   ]
+  },
+  {
+   "id": "c3",
+   "name": "Lớp test",
+   "anchor": "Ngày test",
+   "desc": "Chuẩn bị test, ngày test, xin điểm và nhận xét",
+   "steps": [
+    {
+     "title": "Chuẩn bị test: gửi nội dung, hướng dẫn giáo viên, phiếu test nói",
+     "off": -20,
+     "group": "cm",
+     "desc": "Chuẩn bị cho test: gửi nội dung chuyển cấp cho giáo viên từ ngày 25-28 hàng tháng, gửi cùng lịch test. Hỏi chị Alice lớp nào cần làm circle time không, có cần training không. Gửi trước cho giáo viên link nội dung bài kiểm tra và yêu cầu giáo viên cho học sinh làm quen với dạng bài và độ khó tương tự. Gửi hướng dẫn giáo viên test (link hướng dẫn cho giáo viên test sau 1 tháng: BI0, BI1 và Cam1). Cùng giáo viên thống nhất ngày quay video, báo Marketing, Quản lý, CSKH, Vận hành. Chuẩn bị phiếu cho lớp test nói.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Cập nhật danh sách lớp test lên nhóm LIME SCHOOL TEACHERS",
+     "off": -14,
+     "group": "cm",
+     "desc": "Cập nhật danh sách các lớp test lên nhóm LIME SCHOOL TEACHERS (ghi rõ tên lớp, bài test số, thời gian test, link). Gửi danh sách test trên nhóm, bắt các đội confirm, gửi lại thông tin bài viết báo nhóm chat LIME GIÁO VIÊN để mọi người biết có bài. Nếu sửa đổi lịch test các lớp thì comment lại lịch ở mục 'Lịch test các lớp' trong nhóm LIME SCHOOL TEACHERS và báo lại các đội CSKH, Chuyên môn, Marketing, Vận hành để đảm bảo các đội đều nắm thông tin.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Kiểm tra file test (online với phiếu offline)",
+     "off": -7,
+     "group": "ta",
+     "desc": "Kiểm tra file test của lớp (1 tuần trước test): đối chiếu file test online và phiếu offline, báo Vận hành in lại bổ sung phiếu.",
+     "needsReview": false,
+     "who": "Trợ giảng"
+    },
+    {
+     "title": "Ngày test: nhắc giáo viên, chấm bài, nhập điểm",
+     "off": 0,
+     "group": "ta",
+     "desc": "Ngày test: nhắc giáo viên tải sẵn file nghe; nhắc giáo viên thu lại bài và gửi cho mình chấm (tuyệt đối không cho giáo viên mang về tự chấm); khi check nhận xét test: dùng sổ điểm danh để kiểm tra số học sinh trong sổ điểm danh khớp với số lượng học sinh trong nhận xét test; tính lịch test, gửi file nhận xét; cập nhật bảng nhận xét Excel; nhập điểm bài test; cho học sinh làm bù bài test nếu hôm test có học sinh nghỉ.",
+     "needsReview": false,
+     "who": "Trợ giảng"
+    },
+    {
+     "title": "Xin giáo viên điểm test (sau 1 tuần)",
+     "off": 7,
+     "group": "cm",
+     "desc": "Xin giáo viên kết quả test (điểm và nhận xét): sau 1 tuần kể từ ngày test thì xin nhập điểm. Lucie xin nhận xét, check font size, số lượng; Ruby, Mai Phương check nội dung. Làm riêng cho từng cơ sở.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Xin file nhận xét test (sau 2 tuần)",
+     "off": 14,
+     "group": "cm",
+     "desc": "Sau 2 tuần kể từ ngày test thì xin file nhận xét (từng cơ sở).",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Kết thúc lớp test: đánh giá mức độ tiếp thu, biện pháp",
+     "off": 15,
+     "group": "cm",
+     "desc": "Kết thúc công tác lớp test: kiểm tra kết quả kiểm tra để đánh giá mức độ tiếp thu của lớp, đưa biện pháp khắc phục. Cập nhật bảng nhận xét sau test.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    }
+   ]
+  },
+  {
+   "id": "c4",
+   "name": "Lớp chuyển cấp độ + họp phụ huynh",
+   "anchor": "Ngày họp phụ huynh",
+   "desc": "Chuẩn bị, tổ chức, sau họp, sau 2 buổi đầu khóa mới",
+   "steps": [
+    {
+     "title": "Kiểm tra lớp chuyển cấp độ đã học Unit cuối chưa",
+     "off": -21,
+     "group": "cm",
+     "desc": "Danh sách các lớp chuyển cấp độ: trong lúc check lịch test thì tranh thủ kiểm tra xem các lớp đã bắt đầu học Unit cuối cùng chưa. Các lớp bắt đầu học bài cuối cùng là phải cho vào danh sách ngay. Hỏi chị Alice xem giáo viên cần training không, có cần gửi tài liệu Circle time không.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Chuẩn bị họp phụ huynh",
+     "off": -14,
+     "group": "cm",
+     "desc": "Chuẩn bị cho họp phụ huynh: trao đổi với giáo viên về nội dung bài kiểm tra cuối cùng và hình thức quay video; hướng dẫn giáo viên họp PH và gửi tài liệu họp; cùng giáo viên thống nhất ngày quay video, báo Marketing, Quản lý, CSKH, Vận hành; dự trù nhân sự trong buổi họp và sắp xếp phòng, báo nhóm chung; order Marketing Certificate (trước ngày họp PH đã phát chưa); lập mã Khan Kids gửi giáo viên và CSKH, cập nhật vào bảng Chuyên môn, Khan Kids.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Dự trù nhân sự buổi họp + xếp phòng",
+     "off": -1,
+     "group": "cm",
+     "desc": "Dự trù nhân sự buổi họp + xếp phòng: báo lên LIME GIÁO VỤ. Thay đổi phòng học (nếu có), nhờ vận hành nhắc thêm giáo viên khi giáo viên đến. Trước giờ họp: giáo viên hỗ trợ học sinh lên phòng khác, marketing tiếp tục trông lớp; CSKH, Vận hành phân công quét lại phòng họp, bê ghế (đếm số ghế); Alice set up máy tính và kiểm tra lại tài liệu gồm thông tin khóa học + nhận xét học sinh cuối khóa (số bản theo sĩ số lớp); sau đó họp phụ huynh. (Ví dụ trong file: họp phụ huynh lớp CAM1A lúc 19h, mốc 18h30 đến 18h45, 18h45 đến 19h.)",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Xin nhận xét cuối khóa, gửi Alice check",
+     "off": -14,
+     "group": "cm",
+     "desc": "Xin nhận xét cuối khóa và nhận xét học sinh đọc trong buổi họp, gửi Alice check. Làm trước ngày họp 3 buổi học (2 tuần trước họp).",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Sau họp: báo cáo kết quả, giải pháp, gửi PH tóm tắt",
+     "off": 1,
+     "group": "cm",
+     "desc": "Báo cáo lại kết quả cuộc họp. Đưa ra các giải pháp cho góp ý từ phụ huynh, báo nhóm chung; nếu cần thực hiện công việc gì thì thêm vào CVPS. Gửi phụ huynh tóm tắt nội dung buổi họp phụ huynh.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Sau 2 buổi đầu khóa mới: Khan Kids, bài tập, sách vở",
+     "off": 7,
+     "group": "cm",
+     "desc": "Kiểm tra tài khoản Khan Kids (giáo viên giao bài chưa, học sinh làm chưa). Tình hình bài tập (gồm cả bài Khan và Video). Tình hình sách vở của học sinh (đủ sách và vở ghi, biết dùng sách và vở chưa; hỏi CSKH học sinh mua sách chưa; nhắn giáo viên động viên học sinh mua sách). Theo dõi tình hình đáp ứng khóa mới của giáo viên và học sinh.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    }
+   ]
+  },
+  {
+   "id": "c5",
+   "name": "Sự kiện (mẫu: Hồ Gươm)",
+   "anchor": "Ngày diễn ra sự kiện",
+   "desc": "Mẫu timeline sự kiện, sửa lại theo từng sự kiện",
+   "steps": [
+    {
+     "title": "Tạo bộ câu hỏi chủ đề sự kiện",
+     "off": -12,
+     "group": "cm",
+     "desc": "Tạo bộ câu hỏi theo chủ đề sự kiện (ví dụ trong file: bộ câu hỏi chủ đề Phụ nữ Việt Nam).",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Media đăng video truyền thông",
+     "off": -10,
+     "group": "cm",
+     "desc": "Media đăng video truyền thông.",
+     "needsReview": false,
+     "who": "Bộ phận Media"
+    },
+    {
+     "title": "Chốt đăng ký lần 1, tổng hợp nội dung luyện tập gửi PH",
+     "off": -7,
+     "group": "cm",
+     "desc": "Chốt đăng ký lần 1 và tổng hợp lại nội dung luyện tập gửi lại phụ huynh.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Tìm nhân sự cho sự kiện",
+     "off": -6,
+     "group": "cm",
+     "desc": "Tìm nhân sự cho sự kiện.",
+     "needsReview": false,
+     "who": "Quản lý / người phụ trách"
+    },
+    {
+     "title": "Chốt đăng ký lần cuối",
+     "off": -4,
+     "group": "cm",
+     "desc": "Chốt đăng ký lần cuối.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Họp và gửi tài liệu cho nhân sự",
+     "off": -3,
+     "group": "cm",
+     "desc": "Họp và gửi tài liệu cho nhân sự.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "Chuẩn bị thẻ, in tài liệu",
+     "off": -2,
+     "group": "cm",
+     "desc": "Chuẩn bị thẻ và in tài liệu.",
+     "needsReview": false,
+     "who": "Chuyên môn"
+    },
+    {
+     "title": "CSKH gửi PH địa điểm sự kiện",
+     "off": -2,
+     "group": "cm",
+     "desc": "CSKH gửi phụ huynh địa điểm sự kiện.",
+     "needsReview": false,
+     "who": "CSKH"
+    },
+    {
+     "title": "Sự kiện diễn ra",
+     "off": 0,
+     "group": "both",
+     "desc": "Sự kiện diễn ra.",
+     "needsReview": false,
+     "who": "Cả 2"
+    }
+   ]
+  }
+ ],
+ "scheduleKeys": {
+  "support": {
+   "label": "Lớp cần hỗ trợ (lớp đông, theo thứ)",
+   "mode": "weekday"
+  },
+  "test": {
+   "label": "Test học sinh hàng tuần (theo thứ)",
+   "mode": "weekday"
+  },
+  "video": {
+   "label": "Chấm video theo thứ",
+   "mode": "weekday"
+  },
+  "limevoice": {
+   "label": "Đếm Limevoice (theo thứ)",
+   "mode": "weekday"
+  },
+  "summary": {
+   "label": "Tổng kết Limevoice + Khan Kids (theo ngày trong tháng)",
+   "mode": "monthday"
+  },
+  "askReview": {
+   "label": "Xin danh sách ôn bù bài tuần sau (theo thứ)",
+   "mode": "weekday"
+  },
+  "flashcard": {
+   "label": "Kiểm tra folder tranh/thẻ chữ (theo tuần trong tháng)",
+   "mode": "weekidx"
+  },
+  "report": {
+   "label": "Báo cáo + soạn văn: lịch theo ngày trong tháng",
+   "mode": "monthday"
+  }
+ },
+ "schedules": {
+  "yenhoa": {
+   "support": {
+    "1": "DORY1M, PET",
+    "2": "CAM1T, CAM2Q",
+    "3": "CLC A2G, CAM2M, CAM1R",
+    "4": "PET, CLC A1D, GRAM1A",
+    "5": "CAM1N, DORY1M",
+    "6": "Sáng: CAM1T, CAM2M. Tối: GRAM1A, CAM2Q",
+    "7": "Sáng: CAM1N. Chiều: CLC A2G. Tối: CLC A1D, CAM1R"
+   },
+   "test": {
+    "1": "DORY1M, CAM1S",
+    "2": "CAM2Q, DORY0Y",
+    "3": "CAM2M, CLC A2G",
+    "4": "DORY0X, PET",
+    "5": "CAM2N, CLC A1E",
+    "6": "Sáng: CLC A1F, CAM1T. Tối: CLC A2E, GRAM1A",
+    "7": "Sáng: DORY1K, DORY2H. Chiều: FCE B2A, CLC A2D. Tối: CAM2P, CAM1R"
+   },
+   "video": {
+    "1": "DORY1M, CAM1S, CLC A1F",
+    "2": "DORY0Y, CLC A1E",
+    "3": "CAM1P, FCE B2A",
+    "4": "PET, DORY0X, CLC A1D",
+    "5": "DORY2H, CAM1N",
+    "6": "Sáng: CAM2M, CAM1T. Tối: CLC A2E, GRAM1A, CAM2Q",
+    "7": "Sáng: DORY1K. Chiều: CLC A2G, CLC A2D. Tối: CAM1R"
+   },
+   "limevoice": {
+    "1": "DORY1M, CAM1R, DORY0Y, DORY0X, CAM2Q, CAM1P, FCE B2A, PET, CLC A1D, CLC A1E",
+    "2": "CAM1S, CAM1T, DORY1K, DORY2H, CAM1N, CAM2M, CLC A1F, CLC A2D, CLC A2E, CLC A2G"
+   },
+   "summary": {
+    "1": "DORY1M, CAM1R, DORY0Y, DORY0X, FCE B2A, PET, CLC A1D",
+    "2": "CAM2Q, CAM1P, CAM1N, CAM2M, CLC A1E, CLC A1F, CLC A2E",
+    "3": "CAM1S, CAM1T, DORY1K, DORY2H, CLC A2D, CLC A2G"
+   },
+   "askReview": {
+    "3": "Ms Rosie: CLC A2D. Ms Lia: DORY2H, CAM1R. Ms Rachel: CAM1N, CAM2Q, CLC A1F, CLC A2G. Ms Aimee: CLC A1E, CAM2M, CLC A2E. Mr Nathan: DORY1M. Ms Helen: DORY0Y",
+    "4": "Ms Summer: CAM1S, DORY1K. Ms Annie: GRAM1A, CAM1T. Ms Alice: FCE B2A, CLC A1D. Ms Mia: DORY0X. Ms Ruby: PET B1, CAM1P",
+    "5": "Ms Mia: DORY0X. Ms Ruby: PET B1, CAM1P"
+   },
+   "flashcard": {
+    "1": "DORY3",
+    "2": "DORY4",
+    "3": "CAM1",
+    "4": "CAM2",
+    "5": "DORY0"
+   },
+   "report": {
+    "5": "Lần 1: DORY2H, CAM2N",
+    "6": "Lần 1: CLC A2E, DORY1M",
+    "7": "Lần 1: DORY0Y, CAM1T",
+    "8": "Lần 1: CAM2M, CAM1R",
+    "9": "Lần 1: DORY0X, GRAM1A",
+    "10": "Lần 1: CAM1S, PET B1",
+    "11": "Lần 1: CLC A1F, DORY1K",
+    "12": "Lần 1: CLC A1E, CAM2Q",
+    "13": "Lần 1: CAM2P, FCE B2A",
+    "14": "Lần 1: CLC A2G, CLC A2D",
+    "15": "Lần 2: DORY0X, GRAM1A",
+    "16": "Lần 2: DORY2H, DORY1M",
+    "17": "Lần 2: CAM2M, CAM1T",
+    "18": "Lần 2: CLC A2G, CAM2P",
+    "19": "Lần 2: CLC A2E, PET B1",
+    "20": "Lần 2: CLC A1E, CAM2Q",
+    "21": "Lần 2: FCE B2A, CAM1R",
+    "22": "Lần 2: Các lớp thứ 5 nếu chưa hoàn thành",
+    "23": "Lần 2: CAM2N, CLC A2D",
+    "24": "Lần 2: CLC A1F, CAM1S và các lớp thứ 7 nếu chưa hoàn thành",
+    "25": "Lần 2: DORY0Y và các lớp Chủ nhật nếu chưa hoàn thành",
+    "26": "Hoàn thành các báo cáo + soạn văn còn thiếu",
+    "27": "Hoàn thành các báo cáo + soạn văn còn thiếu",
+    "28": "Hoàn thành các báo cáo + soạn văn còn thiếu",
+    "29": "Hoàn thành các báo cáo + soạn văn còn thiếu",
+    "30": "Hoàn thành các báo cáo + soạn văn còn thiếu",
+    "31": "Hoàn thành các báo cáo + soạn văn còn thiếu"
+   }
+  },
+  "trunghoa": {
+   "support": {
+    "2": "3CAM1V",
+    "3": "3DORY02R, 3CLC A2H",
+    "4": "3CAM1V, 3CLC A2K, 3CAM2F",
+    "7": "Tối: 3CAM2F, 3DORY02R, 3CLC A2K"
+   },
+   "test": {
+    "2": "3CAM1V, 3DORY2D",
+    "3": "3DORY02R, 3CLC A2H",
+    "4": "3CLC A2K, 3CAM2F",
+    "5": "3CAM3A",
+    "6": "3DORY0S, 3DORY0T",
+    "7": "Sáng: 3CLC A2F. Tối: 3CAM2E, 3DORY3B"
+   },
+   "video": {
+    "2": "3CAM1V, 3DORY0T",
+    "3": "3CAM2E, 3CLC A2H",
+    "4": "3CAM2F, 3DORY2D, 3DORY3B",
+    "5": "FCE B2, 3CLC A2F, 3DORY0Z",
+    "6": "3DORY0S",
+    "7": "Sáng: 3CAM3A. Tối: 3CLC A2K, 3DORY02R"
+   },
+   "limevoice": {
+    "2": "Các lớp Trung Hòa (đếm video của tuần trước)",
+    "3": "Các lớp Trung Hòa (đếm video của tuần trước)"
+   },
+   "summary": {
+    "1": "Các lớp Trung Hòa",
+    "2": "Các lớp Trung Hòa",
+    "3": "Các lớp Trung Hòa"
+   },
+   "askReview": {
+    "5": "Xin trực tiếp các Ms có lớp; còn lại nhắn tin hotline cho các Ms",
+    "6": "Xin trực tiếp các Ms có lớp; còn lại nhắn tin hotline cho các Ms",
+    "7": "Xin trực tiếp các Ms có lớp sáng Chủ nhật; còn lại nhắn tin hotline cho các Ms"
+   },
+   "flashcard": {
+    "1": "DORY3",
+    "2": "DORY4",
+    "3": "CAM1",
+    "4": "CAM2",
+    "5": "CAM3"
+   },
+   "report": {
+    "8": "Báo cáo + soạn văn L1: 3DORY2D, 3CLC A2K",
+    "9": "Báo cáo + soạn văn L1: 3DORY3B, FCE",
+    "10": "Báo cáo + soạn văn L1: 3CAM1V",
+    "11": "Báo cáo + soạn văn L1: 3DORY0T, FCE S1",
+    "12": "Báo cáo + soạn văn L1: 3CAM2E",
+    "13": "Báo cáo + soạn văn L1: 3CAM3A",
+    "14": "Báo cáo + soạn văn L1: 3DORY02R",
+    "15": "Báo cáo + soạn văn L1: 3CLC A2H",
+    "16": "Báo cáo + soạn văn L1: 3CLC A2F",
+    "17": "Báo cáo + soạn văn L1: 3DORY0S, 3CAM2F",
+    "18": "Báo cáo + soạn văn L2: 3DORY2D, 3CLC A2K",
+    "20": "Báo cáo + soạn văn L2: 3DORY3B, FCE",
+    "21": "Báo cáo + soạn văn L2: 3CAM1V",
+    "22": "Báo cáo + soạn văn L2: 3DORY0T, FCE S1",
+    "23": "Báo cáo + soạn văn L2: 3CAM2E",
+    "24": "Báo cáo + soạn văn L2: 3CAM3A",
+    "25": "Báo cáo + soạn văn L2: 3DORY02R",
+    "26": "Báo cáo + soạn văn L2: 3CLC A2H",
+    "27": "Báo cáo + soạn văn L2: 3DORY0S",
+    "28": "Báo cáo + soạn văn L2: 3CAM2F",
+    "29": "Hoàn thành các báo cáo còn lại còn thiếu",
+    "30": "Hoàn thành các báo cáo còn lại còn thiếu",
+    "31": "Hoàn thành các báo cáo còn lại còn thiếu"
+   }
+  }
+ }
+}

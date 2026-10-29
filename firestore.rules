@@ -1,0 +1,65 @@
+rules_version = '2';
+// Dán toàn bộ nội dung file này vào Firestore Database > Rules rồi bấm Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function hasProfile() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function active() { return hasProfile() && profile().disabled != true; }
+    function role() { return profile().role; }
+    function isAdmin() { return active() && role() == 'admin'; }
+    function isMgr() { return active() && (role() == 'admin' || role() == 'manager'); }
+    function isCM() { return active() && (role() == 'admin' || role() == 'manager' || role() == 'cm'); }
+    // Quản lý/Chuyên môn được tạo, sửa, khóa tài khoản theo cấp:
+    //  - Chuyên môn và Quản lý: tài khoản Trợ giảng
+    //  - Quản lý: thêm tài khoản Chuyên môn
+    //  - Admin: tất cả
+    function canManage(r) {
+      return (r == 'ta' && isCM()) || (r == 'cm' && isMgr()) || isAdmin();
+    }
+
+    match /users/{uid} {
+      allow read: if active() || (signedIn() && request.auth.uid == uid);
+      // Tài khoản Admin đầu tiên (chỉ tạo được khi hệ thống chưa khởi tạo)
+      allow create: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.role == 'admin'
+                    && !exists(/databases/$(database)/documents/meta/setup);
+      allow create: if canManage(request.resource.data.role);
+      allow update: if canManage(resource.data.role) && canManage(request.resource.data.role);
+      allow delete: if false;   // không xóa hẳn, chỉ khóa (disabled = true)
+    }
+
+    match /tasks/{id} {
+      allow read, create: if active();
+      // Trợ giảng không được tự đánh dấu "đã duyệt", không được sửa phản hồi/đánh dấu lỗi
+      allow update: if isCM() || (active()
+                    && request.resource.data.status != 'approved'
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['flagged', 'feedback']));
+      allow delete: if isCM();
+    }
+
+    match /templates/{id} {
+      allow read: if active();
+      allow create: if isCM() || (active() && request.resource.data.source == 'user');
+      allow update, delete: if isCM();
+    }
+
+    match /chains/{id}   { allow read: if active(); allow write: if isCM(); }
+    match /events/{id}   { allow read: if active(); allow create, update, delete: if isCM(); }
+    match /reports/{id}  { allow read: if active(); allow create, update: if active() && request.resource.data.uid == request.auth.uid; allow delete: if isCM(); }
+    match /evaluations/{id} { allow read, write: if isCM(); }
+
+    match /notifications/{id} {
+      allow create: if active();
+      allow read, update, delete: if active() && resource.data.toUid == request.auth.uid;
+    }
+
+    match /meta/{id} {
+      allow read: if active();
+      allow create: if (id == 'setup' && signedIn()) || active();
+      allow update: if isCM() || (active() && id.matches('gen_.*'));
+      allow delete: if false;
+    }
+  }
+}
