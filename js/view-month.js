@@ -1,5 +1,5 @@
 import { h, mount, modal, makeRedraw, fmtDM, sortBy, uniq } from './ui.js';
-import { S, facName, GROUP_LABEL, isOverdue, taskKey } from './core.js';
+import { S, scoped, facName, GROUP_LABEL, isOverdue, taskKey } from './core.js';
 import { taskModal } from './taskui.js';
 import { todayStr, addMonths, daysInMonth, pad, dow, DOW_NAMES, monthOf, isOpen } from './rules.js';
 
@@ -12,7 +12,7 @@ export function viewMonth(root, params) {
   let groupFilter = 'all'; let onlyOpen = false; let q = '';
   const unsubs = [];
   const redraw = makeRedraw(root, render);
-  unsubs.push(S.db.subscribe('tasks', [['facility', '==', fac], ['month', '==', ym]], (r) => { tasks = r; redraw(); }));
+  unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['month', '==', ym]]), (r) => { tasks = r; redraw(); }));
   unsubs.push(S.db.subscribe('reports', [['facility', '==', fac], ['month', '==', ym]], (r) => { reports = r; redraw(); }));
   taskModal.live = (id) => tasks.find((t) => t.id === id);
   const nav = (m) => S.navigate(`#/month?m=${m}`);

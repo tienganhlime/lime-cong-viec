@@ -31,9 +31,12 @@ service cloud.firestore {
     }
 
     match /tasks/{id} {
-      allow read, create: if active();
+      // Trợ giảng chỉ đọc/sửa được việc của đội Trợ giảng hoặc việc chung; việc Chuyên môn bị ẩn hoàn toàn
+      allow read: if isCM() || (active() && resource.data.group in ['ta', 'both']);
+      allow create: if active() && (isCM() || request.resource.data.group in ['ta', 'both']);
       // Trợ giảng không được tự đánh dấu "đã duyệt", không được sửa phản hồi/đánh dấu lỗi
       allow update: if isCM() || (active()
+                    && resource.data.group in ['ta', 'both'] && request.resource.data.group in ['ta', 'both']
                     && request.resource.data.status != 'approved'
                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['flagged', 'feedback']));
       allow delete: if isCM();

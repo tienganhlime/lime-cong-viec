@@ -47,7 +47,7 @@ export function scheduleText(tpl, fac, date, schedules) {
   return { skip: false, text: v };
 }
 
-export function generateMonth({ templates, schedules, facilities, ym, existingIds, by, cutoff }) {
+export function generateMonth({ templates, schedules, facilities, ym, existingIds, by, cutoff, users = [] }) {
   const out = [];
   const n = daysInMonth(ym);
   for (const fac of facilities) {
@@ -59,20 +59,26 @@ export function generateMonth({ templates, schedules, facilities, ym, existingId
         if (!ruleMatches(t.rule, date)) continue;
         const sc = scheduleText(t, fac, date, schedules);
         if (sc.skip) continue;
-        const id = `${fac}_${date}_${t.id}`;
-        if (existingIds && existingIds.has(id)) continue;
         if (cutoff && date < cutoff) continue; // ngày đã qua trước khi tạo checklist: không tạo (đỡ ghi dữ liệu thừa)
-        out.push({
-          id,
-          data: {
-            facility: fac, date, month: ym, title: t.name, extra: sc.text, time: t.time || '',
-            group: t.group, tplId: t.id, source: 'template', status: 'todo', open: true,
-            carry: !(t.rule.type === 'daily' && !t.scheduleKey),
-            assignee: null, assigneeName: '', note: '', feedback: '',
-            needsReview: !!t.needsReview, sendCSKH: !!t.sendCSKH, flagged: false,
-            order: t.order || 0, createdBy: by || '', createdAt: Date.now(),
-          },
-        });
+        // Việc chuyên môn giao theo người: mỗi người một việc riêng (gán sẵn, chuyển sang ngày sau nếu chưa xong)
+        const people = t.group === 'cm' ? (t.assignees || []).map((uid) => users.find((u) => u.id === uid)).filter((u) => u && !u.disabled && (!u.facilities || !u.facilities.length || u.facilities.includes(fac))) : [];
+        const targets = people.length ? people : [null];
+        for (const u of targets) {
+          const id = u ? `${fac}_${date}_${t.id}_${u.id}` : `${fac}_${date}_${t.id}`;
+          if (existingIds && existingIds.has(id)) continue;
+          const own = u && t.perClass && u.classes ? u.classes : '';
+          out.push({
+            id,
+            data: {
+              facility: fac, date, month: ym, title: t.name, extra: [sc.text, own].filter(Boolean).join(' · '), time: t.time || '',
+              group: t.group, tplId: t.id, source: 'template', status: 'todo', open: true,
+              carry: u ? true : !(t.rule.type === 'daily' && !t.scheduleKey),
+              assignee: u ? u.id : null, assigneeName: u ? u.name : '', note: '', feedback: '',
+              needsReview: !!t.needsReview, sendCSKH: !!t.sendCSKH, flagged: false,
+              order: t.order || 0, createdBy: by || '', createdAt: Date.now(),
+            },
+          });
+        }
       }
     }
   }

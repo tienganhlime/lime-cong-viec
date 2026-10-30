@@ -1,6 +1,6 @@
 import { LINKS, LINK_GROUPS, linkUrl } from './links.js';
 import { createDb, errMsg, isFirebase, USERNAME_RE, normUsername } from './db.js';
-import { S, ROLE_LABEL, isCM, facName } from './core.js';
+import { S, scoped, ROLE_LABEL, isCM, facName } from './core.js';
 import { h, mount, toast, modal, sortBy, fmtDM } from './ui.js';
 import { todayStr, monthOf, addMonths } from './rules.js';
 import { viewToday } from './view-today.js';
@@ -86,13 +86,14 @@ function start(user) {
     loaded.meta = true; autoGen();
   });
   // chấm đỏ ở tab "Hôm nay": số việc của tôi đang bị yêu cầu sửa
-  sub('tasks', [['assignee', '==', user.id], ['status', '==', 'fix']], (r) => { fixCount = r.length; drawNav(); });
+  sub('tasks', scoped([['assignee', '==', user.id], ['open', '==', true]]), (r) => { const td = todayStr(); fixCount = r.filter((t) => t.status === 'fix' || t.date < td).length; drawNav(); });
   if (isCM()) sub('tasks', [['status', '==', 'review']], (r) => { reviewCount = r.length; drawNav(); });
   renderShell();
   route();
 }
 
 async function autoGen() {
+  if (!isCM()) return; // trợ giảng không đọc được việc chuyên môn nên không được sinh checklist
   if (genRunning || !loaded.templates || !loaded.meta || !S.templates.length || !S.user) return;
   const today = todayStr(); const ym = monthOf(today);
   const todo = [ym];

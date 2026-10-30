@@ -1,5 +1,5 @@
 import { h, mount, modal, toast, fmtDM, fmtDMY, makeRedraw, sortBy } from './ui.js';
-import { S, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
+import { S, scoped, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, isOverdue, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
 import { taskCard } from './taskui.js';
 import { reviewSection } from './view-students.js';
 import { moveOp } from './students.js';
@@ -12,7 +12,7 @@ export function addTaskModal({ date = todayStr(), onDone } = {}) {
   const dateIn = h('input', { type: 'date', value: date });
   const facBoxes = S.facilities.map((f) => ({ f, el: h('input', { type: 'checkbox', checked: f.id === S.facility }) }));
   const groupSel = h('select', null,
-    h('option', { value: 'ta' }, 'Đội Trợ giảng'), h('option', { value: 'cm' }, 'Đội Chuyên môn'), h('option', { value: 'both' }, 'Cả 2 đội'));
+    h('option', { value: 'ta' }, 'Đội Trợ giảng'), isCM() && h('option', { value: 'cm' }, 'Đội Chuyên môn'), h('option', { value: 'both' }, 'Cả 2 đội'));
   groupSel.value = isTA() ? 'ta' : 'cm';
   const who = h('select', null);
   const fillWho = () => {
@@ -151,8 +151,8 @@ export function viewToday(root, params) {
   const subscribe = () => {
     unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac], ['date', '==', date]], (r) => { dayRev = r; redraw(); }));
     unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac], ['status', '==', 'pending']], (r) => { pendRev = r; redraw(); }));
-    unsubs.push(S.db.subscribe('tasks', [['facility', '==', fac], ['date', '==', date]], (r) => { dayTasks = r; redraw(); }));
-    unsubs.push(S.db.subscribe('tasks', [['facility', '==', fac], ['carry', '==', true], ['open', '==', true]], (r) => { carry = r; redraw(); }));
+    unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['date', '==', date]]), (r) => { dayTasks = r; redraw(); }));
+    unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['carry', '==', true], ['open', '==', true]]), (r) => { carry = r; redraw(); }));
     const m = monthOf(date);
     unsubs.push(S.db.subscribe('reports', [['facility', '==', fac], ['month', 'in', [m, addMonths(m, -1)]]], (r) => { reports = r; redraw(); }));
   };
@@ -202,7 +202,7 @@ export function viewToday(root, params) {
           h('button', { class: 'btn ghost sm', type: 'button', onClick: () => go(addDays(date, 1)), 'aria-label': 'Ngày sau' }, '›'),
           date !== today && h('button', { class: 'btn sm', type: 'button', onClick: () => go(today) }, 'Hôm nay'))),
       h('div', { class: 'toolbar' },
-        h('div', { class: 'seg', role: 'group', 'aria-label': 'Lọc theo đội' }, [['all', 'Tất cả'], ['ta', 'Việc Trợ giảng'], ['cm', 'Việc Chuyên môn']].map(([v, l]) =>
+        isCM() && h('div', { class: 'seg', role: 'group', 'aria-label': 'Lọc theo đội' }, [['all', 'Tất cả'], ['ta', 'Việc Trợ giảng'], ['cm', 'Việc Chuyên môn']].map(([v, l]) =>
           h('button', { class: 'seg-b' + (grp === v ? ' on' : ''), type: 'button', onClick: () => { grp = v; render(); } }, l))),
         h('div', { class: 'progress', title: `${doneN}/${relevantTotal.length} việc đã xong` }, h('div', { class: 'bar' }, h('span', { style: { width: pct + '%' } })), h('span', null, `${doneN}/${relevantTotal.length} xong`)),
         h('div', { class: 'row-actions' },
@@ -211,6 +211,7 @@ export function viewToday(root, params) {
       myReport && h('div', { class: 'banner ok' }, `Bạn đã nộp báo cáo cuối ca lúc ${new Date(myReport.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}.`),
       prev && h('div', { class: 'banner' }, h('b', null, `Bàn giao từ ca ngày ${fmtDM(prev.date)} (${prev.userName}): `), prev.note),
       reviewSection(revs, date, redraw),
+      mine.filter((t) => isOverdue(t)).length ? h('div', { class: 'banner bad' }, `⚠ Bạn còn ${mine.filter((t) => isOverdue(t)).length} việc quá hạn chưa làm`) : null,
       sec('Việc của tôi', mine.length, mine.length ? mine.map((t) => card(t)) : h('p', { class: 'empty' }, free.length ? 'Bạn chưa nhận việc nào. Chọn việc ở danh sách bên dưới rồi bấm Nhận, hoặc bấm Nhận tất cả.' : 'Chưa có việc nào.')),
       sec('Chưa có người nhận', free.length, free.length ? free.map((t) => card(t, { selectable: true, selected: selected.has(t.id), onSelect: (x, on) => { on ? selected.add(x.id) : selected.delete(x.id); redraw(); } })) : h('p', { class: 'empty' }, 'Tất cả việc đã có người nhận.'), free.length ? freeActions : null),
       others.length ? h('section', { class: 'sec' },

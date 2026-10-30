@@ -16,7 +16,7 @@ export function ruleText(r) {
 export async function generateFor(ym, facilities) {
   const existing = await S.db.getAll('tasks', [['month', '==', ym]]);
   const ids = new Set(existing.map((t) => t.id));
-  const gen = generateMonth({ templates: S.templates, schedules: S.schedules, facilities, ym, existingIds: ids, by: S.user.id, cutoff: todayStr() });
+  const gen = generateMonth({ templates: S.templates, schedules: S.schedules, facilities, ym, existingIds: ids, by: S.user.id, cutoff: todayStr(), users: S.users });
   await S.db.batch(gen.map((g) => ({ op: 'set', col: 'tasks', id: g.id, data: g.data })));
   return gen.length;
 }
@@ -41,7 +41,7 @@ export async function syncSchedule(fac, key, schedules) {
   let added = 0;
   for (const ym of [...new Set([monthOf(from), ...[...S.gen || []].map((g) => g.slice(4)).filter((m) => m >= monthOf(from))])]) {
     const ids = new Set(olds.map((o) => o.id));
-    const gen = generateMonth({ templates: tpls, schedules, facilities: [fac], ym, existingIds: ids, by: S.user.id, cutoff: from });
+    const gen = generateMonth({ templates: tpls, schedules, facilities: [fac], ym, existingIds: ids, by: S.user.id, cutoff: from, users: S.users });
     for (const g of gen) { ops.push({ op: 'set', col: 'tasks', id: g.id, data: g.data }); added++; }
   }
   if (ops.length) await S.db.batch(ops);
@@ -71,6 +71,15 @@ function templateModal(tpl) {
   const keySel = h('select', null, h('option', { value: '' }, 'Không (dùng chung cho mọi ngày)'),
     Object.entries(S.scheduleKeys).map(([k, v]) => h('option', { value: k }, 'Theo lịch lớp: ' + v.label)));
   keySel.value = t.scheduleKey || '';
+  const cms = S.users.filter((u) => u.role === 'cm' && !u.disabled);
+  const asg = cms.map((u) => ({ u, el: h('input', { type: 'checkbox', checked: (t.assignees || []).includes(u.id) }) }));
+  const perClass = h('input', { type: 'checkbox', checked: !!t.perClass });
+  const asgBox = h('div', { class: 'stack' }, h('div', { class: 'lab' }, 'Giao cho (chỉ áp dụng đội Chuyên môn; không chọn ai = việc chung, ai làm cũng được)'),
+    h('div', { class: 'checks' }, asg.length ? asg.map((x) => h('label', { class: 'check' }, x.el, x.u.name)) : h('span', { class: 'muted small' }, 'Chưa có tài khoản Chuyên môn')),
+    h('div', { class: 'checks' }, h('label', { class: 'check' }, perClass, 'Ghi kèm "Lớp phụ trách" của từng người vào việc')),
+    h('p', { class: 'muted small' }, 'Chọn nhiều người = mỗi người nhận một việc riêng, hiện đỏ nếu quá hạn. Chỉ áp dụng cho các ngày được tạo từ lần sau.'));
+  const syncAsg = () => asgBox.classList.toggle('hidden', group.value !== 'cm');
+  group.addEventListener('change', syncAsg); syncAsg();
   modal({
     title: tpl ? 'Sửa mẫu việc' : 'Thêm mẫu việc', wide: true,
     body: h('div', { class: 'stack' },
@@ -78,6 +87,7 @@ function templateModal(tpl) {
       h('div', { class: 'grid2' }, h('label', null, 'Đội thực hiện', group), h('label', null, 'Giờ làm', time)),
       h('label', null, 'Kiểu lặp', rtype), wDow, wDay,
       h('label', null, 'Gắn với lịch lớp (danh sách lớp hiện kèm trong việc)', keySel),
+      asgBox,
       h('label', null, 'Hướng dẫn chi tiết', content),
       h('div', null, h('div', { class: 'lab' }, 'Áp dụng ở cơ sở'), h('div', { class: 'checks' }, facs.map((x) => h('label', { class: 'check' }, x.el, x.f.name)))),
       h('div', { class: 'checks' }, h('label', { class: 'check' }, review, 'Cần chuyên môn duyệt sau khi làm xong'), h('label', { class: 'check' }, csk, 'Sau khi duyệt, trợ giảng gửi CSKH'))),
@@ -99,6 +109,7 @@ function templateModal(tpl) {
           needsReview: review.checked, reviewText: review.checked ? 'Có' : 'Không', sendCSKH: csk.checked,
           facilities: facs.filter((x) => x.el.checked).map((x) => x.f.id), repeatText: ruleText(rule), scheduleKey: key || null,
           scheduleMode: key ? (S.scheduleKeys[key] || {}).mode : null,
+          assignees: group.value === 'cm' ? asg.filter((x) => x.el.checked).map((x) => x.u.id) : [], perClass: group.value === 'cm' && perClass.checked,
         };
         if (!data.scheduleKey) { delete data.scheduleKey; delete data.scheduleMode; }
         if (tpl) await S.db.set('templates', tpl.id, data);
@@ -204,22 +215,23 @@ function userModal(u) {
   const pw = h('input', { type: 'text', placeholder: 'Ít nhất 6 ký tự', autocomplete: 'off' });
   const role = h('select', null, roleChoices().map((r) => h('option', { value: r }, ROLE_LABEL[r])));
   if (u) role.value = u.role;
+  const classes = h('input', { type: 'text', value: u && u.classes || '', placeholder: 'Chỉ cho Chuyên môn. Ví dụ: PET, CLC A1E, CLC A1F' });
   modal({
     title: u ? 'Sửa tài khoản' : 'Tạo tài khoản',
-    body: h('div', { class: 'stack' }, h('label', null, 'Họ tên', name), h('label', null, 'Tên đăng nhập', un), !u && h('label', null, 'Mật khẩu ban đầu', pw), h('label', null, 'Vai trò', role)),
+    body: h('div', { class: 'stack' }, h('label', null, 'Họ tên', name), h('label', null, 'Tên đăng nhập', un), !u && h('label', null, 'Mật khẩu ban đầu', pw), h('label', null, 'Vai trò', role), h('label', null, 'Lớp phụ trách (chuyên môn)', classes)),
     actions: [{ label: 'Hủy', kind: 'ghost' }, {
       label: 'Lưu', kind: 'primary',
       onClick: async () => {
         if (!name.value.trim()) { toast('Hãy nhập họ tên', 'err'); return false; }
         try {
-          if (u) await S.db.update('users', u.id, { name: name.value.trim(), role: role.value });
+          if (u) await S.db.update('users', u.id, { name: name.value.trim(), role: role.value, classes: classes.value.trim() });
           else {
             const uname = normUsername(un.value);
             if (!USERNAME_RE.test(uname)) { toast('Tên đăng nhập gồm 3–30 ký tự: chữ thường, số, dấu . _ -', 'err'); return false; }
             if (pw.value.length < 6) { toast('Mật khẩu cần ít nhất 6 ký tự', 'err'); return false; }
             const stale = S.users.find((x) => x.username === uname);
             if (stale && stale.disabled) await S.db.update('users', stale.id, { username: `${uname}_cu_${Date.now().toString(36)}` });
-            await S.db.createUser(uname, pw.value, { name: name.value.trim(), role: role.value });
+            await S.db.createUser(uname, pw.value, { name: name.value.trim(), role: role.value, classes: classes.value.trim() });
             toast(`Đã tạo tài khoản ${uname}. Hãy gửi tên đăng nhập và mật khẩu cho người dùng.`);
           }
         } catch (e) { toast(errMsg(e), 'err'); return false; }

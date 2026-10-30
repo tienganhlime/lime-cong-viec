@@ -12,6 +12,8 @@ export const GROUP_LABEL = { ta: 'Trợ giảng', cm: 'Chuyên môn', both: 'C�
 export const isCM = () => ['admin', 'manager', 'cm'].includes(S.user.role);
 export const isMgr = () => ['admin', 'manager'].includes(S.user.role);
 export const isTA = () => S.user.role === 'ta';
+/** Trợ giảng chỉ được đọc việc của đội TA hoặc chung; chuyên môn đọc tất cả. */
+export const scoped = (where) => (S.user && S.user.role === 'ta' ? [...where, ['group', 'in', ['ta', 'both']]] : where);
 export const facName = (id) => (S.facilities.find((f) => f.id === id) || { name: id }).name;
 export const userName = (id) => (S.users.find((u) => u.id === id) || {}).name || '';
 export const myGroups = () => (isTA() ? ['ta', 'both'] : ['cm', 'both']);

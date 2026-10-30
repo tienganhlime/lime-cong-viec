@@ -1,5 +1,5 @@
 import { h, mount, toast, modal, confirmDlg, fmtDM, fmtDMY, makeRedraw, sortBy } from './ui.js';
-import { S, isCM, facName, notifyGroup, GROUP_LABEL } from './core.js';
+import { S, scoped, isCM, facName, notifyGroup, GROUP_LABEL } from './core.js';
 import { buildChainTasks, addDays, parseYmd, ymd, todayStr, monthOf } from './rules.js';
 
 const CARRY = (d) => ({ ...d, open: true, carry: true });
@@ -173,7 +173,7 @@ export function viewChains(root, params) {
       h('div', null, h('b', null, e.name), h('div', { class: 'muted small' }, `${e.kind === 'event' ? 'Sự kiện' : 'Chuỗi việc'} · ${e.count} việc · ${e.createdByName || ''} · ${new Date(e.createdAt).toLocaleDateString('vi-VN')}`)),
       isCM() && h('button', { class: 'btn ghost sm danger', type: 'button', onClick: async () => {
         if (!(await confirmDlg(`Hủy "${e.name}"? Các việc chưa làm của nó sẽ bị xóa khỏi checklist, việc đã làm vẫn giữ lại.`, { okLabel: 'Hủy sự kiện', danger: true }))) return;
-        const ts = await S.db.getAll('tasks', [['refId', '==', e.id]]);
+        const ts = await S.db.getAll('tasks', scoped([['refId', '==', e.id]]));
         const del = ts.filter((t) => t.status === 'todo').map((t) => ({ op: 'delete', col: 'tasks', id: t.id }));
         del.push({ op: 'delete', col: 'events', id: e.id });
         await S.db.batch(del); toast(`Đã xóa ${del.length - 1} việc chưa làm`);
