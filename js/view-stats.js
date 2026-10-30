@@ -9,26 +9,43 @@ function monthsBetween(a, b) {
   return out;
 }
 
+const STATS_CACHE = new Map();
+
 export function viewStats(root) {
   const today = todayStr();
   const weekStart = (d) => addDays(d, -(dow(d) - 1));
   let from = weekStart(today); let to = addDays(weekStart(today), 6);
   let facSel = 'all'; let withCM = false; let preset = 'week';
-  let tasks = []; let reports = []; let evals = [];
-  let selTA = ''; let unsubs = [];
+  let tasks = []; let reports = []; let evals = []; let loading = false;
+  let selTA = '';
   const redraw = makeRedraw(root, render);
 
-  const evUnsub = S.db.subscribe('evaluations', [], (r) => { evals = r; redraw(); });
-
-  function resub() {
-    unsubs.forEach((u) => u()); unsubs = [];
+  // Thống kê không cần realtime: đọc một lần, nhớ kết quả 5 phút, chỉ đọc lại khi bấm "Tải lại"
+  let seq = 0;
+  async function load(force = false) {
     const ms = monthsBetween(from, to);
+    const key = `${facSel}|${ms.join(',')}`;
+    const hit = STATS_CACHE.get(key);
+    if (!force && hit && Date.now() - hit.at < 5 * 60000) { tasks = hit.tasks; reports = hit.reports; render(); return; }
+    const my = ++seq; loading = true; render();
     const w = [['month', 'in', ms]];
     if (facSel !== 'all') w.unshift(['facility', '==', facSel]);
-    unsubs.push(S.db.subscribe('tasks', w, (r) => { tasks = r; redraw(); }));
-    unsubs.push(S.db.subscribe('reports', w, (r) => { reports = r; redraw(); }));
+    try {
+      const [t, r] = await Promise.all([S.db.getAll('tasks', w), S.db.getAll('reports', w)]);
+      if (my !== seq) return;
+      tasks = t; reports = r; STATS_CACHE.set(key, { at: Date.now(), tasks: t, reports: r });
+    } catch (e) { toast(e.message || 'Không tải được thống kê', 'err'); }
+    loading = false; render();
   }
-  resub();
+  async function loadEvals() {
+    try {
+      evals = selTA ? await S.db.getAll('evaluations', [['taUid', '==', selTA]])
+        : await S.db.getAll('evaluations', [], { orderBy: ['createdAt', 'desc'], limit: 40 });
+    } catch (e) { evals = []; }
+    render();
+  }
+  const resub = () => load();
+  load(); loadEvals();
 
   const setPreset = (p) => {
     preset = p;
@@ -36,7 +53,7 @@ export function viewStats(root) {
     if (p === 'week') { from = weekStart(today); to = addDays(from, 6); }
     if (p === 'prevweek') { from = addDays(weekStart(today), -7); to = addDays(from, 6); }
     if (p === 'month') { from = `${monthOf(today)}-01`; to = `${monthOf(today)}-${pad(daysInMonth(monthOf(today)))}`; }
-    resub(); render();
+    load();
   };
 
   function render() {
@@ -74,7 +91,7 @@ export function viewStats(root) {
       h('tbody', null, perDay.map((r) => h('tr', null, h('td', null, `${DOW_NAMES[dow(r.d)]} ${fmtDM(r.d)}`), r.counts.map((c) => h('td', { class: c ? '' : 'muted' }, c)))))));
 
     const taOptions = S.users.filter((u) => !u.disabled && u.role === 'ta');
-    const shown = selTA ? evals.filter((e) => e.taUid === selTA) : evals;
+    const shown = evals;
     const evList = sortBy(shown, (e) => -(e.createdAt || 0)).slice(0, 40);
     const noteIn = h('textarea', { rows: 3, placeholder: 'Nhận xét, ghi chú về trợ giảng (cả đội Chuyên môn cùng xem được; trợ giảng không thấy)…' });
     const taSel = h('select', null, h('option', { value: '' }, '— Chọn trợ giảng —'), taOptions.map((u) => h('option', { value: u.id }, u.name)));
@@ -85,10 +102,13 @@ export function viewStats(root) {
       h('div', { class: 'page-head' }, h('div', null, h('h2', null, 'Thống kê & đánh giá'), h('p', { class: 'muted' }, `${fmtDMY(from)} – ${fmtDMY(to)} · ${facSel === 'all' ? 'Cả 2 cơ sở' : facName(facSel)}`))),
       h('div', { class: 'toolbar wrap' },
         h('div', { class: 'seg' }, [['day', 'Hôm nay'], ['week', 'Tuần này'], ['prevweek', 'Tuần trước'], ['month', 'Tháng này']].map(([v, l]) => h('button', { class: 'seg-b' + (preset === v ? ' on' : ''), type: 'button', onClick: () => setPreset(v) }, l))),
-        h('label', { class: 'inline' }, 'Từ', h('input', { type: 'date', value: from, onChange: (e) => { from = e.target.value || from; if (to < from) to = from; preset = ''; resub(); render(); } })),
-        h('label', { class: 'inline' }, 'đến', h('input', { type: 'date', value: to, onChange: (e) => { to = e.target.value || to; if (to < from) from = to; preset = ''; resub(); render(); } })),
-        h('select', { onChange: (e) => { facSel = e.target.value; resub(); render(); } }, h('option', { value: 'all' }, 'Cả 2 cơ sở'), S.facilities.map((f) => h('option', { value: f.id, selected: f.id === facSel }, f.name))),
+        h('label', { class: 'inline' }, 'Từ', h('input', { type: 'date', value: from, onChange: (e) => { from = e.target.value || from; if (to < from) to = from; preset = ''; } })),
+        h('label', { class: 'inline' }, 'đến', h('input', { type: 'date', value: to, onChange: (e) => { to = e.target.value || to; if (to < from) from = to; preset = ''; } })),
+        h('button', { class: 'btn sm', type: 'button', onClick: () => load() }, 'Xem'),
+        h('button', { class: 'btn ghost sm', type: 'button', title: 'Đọc lại dữ liệu mới nhất', onClick: () => load(true) }, 'Tải lại'),
+        h('select', { onChange: (e) => { facSel = e.target.value; load(); } }, h('option', { value: 'all' }, 'Cả 2 cơ sở'), S.facilities.map((f) => h('option', { value: f.id, selected: f.id === facSel }, f.name))),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: withCM, onChange: (e) => { withCM = e.target.checked; render(); } }), 'Gồm cả Chuyên môn')),
+      loading ? h('div', { class: 'banner' }, 'Đang tải số liệu…') : null,
       unassignedOpen ? h('div', { class: 'banner warn' }, `${unassignedOpen} việc đến hạn nhưng chưa có người nhận hoặc chưa làm.`) : null,
       h('section', { class: 'sec' }, h('div', { class: 'sec-head' }, h('h3', null, 'Tổng hợp theo người')), people.length ? h('div', { class: 'scroll' }, sumT) : h('p', { class: 'empty' }, 'Chưa có tài khoản trợ giảng.')),
       h('section', { class: 'sec' }, h('div', { class: 'sec-head' }, h('h3', null, 'Số việc đã xong theo ngày')), people.length ? dayT : null),
@@ -103,15 +123,15 @@ export function viewStats(root) {
               taUid: taSel.value, taName: (S.users.find((u) => u.id === taSel.value) || {}).name || '', text: noteIn.value.trim(),
               rating: rateSel.value ? Number(rateSel.value) : null, authorUid: S.user.id, authorName: S.user.name, createdAt: Date.now(),
             });
-            selTA = taSel.value; toast('Đã lưu ghi chú');
+            selTA = taSel.value; toast('Đã lưu ghi chú'); await loadEvals();
           } }, 'Lưu ghi chú'),
-          h('label', { class: 'inline' }, 'Lọc xem', h('select', { onChange: (e) => { selTA = e.target.value; render(); } }, h('option', { value: '' }, 'Tất cả trợ giảng'), taOptions.map((u) => h('option', { value: u.id, selected: u.id === selTA }, u.name))))),
+          h('label', { class: 'inline' }, 'Lọc xem', h('select', { onChange: (e) => { selTA = e.target.value; loadEvals(); } }, h('option', { value: '' }, 'Tất cả trợ giảng'), taOptions.map((u) => h('option', { value: u.id, selected: u.id === selTA }, u.name))))),
           evList.length ? evList.map((e) => h('div', { class: 'eval' },
             h('div', { class: 'eval-head' }, h('b', null, e.taName), e.rating ? h('span', { class: 'pill mid' }, e.rating + '/5') : null,
               h('span', { class: 'muted small' }, `${e.authorName} · ${new Date(e.createdAt).toLocaleDateString('vi-VN')}`),
-              (e.authorUid === S.user.id || isMgr()) && h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Xóa ghi chú', onClick: async () => { if (await confirmDlg('Xóa ghi chú này?', { okLabel: 'Xóa', danger: true })) S.db.remove('evaluations', e.id); } }, '×')),
+              (e.authorUid === S.user.id || isMgr()) && h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Xóa ghi chú', onClick: async () => { if (await confirmDlg('Xóa ghi chú này?', { okLabel: 'Xóa', danger: true })) { await S.db.remove('evaluations', e.id); loadEvals(); } } }, '×')),
             h('p', null, e.text))) : h('p', { class: 'empty' }, 'Chưa có ghi chú nào.')))));
   }
   render();
-  return () => { unsubs.forEach((u) => u()); evUnsub(); };
+  return () => { seq++; };
 }

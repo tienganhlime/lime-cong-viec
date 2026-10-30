@@ -93,6 +93,8 @@ export async function importReviews(items, fac, existingIds) {
     for (const st of it.students) {
       const sid = `${fac}_${ck}_${slug(st.name)}`;
       const rid = reviewId(fac, it.date, ck, st.name);
+      const dup = ops.find((o) => o.id === rid);
+      if (dup) { if (it.content && !dup.data.content.includes(it.content)) dup.data.content = [dup.data.content, it.content].filter(Boolean).join('\n'); continue; }
       if (existingIds.has(rid)) { skipped++; continue; }
       if (!studentIds.has(sid)) {
         studentIds.add(sid);

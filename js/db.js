@@ -56,9 +56,14 @@ function demoDb() {
     saveTimer = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* hết dung lượng: bỏ qua */ } }, 150);
   };
   const match = (d, where) => (where || []).every(([f, op, v]) => (op === '==' ? d[f] === v : op === 'in' ? v.includes(d[f]) : true));
-  const rows = (col, where) => Object.entries(S[col]).map(([id, d]) => ({ id, ...d })).filter((d) => match(d, where));
+  const rows = (col, where, opts = {}) => {
+    let r = Object.entries(S[col]).map(([id, d]) => ({ id, ...d })).filter((d) => match(d, where));
+    if (opts.orderBy) { const [f, dir] = opts.orderBy; r.sort((a, b) => (a[f] > b[f] ? 1 : -1) * (dir === 'desc' ? -1 : 1)); }
+    if (opts.limit) r = r.slice(0, opts.limit);
+    return r;
+  };
   const fire = (col) => {
-    for (const s of subs) if (s.col === col) { const r = rows(col, s.where); queueMicrotask(() => s.cb(r)); }
+    for (const s of subs) if (s.col === col) { const r = rows(col, s.where, s.opts); queueMicrotask(() => s.cb(r)); }
   };
   const uid = () => 'd' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
@@ -101,12 +106,17 @@ function demoDb() {
       S.users[id] = { ...data, username: un, pw: password, disabled: false, createdAt: Date.now() };
       persist(); fire('users'); return id;
     },
-    subscribe(col, where, cb) {
-      const s = { col, where, cb }; subs.add(s);
-      queueMicrotask(() => cb(rows(col, where)));
+    subscribe(col, where, cb, opts = {}) {
+      const s = { col, where, cb, opts }; subs.add(s);
+      queueMicrotask(() => cb(rows(col, where, opts)));
       return () => subs.delete(s);
     },
-    async getAll(col, where) { return rows(col, where); },
+    async getAll(col, where, opts = {}) { return rows(col, where, opts); },
+    async claim(col, id, data, staleMs = 0) {
+      const old = S[col][id];
+      if (old && !(staleMs && old.status === 'running' && Date.now() - (old.at || 0) > staleMs)) return false;
+      S[col][id] = { ...data }; persist(); fire(col); return true;
+    },
     async get(col, id) { return S[col][id] ? { id, ...S[col][id] } : null; },
     async add(col, data) { const id = uid(); S[col][id] = { ...data }; persist(); fire(col); return id; },
     async set(col, id, data) { S[col][id] = { ...data }; persist(); fire(col); },
@@ -137,10 +147,20 @@ async function firebaseDb() {
   ]);
   const app = A.initializeApp(FIREBASE_CONFIG);
   const auth = AU.getAuth(app);
-  const fs = F.getFirestore(app);
+  // Bộ nhớ đệm lâu dài trên trình duyệt: tải lại trang chỉ đọc phần dữ liệu thay đổi, không đọc lại toàn bộ
+  let fs;
+  try { fs = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); }
+  catch (e) { console.warn('Không bật được bộ nhớ đệm lâu dài', e); fs = F.getFirestore(app); }
   let current = null;
   let errHandler = () => {};
   const d = (col, id) => F.doc(fs, col, id);
+  const qOf = (col, where, opts) => {
+    const c = [];
+    for (const w of where || []) c.push(F.where(w[0], w[1], w[2]));
+    if (opts.orderBy) c.push(F.orderBy(opts.orderBy[0], opts.orderBy[1] || 'asc'));
+    if (opts.limit) c.push(F.limit(opts.limit));
+    return c.length ? F.query(F.collection(fs, col), ...c) : F.collection(fs, col);
+  };
 
   async function loadProfile(u) {
     const snap = await F.getDoc(d('users', u.uid));
@@ -192,15 +212,23 @@ async function firebaseDb() {
         return cred.user.uid;
       } finally { await A.deleteApp(sec); }
     },
-    subscribe(col, where, cb) {
-      let q = F.collection(fs, col);
-      if (where && where.length) q = F.query(q, ...where.map((w) => F.where(w[0], w[1], w[2])));
+    subscribe(col, where, cb, opts = {}) {
+      let q = qOf(col, where, opts);
       return F.onSnapshot(q, (s) => cb(s.docs.map((x) => ({ id: x.id, ...x.data() }))), (e) => { console.error(col, e); errHandler(e, col); });
     },
-    async getAll(col, where) {
-      let q = F.collection(fs, col);
-      if (where && where.length) q = F.query(q, ...where.map((w) => F.where(w[0], w[1], w[2])));
-      return (await F.getDocs(q)).docs.map((x) => ({ id: x.id, ...x.data() }));
+    async getAll(col, where, opts = {}) {
+      return (await F.getDocs(qOf(col, where, opts))).docs.map((x) => ({ id: x.id, ...x.data() }));
+    },
+    /** Giành quyền làm một việc chỉ một người được làm (vd sinh checklist tháng). Trả về true nếu giành được. */
+    async claim(col, id, data, staleMs = 0) {
+      return F.runTransaction(fs, async (tx) => {
+        const snap = await tx.get(d(col, id));
+        if (snap.exists()) {
+          const old = snap.data();
+          if (!(staleMs && old.status === 'running' && Date.now() - (old.at || 0) > staleMs)) return false;
+        }
+        tx.set(d(col, id), data); return true;
+      });
     },
     async get(col, id) { const s = await F.getDoc(d(col, id)); return s.exists() ? { id, ...s.data() } : null; },
     async add(col, data) { return (await F.addDoc(F.collection(fs, col), data)).id; },

@@ -61,14 +61,14 @@ export function generateMonth({ templates, schedules, facilities, ym, existingId
         if (sc.skip) continue;
         const id = `${fac}_${date}_${t.id}`;
         if (existingIds && existingIds.has(id)) continue;
-        const past = !!cutoff && date < cutoff; // ngày đã qua trước khi hệ thống tạo checklist: không áp dụng
+        if (cutoff && date < cutoff) continue; // ngày đã qua trước khi tạo checklist: không tạo (đỡ ghi dữ liệu thừa)
         out.push({
           id,
           data: {
             facility: fac, date, month: ym, title: t.name, extra: sc.text, time: t.time || '',
-            group: t.group, tplId: t.id, source: 'template', status: past ? 'na' : 'todo', open: !past,
-            carry: !past && !(t.rule.type === 'daily' && !t.scheduleKey),
-            assignee: null, assigneeName: '', note: past ? 'Checklist được tạo sau ngày này nên không áp dụng' : '', feedback: '',
+            group: t.group, tplId: t.id, source: 'template', status: 'todo', open: true,
+            carry: !(t.rule.type === 'daily' && !t.scheduleKey),
+            assignee: null, assigneeName: '', note: '', feedback: '',
             needsReview: !!t.needsReview, sendCSKH: !!t.sendCSKH, flagged: false,
             order: t.order || 0, createdBy: by || '', createdAt: Date.now(),
           },

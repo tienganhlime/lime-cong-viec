@@ -17,7 +17,7 @@ let globalUnsubs = [];
 let loaded = { templates: false, meta: false };
 let genRunning = false;
 let reviewCount = 0;
-let seenNotif = null;
+let fixCount = 0;
 
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -64,7 +64,7 @@ function showLogin(msg) {
 function stopAll() {
   if (cleanup) { cleanup(); cleanup = null; }
   globalUnsubs.forEach((u) => u()); globalUnsubs = [];
-  loaded = { templates: false, meta: false }; seenNotif = null; reviewCount = 0;
+  loaded = { templates: false, meta: false }; reviewCount = 0; fixCount = 0;
 }
 
 function start(user) {
@@ -81,15 +81,12 @@ function start(user) {
   sub('meta', [], (r) => {
     const sch = r.find((x) => x.id === 'schedules');
     S.schedules = sch ? sch.data || {} : {}; S.scheduleKeys = sch ? sch.keys || {} : {};
-    S.gen = new Set(r.filter((x) => x.id.startsWith('gen_')).map((x) => x.id));
+    // dấu 'đang chạy' quá 15 phút coi như bị treo, cho phép người khác chạy lại
+    S.gen = new Set(r.filter((x) => x.id.startsWith('gen_') && (x.status !== 'running' || Date.now() - (x.at || 0) < 15 * 60000)).map((x) => x.id));
     loaded.meta = true; autoGen();
   });
-  sub('notifications', [['toUid', '==', user.id]], (r) => {
-    const sorted = sortBy(r, (n) => -(n.createdAt || 0));
-    if (seenNotif) for (const n of sorted) if (!seenNotif.has(n.id) && !n.read) toast('🔔 ' + n.text);
-    seenNotif = new Set(sorted.map((n) => n.id));
-    S.notifications = sorted; drawBell();
-  });
+  // chấm đỏ ở tab "Hôm nay": số việc của tôi đang bị yêu cầu sửa
+  sub('tasks', [['assignee', '==', user.id], ['status', '==', 'fix']], (r) => { fixCount = r.length; drawNav(); });
   if (isCM()) sub('tasks', [['status', '==', 'review']], (r) => { reviewCount = r.length; drawNav(); });
   renderShell();
   route();
@@ -104,9 +101,14 @@ async function autoGen() {
     if (S.gen && S.gen.has('gen_' + m)) continue;
     genRunning = true;
     try {
-      const n = await generateFor(m, S.facilities.map((f) => f.id));
-      await S.db.set('meta', 'gen_' + m, { at: Date.now(), by: S.user.id, count: n });
-      if (n) toast(`Đã tự tạo checklist tháng ${m.slice(5)}/${m.slice(0, 4)} (${n} việc)`);
+      // giành quyền sinh việc: chỉ một người (một tab) được chạy cho mỗi tháng
+      const ok = await S.db.claim('meta', 'gen_' + m, { at: Date.now(), by: S.user.id, status: 'running' }, 15 * 60000);
+      if (!ok) { genRunning = false; continue; }
+      try {
+        const n = await generateFor(m, S.facilities.map((f) => f.id));
+        await S.db.set('meta', 'gen_' + m, { at: Date.now(), by: S.user.id, count: n, status: 'done' });
+        if (n) toast(`Đã tự tạo checklist tháng ${m.slice(5)}/${m.slice(0, 4)} (${n} việc)`);
+      } catch (e) { await S.db.set('meta', 'gen_' + m, { at: 0, by: S.user.id, status: 'running' }).catch(() => {}); throw e; }
     } catch (e) { console.error('Tự tạo checklist lỗi', e); }
     genRunning = false;
   }
@@ -133,11 +135,10 @@ function linksModal() {
 }
 const VIEWS = { today: viewToday, month: viewMonth, review: viewReview, students: viewStudents, chains: viewChains, stats: viewStats, templates: viewTemplates, schedules: viewSchedules, users: viewUsers };
 
-let navEl; let bellEl; let main;
+let navEl; let main;
 
 function renderShell() {
   navEl = h('nav', { class: 'nav', 'aria-label': 'Menu chính' });
-  bellEl = h('div', { class: 'bell-wrap' });
   main = h('main', { id: 'view', class: 'view' });
   const facSeg = h('div', { class: 'seg fac', role: 'group', 'aria-label': 'Cơ sở đang làm việc' }, S.facilities.map((f) =>
     h('button', { class: 'seg-b' + (S.facility === f.id ? ' on' : ''), type: 'button', onClick: () => { S.facility = f.id; store.set('lime_fac', f.id); renderShell(); route(); } }, f.name)));
@@ -146,9 +147,9 @@ function renderShell() {
   const userBtn = h('button', { class: 'user-btn', type: 'button', onClick: userMenu }, h('span', { class: 'avatar' }, (S.user.name || '?').trim().slice(0, 1).toUpperCase()), h('span', { class: 'uname' }, S.user.name, h('small', null, ROLE_LABEL[S.user.role])));
   mount(root,
     h('header', { class: 'topbar' }, h('a', { class: 'brand', href: '#/today' }, h('span', { class: 'logo' }, 'L'), h('span', { class: 'bname' }, 'LIME Checklist')),
-      facSeg, h('div', { class: 'spacer' }), h('button', { class: 'btn ghost sm', type: 'button', onClick: linksModal }, '🔗 Liên kết'), demoSel, bellEl, userBtn),
+      facSeg, h('div', { class: 'spacer' }), h('button', { class: 'btn ghost sm', type: 'button', onClick: linksModal }, '🔗 Liên kết'), demoSel, userBtn),
     navEl, !isFirebase ? h('div', { class: 'demo-strip' }, 'Chế độ chạy thử: dữ liệu chỉ lưu trong trình duyệt này. Kết nối Firebase để dùng chung giữa nhiều người.') : null, main);
-  drawNav(); drawBell();
+  drawNav();
 }
 
 function curRoute() {
@@ -162,31 +163,7 @@ function drawNav() {
   if (!navEl) return;
   const { name } = curRoute();
   navEl.replaceChildren(...NAV.filter(([, , ok]) => ok()).map(([id, label]) =>
-    h('a', { href: '#/' + id, class: 'nav-a' + (name === id ? ' on' : '') }, label, id === 'review' && reviewCount ? h('span', { class: 'badge' }, reviewCount) : null)));
-}
-
-function drawBell() {
-  if (!bellEl) return;
-  const unread = S.notifications.filter((n) => !n.read);
-  const btn = h('button', { class: 'bell', type: 'button', 'aria-label': `Thông báo, ${unread.length} chưa đọc`, onClick: (e) => { e.stopPropagation(); togglePanel(); } },
-    h('svg', { viewBox: '0 0 24 24', width: 22, height: 22, 'aria-hidden': 'true' }, h('path', { d: 'M12 3a6 6 0 0 0-6 6v3.6L4.3 16.5a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 12.6V9a6 6 0 0 0-6-6Zm0 19a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 22Z', fill: 'currentColor' })),
-    unread.length ? h('span', { class: 'badge' }, unread.length > 99 ? '99+' : unread.length) : null);
-  bellEl.replaceChildren(btn);
-}
-
-function togglePanel() {
-  const old = document.getElementById('bell-panel');
-  if (old) { old.remove(); return; }
-  const list = S.notifications.slice(0, 30);
-  const panel = h('div', { id: 'bell-panel', class: 'bell-panel', role: 'dialog', 'aria-label': 'Thông báo' },
-    h('div', { class: 'bp-head' }, h('b', null, 'Thông báo'),
-      h('button', { class: 'btn ghost sm', type: 'button', onClick: async () => { await S.db.batch(S.notifications.filter((n) => !n.read).map((n) => ({ op: 'update', col: 'notifications', id: n.id, data: { read: true } }))); panel.remove(); } }, 'Đánh dấu đã đọc hết')),
-    list.length ? list.map((n) => h('button', { class: 'bp-item' + (n.read ? '' : ' unread'), type: 'button', onClick: async () => {
-      if (!n.read) await S.db.update('notifications', n.id, { read: true });
-      panel.remove(); if (n.link) S.navigate(n.link);
-    } }, h('span', null, n.text), h('small', null, new Date(n.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })))) : h('p', { class: 'empty' }, 'Chưa có thông báo.'));
-  bellEl.append(panel);
-  setTimeout(() => document.addEventListener('click', function close(e) { if (!panel.contains(e.target)) { panel.remove(); document.removeEventListener('click', close); } }), 0);
+    h('a', { href: '#/' + id, class: 'nav-a' + (name === id ? ' on' : '') }, label, id === 'review' && reviewCount ? h('span', { class: 'badge' }, reviewCount) : null, id === 'today' && fixCount ? h('span', { class: 'badge' }, fixCount) : null)));
 }
 
 function userMenu() {

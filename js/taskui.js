@@ -47,6 +47,26 @@ function moveModal(t, redraw) {
   });
 }
 
+export function editModal(t, redraw) {
+  const title = h('input', { type: 'text', value: t.title, disabled: !isCM() });
+  const extra = h('textarea', { rows: 2, value: t.extra || '', placeholder: 'Danh sách lớp / ghi chú đi kèm (ví dụ các lớp test hôm nay)' });
+  const time = h('input', { type: 'text', value: t.time || '', placeholder: 'Thời gian làm' });
+  const desc = h('textarea', { rows: 4, value: t.desc || '', placeholder: 'Hướng dẫn / nội dung chi tiết (để trống = dùng nội dung của mẫu việc)' });
+  modal({
+    title: 'Sửa việc này', body: h('div', { class: 'stack' },
+      h('label', null, 'Tên việc', title), h('label', null, 'Lớp / ghi chú đi kèm', extra), h('label', null, 'Thời gian', time), h('label', null, 'Nội dung chi tiết', desc),
+      h('p', { class: 'hint' }, 'Chỉ sửa việc của ngày này. Muốn sửa cho các ngày sau, sửa ở Mẫu việc hoặc Lịch lớp.')),
+    actions: [{ label: 'Hủy', kind: 'ghost' }, {
+      label: 'Lưu', kind: 'primary',
+      onClick: async () => {
+        const p = { extra: extra.value.trim(), time: time.value.trim(), desc: desc.value.trim() };
+        if (isCM() && title.value.trim()) p.title = title.value.trim();
+        await S.db.update('tasks', t.id, p); redraw && redraw(); toast('Đã sửa việc');
+      },
+    }],
+  });
+}
+
 export function postponeModal(t, redraw) {
   const inp = h('input', { type: 'date', value: addDays(todayStr(), 1), min: todayStr() });
   const ta = h('textarea', { rows: 4, placeholder: 'Đã làm được gì, còn lại gì, cần lưu ý gì (ví dụ: đã check 5/8 lớp, còn CAM1T, CAM2M, FCE B2A)…' });
@@ -143,6 +163,7 @@ export function taskCard(t, o = {}) {
     row.append(btn('Không áp dụng', 'ghost', () => markNA(t)));
   }
   if (t.status === 'na' && allowed) row.append(btn('Mở lại', 'ghost', () => reopen(t)));
+  if (allowed || isCM()) row.append(h('button', { class: 'btn sm ghost', type: 'button', onClick: () => editModal(t, redraw) }, 'Sửa'));
   detail.append(row);
 
   // phân công

@@ -1,6 +1,6 @@
 import { h, mount, toast, modal, confirmDlg, makeRedraw, sortBy, fmtDM } from './ui.js';
 import { S, isMgr, isCM, ROLE_LABEL, GROUP_LABEL, facName } from './core.js';
-import { generateMonth, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth } from './rules.js';
+import { generateMonth, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth } from './rules.js';
 import { USERNAME_RE, normUsername, errMsg, isFirebase } from './db.js';
 
 /* ====================== MẪU VIỆC ====================== */
@@ -19,6 +19,33 @@ export async function generateFor(ym, facilities) {
   const gen = generateMonth({ templates: S.templates, schedules: S.schedules, facilities, ym, existingIds: ids, by: S.user.id, cutoff: todayStr() });
   await S.db.batch(gen.map((g) => ({ op: 'set', col: 'tasks', id: g.id, data: g.data })));
   return gen.length;
+}
+
+/** Áp dụng lịch lớp mới vào các việc đã tạo từ hôm nay trở đi (sửa danh sách lớp, thêm ngày mới, bỏ ngày không còn). */
+export async function syncSchedule(fac, key, schedules) {
+  const from = todayStr();
+  const tpls = S.templates.filter((t) => t.scheduleKey === key && t.auto && t.rule && t.rule.type !== 'none' && (!t.facilities || t.facilities.includes(fac)));
+  if (!tpls.length) return { changed: 0, added: 0, removed: 0 };
+  const olds = [];
+  for (const t of tpls) olds.push(...(await S.db.getAll('tasks', [['facility', '==', fac], ['tplId', '==', t.id]])));
+  const ops = []; let changed = 0; let removed = 0;
+  const months = new Set();
+  for (const t of tpls) {
+    for (const o of olds.filter((x) => x.tplId === t.id && x.date >= from)) {
+      months.add(o.month);
+      const sc = scheduleText(t, fac, o.date, schedules);
+      if (sc.skip) { if (o.status === 'todo') { ops.push({ op: 'update', col: 'tasks', id: o.id, data: { status: 'na', open: false, note: 'Lịch lớp đã đổi: ngày này không còn việc' } }); removed++; } }
+      else if (sc.text !== o.extra && (o.status === 'todo' || o.status === 'fix')) { ops.push({ op: 'update', col: 'tasks', id: o.id, data: { extra: sc.text } }); changed++; }
+    }
+  }
+  let added = 0;
+  for (const ym of [...new Set([monthOf(from), ...[...S.gen || []].map((g) => g.slice(4)).filter((m) => m >= monthOf(from))])]) {
+    const ids = new Set(olds.map((o) => o.id));
+    const gen = generateMonth({ templates: tpls, schedules, facilities: [fac], ym, existingIds: ids, by: S.user.id, cutoff: from });
+    for (const g of gen) { ops.push({ op: 'set', col: 'tasks', id: g.id, data: g.data }); added++; }
+  }
+  if (ops.length) await S.db.batch(ops);
+  return { changed, added, removed };
 }
 
 function templateModal(tpl) {
@@ -155,9 +182,13 @@ export function viewSchedules(root) {
           const clean = {}; for (const [a, b] of Object.entries(draft)) if (String(b).trim()) clean[a] = String(b).trim();
           const data = JSON.parse(JSON.stringify(S.schedules || {})); data[fac] = data[fac] || {}; data[fac][key] = clean;
           await S.db.set('meta', 'schedules', { data, keys: S.scheduleKeys });
-          toast('Đã lưu lịch lớp. Việc tạo từ bây giờ sẽ dùng lịch mới.');
+          toast('Đã lưu lịch lớp.');
+          if (await confirmDlg('Áp dụng lịch mới vào các việc đã tạo từ hôm nay trở đi? (Sửa danh sách lớp, thêm ngày mới, bỏ ngày không còn việc.)', { okLabel: 'Áp dụng', title: 'Lịch lớp đã đổi' })) {
+            const r = await syncSchedule(fac, key, data);
+            toast(`Đã cập nhật ${r.changed} việc, thêm ${r.added}, bỏ ${r.removed}`);
+          }
         } }, 'Lưu lịch lớp'),
-        h('span', { class: 'hint' }, 'Lưu ý: các việc đã tạo trong tháng không tự đổi. Muốn áp dụng cho tháng đang chạy, hãy sửa trực tiếp từng việc hoặc xóa rồi tạo lại.')))));
+        h('span', { class: 'hint' }, 'Sau khi lưu, hệ thống hỏi có áp dụng lịch mới vào các việc đã tạo từ hôm nay trở đi không (ví dụ lịch test bị lùi). Từng việc cũng có nút "Sửa" để chỉnh riêng một ngày.')))));
   }
   render();
   return () => unsub();

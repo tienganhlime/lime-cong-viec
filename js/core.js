@@ -36,15 +36,8 @@ export function canAct(t) {
   return !t.assignee || t.assignee === S.user.id;
 }
 
-export async function notify(userIds, text, link = '') {
-  const ids = [...new Set(userIds)].filter((id) => id && id !== S.user.id);
-  if (!ids.length) return;
-  const now = Date.now();
-  await S.db.batch(ids.map((toUid) => ({
-    op: 'set', col: 'notifications', id: S.db.newId(),
-    data: { toUid, text, link, read: false, createdAt: now, fromName: S.user.name },
-  })));
-}
+// Đã bỏ chuông thông báo (đỡ tốn lượt đọc/ghi). Giữ hàm để các nơi gọi cũ không lỗi.
+export async function notify() { /* không làm gì */ }
 export const notifyGroup = (group, text, link) => notify(usersOfGroup(group).map((u) => u.id), text, link);
 
 function buildPatch(p) {

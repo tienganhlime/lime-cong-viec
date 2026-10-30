@@ -205,3 +205,4 @@ label.inline input { width: auto; }
 .rv-note { flex:1; min-width:160px; } .rv-score, .rv-room { max-width:140px; } .ok-text { color:var(--ok,#2b7a1d); font-weight:600; }
 .rv-hist { display:grid; gap:8px; } .rv-h { padding:8px 10px; border-left:3px solid var(--brand,#5a9e2a); background:var(--surface-2,#f4f4ef); border-radius:6px; }
 .chip.warn { background:#fff1cf; color:#8a5a00; } .tbl { width:100%; border-collapse:collapse; } .tbl th, .tbl td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--line,#ddd); } .tbl tr.clickable { cursor:pointer; } .tbl tr.clickable:hover { background:var(--surface-2,#f4f4ef); }
+.rv-who { flex: 1 1 260px; min-width: 220px; } .rv-who .rv-content { margin: 4px 0 0; max-height: 7em; }

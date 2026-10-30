@@ -20,7 +20,9 @@ export function reviewSection(list, date, redraw) {
   const cards = [...byClass.entries()].map(([cid, rows]) => {
     const cls = (S.classes || []).find((c) => c.id === cid);
     const slots = slotOn(cls, date);
-    const contents = [...new Set(rows.map((r) => r.content).filter(Boolean))];
+    // chỉ hiện nội dung chung ở đầu lớp khi mọi học sinh trong lớp có cùng một nội dung
+    const uniq = [...new Set(rows.map((r) => r.content || ''))];
+    const shared = rows.length > 1 && uniq.length === 1 && uniq[0] ? uniq[0] : '';
     const studentRows = rows.map((r) => {
       const late = r.date < date;
       const note = h('input', {
@@ -28,8 +30,9 @@ export function reviewSection(list, date, redraw) {
         onChange: (e) => reviewNote(r, e.target.value).catch((er) => toast(er.message, 'err')),
       });
       return h('div', { class: 'rv-row s-' + r.status },
-        h('div', { class: 'rv-name' }, h('b', null, r.studentName), h('span', { class: 'chip ' + (r.kind === 'bu' ? 'warn' : '') }, r.kind === 'bu' ? 'Bù bài' : 'Ôn bài'),
+        h('div', { class: 'rv-who' }, h('div', { class: 'rv-name' }, h('b', null, r.studentName), h('span', { class: 'chip ' + (r.kind === 'bu' ? 'warn' : '') }, r.kind === 'bu' ? 'Bù bài' : 'Ôn bài'),
           late && h('span', { class: 'chip bad' }, `Từ ${fmtDM(r.date)}`), r.movedCount ? h('span', { class: 'muted' }, ` · đã lùi ${r.movedCount} lần`) : null),
+          !shared && r.content ? h('div', { class: 'rv-content sm' }, r.content) : null),
         r.status === 'done'
           ? h('div', { class: 'rv-acts' }, h('span', { class: 'ok-text' }, `✓ Đã ôn${r.doneByName ? ' · ' + r.doneByName : ''}`), r.note ? h('span', { class: 'muted' }, r.note) : null,
             h('button', { class: 'btn ghost sm', type: 'button', onClick: () => run(() => reviewReopen(r)) }, 'Mở lại'))
@@ -45,7 +48,7 @@ export function reviewSection(list, date, redraw) {
     return h('div', { class: 'rv-card' },
       h('div', { class: 'rv-head' }, h('b', null, cls ? cls.code : rows[0].classCode), cls && h('span', { class: 'muted' }, ` · ${cls.teacher}`),
         slots.length ? h('span', { class: 'chip' }, slots.map((s) => `${s.start}-${s.end} P.${s.room}`).join(', ')) : null),
-      contents.length ? h('div', { class: 'rv-content' }, contents.join('\n')) : null, studentRows);
+      shared ? h('div', { class: 'rv-content' }, shared) : null, studentRows);
   });
   return h('section', { class: 'sec' },
     h('div', { class: 'sec-head' }, h('h3', null, 'Ôn bài / bù bài', h('span', { class: 'count' }, `${done}/${list.length}`)),
@@ -61,7 +64,18 @@ export function viewStudents(root, params) {
   const unsubs = [];
   const redraw = makeRedraw(root, render);
   unsubs.push(S.db.subscribe('students', [['facility', '==', fac]], (r) => { students = r; S.students = r; redraw(); }));
-  unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac]], (r) => { reviews = r; redraw(); }));
+  // Chỉ nghe 2 tuần gần nhất (cộng 16 ngày tới, là các ngày đã dán danh sách). Bấm "Mở thêm" để xem thêm từng 2 tuần cũ hơn.
+  const wins = []; let nWin = 0;
+  const winDates = (k) => {
+    const today = todayStr();
+    return k === 0 ? Array.from({ length: 30 }, (_, i) => addDays(today, i - 13)) : Array.from({ length: 14 }, (_, i) => addDays(today, -14 * k - 13 + i));
+  };
+  const openWindow = () => {
+    const k = nWin++;
+    wins[k] = [];
+    unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac], ['date', 'in', winDates(k)]], (r) => { wins[k] = r; reviews = wins.flat(); redraw(); }));
+  };
+  openWindow();
   let pasteText = ''; let pasteDate = todayStr(); let parsed = null;
 
   const stats = (sid) => {
@@ -69,8 +83,11 @@ export function viewStudents(root, params) {
     return { done: rs.filter((r) => r.status === 'done').length, pending: rs.filter((r) => r.status === 'pending').length, moved: rs.reduce((a, r) => a + (r.movedCount || 0), 0) };
   };
 
-  function profile(st) {
-    const rs = sortBy(reviews.filter((r) => r.studentId === st.id), (r) => r.date).reverse();
+  async function profile(st) {
+    // hồ sơ: đọc toàn bộ lịch sử của riêng học sinh này (chỉ khi mở hồ sơ)
+    let all = reviews.filter((r) => r.studentId === st.id);
+    try { all = await S.db.getAll('reviews', [['studentId', '==', st.id]]); } catch (e) { /* dùng dữ liệu đã tải */ }
+    const rs = sortBy(all, (r) => r.date).reverse();
     const hist = [];
     for (const r of rs) {
       for (const e of r.history || []) hist.push({ date: e.date, text: e.result === 'done' ? 'Đã ôn' : e.result === 'absent' ? 'Vắng, chuyển buổi sau' : 'Chưa ôn, chuyển buổi sau', note: e.note, by: e.byName, content: r.content, kind: r.kind });
@@ -197,6 +214,7 @@ export function viewStudents(root, params) {
     const tabs = [['list', 'Học sinh'], ['paste', 'Dán danh sách ôn bài / bù bài'], ['tkb', 'Thời khóa biểu']];
     mount(root,
       h('div', { class: 'page-head' }, h('div', null, h('h2', null, 'Học sinh'), h('p', { class: 'muted' }, `${facName(fac)} · theo dõi ôn bài, bù bài, nhận xét và test hàng tuần`))),
+      h('p', { class: 'muted' }, `Đang hiển thị lượt ôn bài từ ${fmtDM(winDates(nWin - 1)[0])} trở đi. `, h('button', { class: 'btn ghost sm', type: 'button', onClick: () => { openWindow(); render(); } }, 'Mở thêm 2 tuần trước')),
       h('div', { class: 'seg' }, tabs.map(([v, l]) => h('button', { class: 'seg-b' + (tab === v ? ' on' : ''), type: 'button', onClick: () => { tab = v; render(); } }, l))),
       tab === 'list' ? listTab() : tab === 'paste' ? pasteTab() : tkbTab());
   }
