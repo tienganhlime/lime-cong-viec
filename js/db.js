@@ -28,14 +28,21 @@ async function writeSeed(db) {
   for (const c of seed.chains) ops.push({ op: 'set', col: 'chains', id: c.id, data: c });
   ops.push({ op: 'set', col: 'meta', id: 'schedules', data: { data: seed.schedules, keys: seed.scheduleKeys } });
   await db.batch(ops);
+  await writeClasses(db);
   return seed;
+}
+async function writeClasses(db) {
+  try {
+    const cls = await (await fetch(new URL('../data/classes.json', import.meta.url).href, { cache: 'no-store' })).json();
+    await db.batch(cls.map((c) => ({ op: 'set', col: 'classes', id: c.id, data: { facility: c.facility, code: c.code, teacher: c.teacher, slots: c.slots } })));
+  } catch (e) { console.warn('Không nạp được thời khóa biểu mẫu', e); }
 }
 
 /* ====================== CHẾ ĐỘ CHẠY THỬ ====================== */
 function demoDb() {
   const KEY = 'lime_demo_v1';
   const SESSION = 'lime_demo_session';
-  const COLS = ['users', 'tasks', 'templates', 'chains', 'events', 'notifications', 'evaluations', 'reports', 'meta'];
+  const COLS = ['users', 'tasks', 'templates', 'chains', 'events', 'notifications', 'evaluations', 'reports', 'meta', 'classes', 'students', 'reviews'];
   let S = null;
   try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* bỏ qua */ }
   let fresh = false;
@@ -116,6 +123,7 @@ function demoDb() {
       persist(); touched.forEach(fire);
     },
     async loadSeed() { return writeSeed(db); },
+    async loadClasses() { return writeClasses(db); },
     async resetDemo() { try { localStorage.removeItem(KEY); sessionStorage.removeItem(SESSION); } catch (e) { /* bỏ qua */ } location.reload(); },
   };
   return db;
@@ -212,6 +220,7 @@ async function firebaseDb() {
       }
     },
     async loadSeed() { return writeSeed(db); },
+    async loadClasses() { return writeClasses(db); },
   };
   return db;
 }

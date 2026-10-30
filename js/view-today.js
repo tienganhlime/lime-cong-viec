@@ -1,6 +1,8 @@
 import { h, mount, modal, toast, fmtDM, fmtDMY, makeRedraw, sortBy } from './ui.js';
 import { S, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
 import { taskCard } from './taskui.js';
+import { reviewSection } from './view-students.js';
+import { moveOp } from './students.js';
 import { todayStr, addDays, isOpen, DOW_NAMES, dow, monthOf, addMonths, generateMonth } from './rules.js';
 
 /* ---------- Thêm việc phát sinh / định kỳ ---------- */
@@ -85,7 +87,10 @@ export function addTaskModal({ date = todayStr(), onDone } = {}) {
 }
 
 /* ---------- Kết thúc ca: cập nhật checklist và báo cáo ---------- */
-function reportModal({ date, fac, mine, existing }) {
+function reportModal({ date, fac, mine, existing, revs = [] }) {
+  const revDone = revs.filter((r) => r.status === 'done').length;
+  const revPend = revs.filter((r) => r.status === 'pending');
+  const moveRev = h('input', { type: 'checkbox', checked: true });
   const total = mine.filter((t) => t.status !== 'na' && t.status !== 'partial').length;
   const done = mine.filter((t) => t.status === 'done').length;
   const review = mine.filter((t) => t.status === 'review').length;
@@ -103,6 +108,8 @@ function reportModal({ date, fac, mine, existing }) {
     body: h('div', { class: 'stack' },
       h('div', { class: 'sumline' }, h('b', null, `${done}/${total}`), ' việc của bạn đã xong', review ? ` · ${review} việc chờ duyệt` : '', openT.length ? ` · ${openT.length} việc chưa xong` : ' · không còn việc tồn'),
       openT.length ? h('div', null, h('p', { class: 'hint' }, 'Việc chưa xong (kể cả việc hàng ngày) sẽ tự chuyển sang ngày làm việc tiếp theo dưới dạng việc "Làm bù". Ghi rõ đã làm được đến đâu và chọn ngày nếu muốn làm vào ngày khác.'), rows) : null,
+      revs.length ? h('div', { class: 'stack' }, h('div', { class: 'sumline' }, h('b', null, `${revDone}/${revs.length}`), ' lượt ôn bài / bù bài đã xong', revPend.length ? ` · ${revPend.length} chưa ôn` : ''),
+        revPend.length ? h('label', { class: 'check' }, moveRev, `Chuyển ${revPend.length} học sinh chưa ôn sang buổi học kế tiếp của lớp (${revPend.slice(0, 4).map((r) => r.studentName).join(', ')}${revPend.length > 4 ? '…' : ''})`) : null) : null,
       h('label', null, 'Ghi chú bàn giao', note)),
     actions: [{ label: 'Để sau', kind: 'ghost' }, {
       label: 'Nộp báo cáo', kind: 'primary',
@@ -117,9 +124,10 @@ function reportModal({ date, fac, mine, existing }) {
           if (!t.carry || d) await postpone(t, d || t.date, pr);
           else await S.db.update('tasks', t.id, { note: [t.note, `[${date.slice(8)}/${date.slice(5, 7)} · ${S.user.name}] ${pr}`].filter(Boolean).join('\n') });
         }
+        if (revPend.length && moveRev.checked) for (const r of revPend) { const o = moveOp(r, date, 'moved', r.note || 'Chưa kịp ôn trong ca'); delete o.next; ops.push(o); }
         ops.push({
           op: 'set', col: 'reports', id: `${fac}_${date}_${S.user.id}`,
-          data: { facility: fac, date, month: date.slice(0, 7), uid: S.user.id, userName: S.user.name, role: S.user.role, total, done, review, open: openT.length, note: note.value.trim(), at: Date.now() },
+          data: { facility: fac, date, month: date.slice(0, 7), uid: S.user.id, userName: S.user.name, role: S.user.role, total, done, review, open: openT.length, reviewDone: revDone, reviewMoved: moveRev.checked ? revPend.length : 0, note: note.value.trim(), at: Date.now() },
         });
         await S.db.batch(ops);
         toast('Đã nộp báo cáo cuối ca');
@@ -132,15 +140,17 @@ function reportModal({ date, fac, mine, existing }) {
 export function viewToday(root, params) {
   const fac = S.facility;
   let date = params.date || todayStr();
-  let dayTasks = []; let carry = []; let reports = [];
+  let dayTasks = []; let carry = []; let reports = []; let dayRev = []; let pendRev = [];
   const selected = new Set();
-  let showAll = isMgr();
+  let grp = isMgr() ? 'all' : (isTA() ? 'ta' : 'cm');
   let showOthers = false;
   const unsubs = [];
   const redraw = makeRedraw(root, render);
 
   const go = (d) => S.navigate(`#/today?date=${d}`);
   const subscribe = () => {
+    unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac], ['date', '==', date]], (r) => { dayRev = r; redraw(); }));
+    unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac], ['status', '==', 'pending']], (r) => { pendRev = r; redraw(); }));
     unsubs.push(S.db.subscribe('tasks', [['facility', '==', fac], ['date', '==', date]], (r) => { dayTasks = r; redraw(); }));
     unsubs.push(S.db.subscribe('tasks', [['facility', '==', fac], ['carry', '==', true], ['open', '==', true]], (r) => { carry = r; redraw(); }));
     const m = monthOf(date);
@@ -152,11 +162,18 @@ export function viewToday(root, params) {
     const ids = new Set(dayTasks.map((t) => t.id));
     const carried = date >= todayStr() ? carry.filter((t) => t.date < date && !ids.has(t.id)) : [];
     const all = [...dayTasks, ...carried];
-    return all.filter((t) => showAll || myGroups().includes(t.group));
+    return all.filter((t) => grp === 'all' || t.group === grp || t.group === 'both');
+  }
+
+  function revList() {
+    const ids = new Set(dayRev.map((r) => r.id));
+    const late = date >= todayStr() ? pendRev.filter((r) => r.date < date && !ids.has(r.id)) : [];
+    return [...dayRev.filter((r) => r.kind === 'on' || r.kind === 'bu'), ...late];
   }
 
   function render() {
     const all = list();
+    const revs = revList();
     const today = todayStr();
     const mine = sortBy(all.filter((t) => t.assignee === S.user.id), taskKey);
     const free = sortBy(all.filter((t) => !t.assignee), taskKey);
@@ -185,13 +202,15 @@ export function viewToday(root, params) {
           h('button', { class: 'btn ghost sm', type: 'button', onClick: () => go(addDays(date, 1)), 'aria-label': 'Ngày sau' }, '›'),
           date !== today && h('button', { class: 'btn sm', type: 'button', onClick: () => go(today) }, 'Hôm nay'))),
       h('div', { class: 'toolbar' },
+        h('div', { class: 'seg', role: 'group', 'aria-label': 'Lọc theo đội' }, [['all', 'Tất cả'], ['ta', 'Việc Trợ giảng'], ['cm', 'Việc Chuyên môn']].map(([v, l]) =>
+          h('button', { class: 'seg-b' + (grp === v ? ' on' : ''), type: 'button', onClick: () => { grp = v; render(); } }, l))),
         h('div', { class: 'progress', title: `${doneN}/${relevantTotal.length} việc đã xong` }, h('div', { class: 'bar' }, h('span', { style: { width: pct + '%' } })), h('span', null, `${doneN}/${relevantTotal.length} xong`)),
         h('div', { class: 'row-actions' },
-          !isMgr() && h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: showAll, onChange: (e) => { showAll = e.target.checked; redraw(); } }), 'Xem cả việc của đội khác'),
           h('button', { class: 'btn', type: 'button', onClick: () => addTaskModal({ date }) }, '+ Thêm việc'),
-          S.user.role !== 'admin' && h('button', { class: 'btn primary', type: 'button', onClick: () => reportModal({ date, fac, mine: all.filter((t) => t.assignee === S.user.id && t.date === date || t.assignee === S.user.id && t.date < date), existing: myReport }) }, myReport ? 'Cập nhật báo cáo cuối ca' : 'Kết thúc ca & báo cáo'))),
+          S.user.role !== 'admin' && h('button', { class: 'btn primary', type: 'button', onClick: () => reportModal({ date, fac, mine: all.filter((t) => t.assignee === S.user.id && t.date === date || t.assignee === S.user.id && t.date < date), existing: myReport, revs }) }, myReport ? 'Cập nhật báo cáo cuối ca' : 'Kết thúc ca & báo cáo'))),
       myReport && h('div', { class: 'banner ok' }, `Bạn đã nộp báo cáo cuối ca lúc ${new Date(myReport.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}.`),
       prev && h('div', { class: 'banner' }, h('b', null, `Bàn giao từ ca ngày ${fmtDM(prev.date)} (${prev.userName}): `), prev.note),
+      reviewSection(revs, date, redraw),
       sec('Việc của tôi', mine.length, mine.length ? mine.map((t) => card(t)) : h('p', { class: 'empty' }, free.length ? 'Bạn chưa nhận việc nào. Chọn việc ở danh sách bên dưới rồi bấm Nhận, hoặc bấm Nhận tất cả.' : 'Chưa có việc nào.')),
       sec('Chưa có người nhận', free.length, free.length ? free.map((t) => card(t, { selectable: true, selected: selected.has(t.id), onSelect: (x, on) => { on ? selected.add(x.id) : selected.delete(x.id); redraw(); } })) : h('p', { class: 'empty' }, 'Tất cả việc đã có người nhận.'), free.length ? freeActions : null),
       others.length ? h('section', { class: 'sec' },

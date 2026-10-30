@@ -1,5 +1,6 @@
+import { LINKS, LINK_GROUPS, linkUrl } from './links.js';
 import { createDb, errMsg, isFirebase, USERNAME_RE, normUsername } from './db.js';
-import { S, ROLE_LABEL, isCM } from './core.js';
+import { S, ROLE_LABEL, isCM, facName } from './core.js';
 import { h, mount, toast, modal, sortBy, fmtDM } from './ui.js';
 import { todayStr, monthOf, addMonths } from './rules.js';
 import { viewToday } from './view-today.js';
@@ -7,6 +8,7 @@ import { viewMonth } from './view-month.js';
 import { viewReview } from './view-review.js';
 import { viewChains } from './view-chains.js';
 import { viewStats } from './view-stats.js';
+import { viewStudents } from './view-students.js';
 import { viewTemplates, viewSchedules, viewUsers, generateFor } from './view-admin.js';
 
 const root = document.getElementById('app');
@@ -75,6 +77,7 @@ function start(user) {
   sub('users', [], (r) => { S.users = r; });
   sub('templates', [], (r) => { S.templates = sortBy(r, 'order'); loaded.templates = true; autoGen(); });
   sub('chains', [], (r) => { S.chains = sortBy(r, 'id'); });
+  sub('classes', [], (r) => { S.classes = r; });
   sub('meta', [], (r) => {
     const sch = r.find((x) => x.id === 'schedules');
     S.schedules = sch ? sch.data || {} : {}; S.scheduleKeys = sch ? sch.keys || {} : {};
@@ -112,10 +115,23 @@ async function autoGen() {
 /* ---------------- Khung giao diện ---------------- */
 const NAV = [
   ['today', 'Hôm nay', () => true], ['month', 'Checklist tháng', () => true], ['review', 'Chờ duyệt', isCM],
-  ['chains', 'Chuỗi việc & sự kiện', () => true], ['stats', 'Thống kê', isCM], ['templates', 'Mẫu việc', isCM],
+  ['students', 'Học sinh', () => true], ['chains', 'Chuỗi việc & sự kiện', () => true], ['stats', 'Thống kê', isCM], ['templates', 'Mẫu việc', isCM],
   ['schedules', 'Lịch lớp', isCM], ['users', 'Tài khoản', isCM],
 ];
-const VIEWS = { today: viewToday, month: viewMonth, review: viewReview, chains: viewChains, stats: viewStats, templates: viewTemplates, schedules: viewSchedules, users: viewUsers };
+function linksModal() {
+  const q = h('input', { type: 'search', placeholder: 'Tìm liên kết…', class: 'search' });
+  const box = h('div', { class: 'stack' });
+  const draw = () => {
+    const k = q.value.trim().toLowerCase();
+    box.replaceChildren(...LINK_GROUPS.map(([g, name]) => {
+      const items = LINKS.filter((l) => l.g === g && linkUrl(l, S.facility) && (!k || l.label.toLowerCase().includes(k)));
+      return items.length ? h('section', null, h('h4', null, name), h('div', { class: 'linklist' }, items.map((l) => h('a', { href: linkUrl(l, S.facility), target: '_blank', rel: 'noopener' }, l.label)))) : null;
+    }).filter(Boolean));
+  };
+  q.addEventListener('input', draw); draw();
+  modal({ title: `Liên kết nhanh · ${facName(S.facility)}`, wide: true, body: h('div', { class: 'stack' }, q, box), actions: [{ label: 'Đóng', kind: 'primary' }] });
+}
+const VIEWS = { today: viewToday, month: viewMonth, review: viewReview, students: viewStudents, chains: viewChains, stats: viewStats, templates: viewTemplates, schedules: viewSchedules, users: viewUsers };
 
 let navEl; let bellEl; let main;
 
@@ -130,7 +146,7 @@ function renderShell() {
   const userBtn = h('button', { class: 'user-btn', type: 'button', onClick: userMenu }, h('span', { class: 'avatar' }, (S.user.name || '?').trim().slice(0, 1).toUpperCase()), h('span', { class: 'uname' }, S.user.name, h('small', null, ROLE_LABEL[S.user.role])));
   mount(root,
     h('header', { class: 'topbar' }, h('a', { class: 'brand', href: '#/today' }, h('span', { class: 'logo' }, 'L'), h('span', { class: 'bname' }, 'LIME Checklist')),
-      facSeg, h('div', { class: 'spacer' }), demoSel, bellEl, userBtn),
+      facSeg, h('div', { class: 'spacer' }), h('button', { class: 'btn ghost sm', type: 'button', onClick: linksModal }, '🔗 Liên kết'), demoSel, bellEl, userBtn),
     navEl, !isFirebase ? h('div', { class: 'demo-strip' }, 'Chế độ chạy thử: dữ liệu chỉ lưu trong trình duyệt này. Kết nối Firebase để dùng chung giữa nhiều người.') : null, main);
   drawNav(); drawBell();
 }

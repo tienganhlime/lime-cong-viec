@@ -3,7 +3,7 @@ import { FACILITIES } from './config.js';
 import { isOpen, addDays, todayStr } from './rules.js';
 
 export const S = {
-  db: null, user: null, users: [], templates: [], chains: [], schedules: {}, scheduleKeys: {},
+  db: null, user: null, users: [], templates: [], chains: [], classes: [], students: [], schedules: {}, scheduleKeys: {},
   notifications: [], facility: 'yenhoa', facilities: FACILITIES, navigate: null, rerenderShell: null,
 };
 

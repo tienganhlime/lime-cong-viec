@@ -3,6 +3,7 @@ import { h, modal, toast, confirmDlg, fmtDM } from './ui.js';
 import { S, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, reopen, markNA, moveDate, approve, requestFix,
   removeTask, saveNote, postpone, unclaim, assignTo, claim, isOverdue } from './core.js';
 import { todayStr, addDays } from './rules.js';
+import { linksFor, linkUrl } from './links.js';
 
 export const expanded = new Set();
 const ICON = { todo: '', done: '✓', review: '◔', fix: '!', approved: '✉', na: '–', partial: '◐' };
@@ -116,6 +117,9 @@ export function taskCard(t, o = {}) {
   detail.append(h('div', { class: 'meta' },
     `Nhóm: ${GROUP_LABEL[t.group] || t.group} · Ngày: ${fmtDM(t.date)} · ${facName(t.facility)}`,
     t.doneByName && t.status !== 'todo' ? ` · Làm: ${t.doneByName}` : ''));
+
+  const lk = linksFor(`${t.title} ${text}`, t.facility);
+  if (lk.length) detail.append(h('div', { class: 'qlinks' }, h('span', { class: 'muted' }, 'Mở nhanh:'), lk.map((l) => h('a', { class: 'chip lnk', href: linkUrl(l, t.facility), target: '_blank', rel: 'noopener' }, l.label))));
 
   const note = h('textarea', {
     rows: 2, placeholder: 'Ghi chú / kết quả (ví dụ: đã check các lớp, Ms ok; lớp CAM1T chưa giao bài → đã nhắc)…', value: t.note || '', disabled: !allowed,

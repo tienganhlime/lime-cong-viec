@@ -45,6 +45,10 @@ service cloud.firestore {
       allow update, delete: if isCM();
     }
 
+    match /classes/{id}  { allow read: if active(); allow write: if isCM(); }
+    match /students/{id} { allow read, create, update: if active(); allow delete: if isCM(); }
+    match /reviews/{id}  { allow read, create, update: if active(); allow delete: if isCM(); }
+
     match /chains/{id}   { allow read: if active(); allow write: if isCM(); }
     match /events/{id}   { allow read: if active(); allow create, update, delete: if isCM(); }
     match /reports/{id}  { allow read: if active(); allow create, update: if active() && request.resource.data.uid == request.auth.uid; allow delete: if isCM(); }

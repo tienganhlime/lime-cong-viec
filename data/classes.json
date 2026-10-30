@@ -1,0 +1,676 @@
+[
+ {
+  "id": "yenhoa_CLCA2E",
+  "facility": "yenhoa",
+  "code": "CLC A2E",
+  "teacher": "Ms Aimee",
+  "slots": [
+   {
+    "dow": 1,
+    "start": "17:45",
+    "end": "19:45",
+    "room": "201"
+   },
+   {
+    "dow": 6,
+    "start": "17:45",
+    "end": "19:45",
+    "room": "201"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_DORY0Y",
+  "facility": "yenhoa",
+  "code": "DORY0Y",
+  "teacher": "Ms Helen",
+  "slots": [
+   {
+    "dow": 2,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "201"
+   },
+   {
+    "dow": 7,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "201"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CAM2M",
+  "facility": "yenhoa",
+  "code": "CAM2M",
+  "teacher": "Ms Aimee",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "201"
+   },
+   {
+    "dow": 6,
+    "start": "08:45",
+    "end": "10:45",
+    "room": "201"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_DORY0X",
+  "facility": "yenhoa",
+  "code": "DORY0X",
+  "teacher": "Ms Mia",
+  "slots": [
+   {
+    "dow": 4,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "201"
+   },
+   {
+    "dow": 7,
+    "start": "14:45",
+    "end": "16:45",
+    "room": "201"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_DORY2H",
+  "facility": "yenhoa",
+  "code": "DORY2H",
+  "teacher": "Ms Lia",
+  "slots": [
+   {
+    "dow": 5,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "201"
+   },
+   {
+    "dow": 7,
+    "start": "09:00",
+    "end": "11:00",
+    "room": "201"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_DORY1M",
+  "facility": "yenhoa",
+  "code": "DORY1M",
+  "teacher": "Mr Nathan",
+  "slots": [
+   {
+    "dow": 1,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "202"
+   },
+   {
+    "dow": 5,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "202"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CAM1T",
+  "facility": "yenhoa",
+  "code": "CAM1T",
+  "teacher": "Ms Alice",
+  "slots": [
+   {
+    "dow": 2,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "202"
+   },
+   {
+    "dow": 6,
+    "start": "08:45",
+    "end": "10:45",
+    "room": "202"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CAM1R",
+  "facility": "yenhoa",
+  "code": "CAM1R",
+  "teacher": "Ms Lia",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "202"
+   },
+   {
+    "dow": 7,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "202"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_GRAM1A",
+  "facility": "yenhoa",
+  "code": "GRAM1A",
+  "teacher": "Ms Annie",
+  "slots": [
+   {
+    "dow": 4,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "202"
+   },
+   {
+    "dow": 6,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "202"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_DORY1K",
+  "facility": "yenhoa",
+  "code": "DORY1K",
+  "teacher": "Ms Summer",
+  "slots": [
+   {
+    "dow": 2,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "301"
+   },
+   {
+    "dow": 7,
+    "start": "08:45",
+    "end": "10:45",
+    "room": "202"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CLCA2G",
+  "facility": "yenhoa",
+  "code": "CLC A2G",
+  "teacher": "Ms Rachel",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "401"
+   },
+   {
+    "dow": 7,
+    "start": "14:45",
+    "end": "16:45",
+    "room": "202"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CAM1S",
+  "facility": "yenhoa",
+  "code": "CAM1S",
+  "teacher": "Ms Summer",
+  "slots": [
+   {
+    "dow": 1,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "301"
+   },
+   {
+    "dow": 6,
+    "start": "08:45",
+    "end": "10:45",
+    "room": "301"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CAM2P",
+  "facility": "yenhoa",
+  "code": "CAM2P",
+  "teacher": "Ms Ruby",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "301"
+   },
+   {
+    "dow": 7,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "301"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CLCA1D",
+  "facility": "yenhoa",
+  "code": "CLC A1D",
+  "teacher": "Ms Alice",
+  "slots": [
+   {
+    "dow": 4,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "301"
+   },
+   {
+    "dow": 7,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "302"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CAM2N",
+  "facility": "yenhoa",
+  "code": "CAM2N",
+  "teacher": "Ms Rachel",
+  "slots": [
+   {
+    "dow": 5,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "301"
+   },
+   {
+    "dow": 7,
+    "start": "09:00",
+    "end": "11:00",
+    "room": "301"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CAM2Q",
+  "facility": "yenhoa",
+  "code": "CAM2Q",
+  "teacher": "Mr Nathan",
+  "slots": [
+   {
+    "dow": 2,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "401"
+   },
+   {
+    "dow": 6,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "301"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CLCA2D",
+  "facility": "yenhoa",
+  "code": "CLC A2D",
+  "teacher": "Ms Rosie",
+  "slots": [
+   {
+    "dow": 5,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "401"
+   },
+   {
+    "dow": 7,
+    "start": "14:45",
+    "end": "16:45",
+    "room": "301"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_PETB1",
+  "facility": "yenhoa",
+  "code": "PET B1",
+  "teacher": "Ms Ruby",
+  "slots": [
+   {
+    "dow": 1,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "302"
+   },
+   {
+    "dow": 4,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "302"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CLCA1E",
+  "facility": "yenhoa",
+  "code": "CLC A1E",
+  "teacher": "Ms Aimee",
+  "slots": [
+   {
+    "dow": 2,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "302"
+   },
+   {
+    "dow": 5,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "302"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_FCEB2A",
+  "facility": "yenhoa",
+  "code": "FCE B2A",
+  "teacher": "Ms Alice",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "302"
+   },
+   {
+    "dow": 7,
+    "start": "14:30",
+    "end": "16:30",
+    "room": "302"
+   }
+  ]
+ },
+ {
+  "id": "yenhoa_CLCA1F",
+  "facility": "yenhoa",
+  "code": "CLC A1F",
+  "teacher": "Ms Rachel",
+  "slots": [
+   {
+    "dow": 1,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "401"
+   },
+   {
+    "dow": 6,
+    "start": "08:30",
+    "end": "10:30",
+    "room": "302"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3CLCA2H",
+  "facility": "trunghoa",
+  "code": "3CLC A2H",
+  "teacher": "Ms Rosie",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "101"
+   },
+   {
+    "dow": 6,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "101"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3CLCA2K",
+  "facility": "trunghoa",
+  "code": "3CLC A2K",
+  "teacher": "Ms Tracy",
+  "slots": [
+   {
+    "dow": 4,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "101"
+   },
+   {
+    "dow": 7,
+    "start": "17:45",
+    "end": "19:45",
+    "room": "101"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_FCEB2",
+  "facility": "trunghoa",
+  "code": "FCE B2",
+  "teacher": "Ms Katy",
+  "slots": [
+   {
+    "dow": 5,
+    "start": "18:00",
+    "end": "20:30",
+    "room": "101"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3CLCA2F",
+  "facility": "trunghoa",
+  "code": "3CLC A2F",
+  "teacher": "Ms Harley",
+  "slots": [
+   {
+    "dow": 7,
+    "start": "09:00",
+    "end": "11:00",
+    "room": "101"
+   },
+   {
+    "dow": 5,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "301"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3DORY0T",
+  "facility": "trunghoa",
+  "code": "3DORY0T",
+  "teacher": "Ms Phoebe",
+  "slots": [
+   {
+    "dow": 2,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "201"
+   },
+   {
+    "dow": 6,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "201"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3DORY0Z",
+  "facility": "trunghoa",
+  "code": "3DORY0Z",
+  "teacher": "Ms Alex",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "201"
+   },
+   {
+    "dow": 5,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "201"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3CAM2F",
+  "facility": "trunghoa",
+  "code": "3CAM2F",
+  "teacher": "Ms Rosie",
+  "slots": [
+   {
+    "dow": 4,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "201"
+   },
+   {
+    "dow": 7,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "201"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3CAM1V",
+  "facility": "trunghoa",
+  "code": "3CAM1V",
+  "teacher": "Ms Harley",
+  "slots": [
+   {
+    "dow": 2,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "301"
+   },
+   {
+    "dow": 4,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "301"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3DORY02R",
+  "facility": "trunghoa",
+  "code": "3DORY02R",
+  "teacher": "Ms Mia",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "301"
+   },
+   {
+    "dow": 7,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "301"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3DORY2D",
+  "facility": "trunghoa",
+  "code": "3DORY2D",
+  "teacher": "Ms Lia",
+  "slots": [
+   {
+    "dow": 2,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "302"
+   },
+   {
+    "dow": 4,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "302"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3DORY02S",
+  "facility": "trunghoa",
+  "code": "3DORY02S",
+  "teacher": "Ms Helen",
+  "slots": [
+   {
+    "dow": 3,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "302"
+   },
+   {
+    "dow": 6,
+    "start": "18:15",
+    "end": "20:15",
+    "room": "302"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3CAM2E",
+  "facility": "trunghoa",
+  "code": "3CAM2E",
+  "teacher": "Ms Jina",
+  "slots": [
+   {
+    "dow": 7,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "302"
+   },
+   {
+    "dow": 3,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "401"
+   }
+  ]
+ },
+ {
+  "id": "trunghoa_3DORY3B",
+  "facility": "trunghoa",
+  "code": "3DORY3B",
+  "teacher": "Mr Nathan",
+  "slots": [
+   {
+    "dow": 4,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "401"
+   },
+   {
+    "dow": 7,
+    "start": "18:00",
+    "end": "20:00",
+    "room": "401"
+   }
+  ]
+ }
+]
