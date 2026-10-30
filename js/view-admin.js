@@ -1,7 +1,44 @@
 import { h, mount, toast, modal, confirmDlg, makeRedraw, sortBy, fmtDM } from './ui.js';
 import { S, isMgr, isCM, ROLE_LABEL, GROUP_LABEL, facName } from './core.js';
 import { generateMonth, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth } from './rules.js';
+import { PEOPLE, tplAssign } from './assign.js';
 import { USERNAME_RE, normUsername, errMsg, isFirebase } from './db.js';
+
+/** Áp phân công theo file chuyên môn: lớp phụ trách của từng người + người làm của từng mẫu việc, rồi tạo lại việc từ hôm nay. */
+export async function applyCmAssignment() {
+  const byName = {}; for (const u of S.users) byName[u.username] = u;
+  const missing = Object.keys(PEOPLE).filter((k) => !byName[k]);
+  if (missing.length) { toast('Chưa có tài khoản: ' + missing.join(', '), 'err'); return; }
+  const ops = [];
+  for (const [un, p] of Object.entries(PEOPLE)) ops.push({ op: 'update', col: 'users', id: byName[un].id, data: { classCodes: p.classes } });
+  const tpls = S.templates.filter((t) => t.group === 'cm');
+  const today = todayStr();
+  for (const t of tpls) {
+    const ids = tplAssign(t.id).map((un) => byName[un].id);
+    ops.push({ op: 'update', col: 'templates', id: t.id, data: { assignees: ids, perClass: true } });
+  }
+  await S.db.batch(ops);
+  // làm mới: bỏ việc chung chưa làm từ hôm nay, tạo lại theo từng người
+  const fresh = tpls.map((t) => ({ ...t, assignees: tplAssign(t.id).map((un) => byName[un].id), perClass: true }));
+  const users = S.users.map((u) => (PEOPLE[u.username] ? { ...u, classCodes: PEOPLE[u.username].classes } : u));
+  const del = []; let made = 0;
+  for (const t of fresh.filter((x) => x.auto && x.rule && x.rule.type !== 'none')) {
+    for (const fac of S.facilities.map((f) => f.id)) {
+      const olds = await S.db.getAll('tasks', [['facility', '==', fac], ['tplId', '==', t.id]]);
+      for (const o of olds) if (o.date >= today && !o.assignee && o.status === 'todo') del.push({ op: 'delete', col: 'tasks', id: o.id });
+    }
+  }
+  const add = [];
+  for (const g of S.gen || []) {
+    const ym = g.slice(4);
+    if (ym < monthOf(today)) continue;
+    const existing = await S.db.getAll('tasks', [['month', '==', ym]]);
+    const gen = generateMonth({ templates: fresh, schedules: S.schedules, facilities: S.facilities.map((f) => f.id), ym, existingIds: new Set(existing.map((x) => x.id)), by: S.user.id, cutoff: today, users });
+    for (const x of gen) add.push({ op: 'set', col: 'tasks', id: x.id, data: x.data });
+  }
+  await S.db.batch([...del, ...add]);
+  toast(`Đã phân công xong: xóa ${del.length} việc chung chưa làm, tạo ${add.length} việc theo người`);
+}
 
 /* ====================== MẪU VIỆC ====================== */
 export function ruleText(r) {
@@ -71,7 +108,7 @@ function templateModal(tpl) {
   const keySel = h('select', null, h('option', { value: '' }, 'Không (dùng chung cho mọi ngày)'),
     Object.entries(S.scheduleKeys).map(([k, v]) => h('option', { value: k }, 'Theo lịch lớp: ' + v.label)));
   keySel.value = t.scheduleKey || '';
-  const cms = S.users.filter((u) => u.role === 'cm' && !u.disabled);
+  const cms = S.users.filter((u) => (u.role === 'cm' || u.role === 'manager') && !u.disabled);
   const asg = cms.map((u) => ({ u, el: h('input', { type: 'checkbox', checked: (t.assignees || []).includes(u.id) }) }));
   const perClass = h('input', { type: 'checkbox', checked: !!t.perClass });
   const asgBox = h('div', { class: 'stack' }, h('div', { class: 'lab' }, 'Giao cho (chỉ áp dụng đội Chuyên môn; không chọn ai = việc chung, ai làm cũng được)'),
@@ -215,23 +252,27 @@ function userModal(u) {
   const pw = h('input', { type: 'text', placeholder: 'Ít nhất 6 ký tự', autocomplete: 'off' });
   const role = h('select', null, roleChoices().map((r) => h('option', { value: r }, ROLE_LABEL[r])));
   if (u) role.value = u.role;
-  const classes = h('input', { type: 'text', value: u && u.classes || '', placeholder: 'Chỉ cho Chuyên môn. Ví dụ: PET, CLC A1E, CLC A1F' });
+  const codes = [...new Set([...S.classes.map((c) => c.code), ...((u && u.classCodes) || [])])].sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
+  const have = new Set((u && u.classCodes) || []);
+  const clsBoxes = codes.map((c) => ({ c, el: h('input', { type: 'checkbox', checked: have.has(c) }) }));
+  const classes = h('div', { class: 'checks' }, clsBoxes.length ? clsBoxes.map((x) => h('label', { class: 'check' }, x.el, x.c)) : h('span', { class: 'muted small' }, 'Chưa có danh sách lớp (vào tab Học sinh > Thời khóa biểu)'));
+  const pickedCodes = () => clsBoxes.filter((x) => x.el.checked).map((x) => x.c);
   modal({
     title: u ? 'Sửa tài khoản' : 'Tạo tài khoản',
-    body: h('div', { class: 'stack' }, h('label', null, 'Họ tên', name), h('label', null, 'Tên đăng nhập', un), !u && h('label', null, 'Mật khẩu ban đầu', pw), h('label', null, 'Vai trò', role), h('label', null, 'Lớp phụ trách (chuyên môn)', classes)),
+    body: h('div', { class: 'stack' }, h('label', null, 'Họ tên', name), h('label', null, 'Tên đăng nhập', un), !u && h('label', null, 'Mật khẩu ban đầu', pw), h('label', null, 'Vai trò', role), h('div', null, h('div', { class: 'lab' }, 'Lớp phụ trách (chỉ cho Chuyên môn/Quản lý trực tiếp làm việc; tick để chọn)'), classes)),
     actions: [{ label: 'Hủy', kind: 'ghost' }, {
       label: 'Lưu', kind: 'primary',
       onClick: async () => {
         if (!name.value.trim()) { toast('Hãy nhập họ tên', 'err'); return false; }
         try {
-          if (u) await S.db.update('users', u.id, { name: name.value.trim(), role: role.value, classes: classes.value.trim() });
+          if (u) await S.db.update('users', u.id, { name: name.value.trim(), role: role.value, classCodes: pickedCodes() });
           else {
             const uname = normUsername(un.value);
             if (!USERNAME_RE.test(uname)) { toast('Tên đăng nhập gồm 3–30 ký tự: chữ thường, số, dấu . _ -', 'err'); return false; }
             if (pw.value.length < 6) { toast('Mật khẩu cần ít nhất 6 ký tự', 'err'); return false; }
             const stale = S.users.find((x) => x.username === uname);
             if (stale && stale.disabled) await S.db.update('users', stale.id, { username: `${uname}_cu_${Date.now().toString(36)}` });
-            await S.db.createUser(uname, pw.value, { name: name.value.trim(), role: role.value, classes: classes.value.trim() });
+            await S.db.createUser(uname, pw.value, { name: name.value.trim(), role: role.value, classCodes: pickedCodes() });
             toast(`Đã tạo tài khoản ${uname}. Hãy gửi tên đăng nhập và mật khẩu cho người dùng.`);
           }
         } catch (e) { toast(errMsg(e), 'err'); return false; }
@@ -265,6 +306,7 @@ export function viewUsers(root) {
         h('div', { class: 'panel' }, h('div', { class: 'stack' },
           h('p', { class: 'muted' }, isFirebase ? 'Đang kết nối Firebase thật.' : 'Đang chạy ở chế độ chạy thử: dữ liệu chỉ nằm trong trình duyệt này.'),
           h('div', { class: 'row-actions' },
+            h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Gán lớp phụ trách cho Hồng, Liễu, Ruby, Mai Phương và giao việc chuyên môn theo file phân công? Việc chung chưa làm từ hôm nay sẽ được thay bằng việc theo từng người. Việc đã làm giữ nguyên.', { okLabel: 'Áp phân công' })) await applyCmAssignment(); } }, 'Áp phân công chuyên môn theo file'),
             h('button', { class: 'btn ghost', type: 'button', onClick: async () => { if (await confirmDlg('Nạp lại toàn bộ mẫu việc, chuỗi việc và lịch lớp từ bảng gốc? Các chỉnh sửa mẫu bạn đã làm sẽ bị ghi đè.', { okLabel: 'Nạp lại', danger: true })) { await S.db.loadSeed(); toast('Đã nạp lại mẫu việc'); } } }, 'Nạp lại mẫu việc từ bảng gốc'),
             !isFirebase && h('button', { class: 'btn ghost danger', type: 'button', onClick: async () => { if (await confirmDlg('Xóa toàn bộ dữ liệu chạy thử và bắt đầu lại?', { okLabel: 'Xóa hết', danger: true })) S.db.resetDemo(); } }, 'Xóa dữ liệu chạy thử'))))) : null);
   }

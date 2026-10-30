@@ -66,7 +66,7 @@ export function generateMonth({ templates, schedules, facilities, ym, existingId
         for (const u of targets) {
           const id = u ? `${fac}_${date}_${t.id}_${u.id}` : `${fac}_${date}_${t.id}`;
           if (existingIds && existingIds.has(id)) continue;
-          const own = u && t.perClass && u.classes ? u.classes : '';
+          const own = u && t.perClass && u.classCodes && u.classCodes.length ? u.classCodes.join(', ') : '';
           out.push({
             id,
             data: {
