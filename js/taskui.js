@@ -114,7 +114,7 @@ export function taskCard(t, o = {}) {
     t.needsReview && h('span', { class: 'chip info' }, 'Cần CM duyệt'),
     t.sendCSKH && h('span', { class: 'chip info' }, 'Gửi CSKH'),
     t.status !== 'todo' && t.status !== 'done' && h('span', { class: 'chip st-' + t.status }, STATUS_TEXT[t.status]),
-    t.assignee ? h('span', { class: 'chip who' + (mine ? ' me' : '') }, mine ? 'Tôi' : t.assigneeName) : h('span', { class: 'chip ghost' }, 'Chưa có người nhận'),
+    t.assignee ? h('span', { class: 'chip who' + (mine ? ' me' : '') }, mine ? 'Tôi' : t.assigneeName) : t.doneByName && t.status !== 'todo' ? h('span', { class: 'chip who' }, t.doneByName) : h('span', { class: 'chip ghost' }, 'Chưa có người nhận'),
   ];
 
   const main = h('div', { class: 'task-main', onClick: () => { open ? expanded.delete(t.id) : expanded.add(t.id); redraw && redraw(); } },
@@ -136,7 +136,7 @@ export function taskCard(t, o = {}) {
   if (t.feedback) detail.append(h('div', { class: 'feedback' }, h('b', null, 'Phản hồi: '), t.feedback));
   detail.append(h('div', { class: 'meta' },
     `Nhóm: ${GROUP_LABEL[t.group] || t.group} · Ngày: ${fmtDM(t.date)} · ${facName(t.facility)}`,
-    t.doneByName && t.status !== 'todo' ? ` · Làm: ${t.doneByName}` : ''));
+    t.doneByName && t.status !== 'todo' ? ` · Làm: ${t.doneByName}${t.assignee && t.doneBy && t.doneBy !== t.assignee ? ' (làm thay ' + (t.assigneeName || '') + ')' : ''}` : ''));
 
   const lk = linksFor(`${t.title} ${text}`, t.facility);
   if (lk.length) detail.append(h('div', { class: 'qlinks' }, h('span', { class: 'muted' }, 'Mở nhanh:'), lk.map((l) => h('a', { class: 'chip lnk', href: linkUrl(l, t.facility), target: '_blank', rel: 'noopener' }, l.label))));

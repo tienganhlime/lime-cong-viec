@@ -10,6 +10,10 @@ export const addMonths = (ym, n) => { const [y, m] = ym.split('-').map(Number); 
 export const todayStr = () => ymd(new Date());
 export const DOW_NAMES = ['', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 
+export const SHIFTS = ['sáng', 'chiều', 'tối'];
+const SHIFT_ID = { sáng: 's', chiều: 'c', tối: 't' };
+export const shiftOf = (start) => { const h = Number(String(start).split(':')[0]); return h < 12 ? 'sáng' : h < 17 ? 'chiều' : 'tối'; };
+
 export function ruleMatches(rule, date) {
   if (!rule) return false;
   const d = Number(date.slice(8));
@@ -47,7 +51,7 @@ export function scheduleText(tpl, fac, date, schedules) {
   return { skip: false, text: v };
 }
 
-export function generateMonth({ templates, schedules, facilities, ym, existingIds, by, cutoff, users = [] }) {
+export function generateMonth({ templates, schedules, facilities, ym, existingIds, by, cutoff, users = [], classes = [] }) {
   const out = [];
   const n = daysInMonth(ym);
   for (const fac of facilities) {
@@ -60,17 +64,32 @@ export function generateMonth({ templates, schedules, facilities, ym, existingId
         const sc = scheduleText(t, fac, date, schedules);
         if (sc.skip) continue;
         if (cutoff && date < cutoff) continue; // ngày đã qua trước khi tạo checklist: không tạo (đỡ ghi dữ liệu thừa)
+        // Thứ 7 / CN có nhiều ca (sáng/chiều/tối): việc hàng ngày lặp lại theo ca, mỗi ca ghi các lớp của ca đó
+        const wantShift = t.weekendShifts === true || (t.weekendShifts == null && t.group === 'cm' && t.rule.type === 'daily' && !t.scheduleKey);
+        let shifts = [null];
+        if (wantShift && dow(date) >= 6 && classes.length) {
+          const byShift = {};
+          for (const c of classes) {
+            if (c.facility !== fac) continue;
+            for (const s of c.slots || []) if (s.dow === dow(date)) { const k = shiftOf(s.start); (byShift[k] = byShift[k] || new Set()).add(c.code); }
+          }
+          const ks = SHIFTS.filter((k) => byShift[k]);
+          if (ks.length) shifts = ks.map((k) => ({ key: k, codes: byShift[k] }));
+        }
+        for (const sh of shifts) {
         // Việc chuyên môn giao theo người: mỗi người một việc riêng (gán sẵn, chuyển sang ngày sau nếu chưa xong)
         const people = t.group === 'cm' ? (t.assignees || []).map((uid) => users.find((u) => u.id === uid)).filter((u) => u && !u.disabled && (!u.facilities || !u.facilities.length || u.facilities.includes(fac))) : [];
         const targets = people.length ? people : [null];
         for (const u of targets) {
-          const id = u ? `${fac}_${date}_${t.id}_${u.id}` : `${fac}_${date}_${t.id}`;
+          const id = (u ? `${fac}_${date}_${t.id}_${u.id}` : `${fac}_${date}_${t.id}`) + (sh ? `_${SHIFT_ID[sh.key]}` : '');
           if (existingIds && existingIds.has(id)) continue;
-          const own = u && t.perClass && u.classCodes && u.classCodes.length ? u.classCodes.join(', ') : '';
+          let mine = u && t.perClass && u.classCodes && u.classCodes.length ? u.classCodes : [];
+          if (sh) { const inShift = (mine.length ? mine.filter((c) => sh.codes.has(c)) : [...sh.codes]); if (u && t.perClass && !inShift.length) continue; mine = inShift; }
+          const own = mine.join(', ');
           out.push({
             id,
             data: {
-              facility: fac, date, month: ym, title: t.name, extra: [sc.text, own].filter(Boolean).join(' · '), time: t.time || '',
+              facility: fac, date, month: ym, title: sh ? `${t.name} (ca ${sh.key})` : t.name, extra: [sc.text, own].filter(Boolean).join(' · '), time: t.time || '', ...(sh ? { shift: sh.key } : {}),
               group: t.group, tplId: t.id, source: 'template', status: 'todo', open: true,
               carry: u ? true : !(t.rule.type === 'daily' && !t.scheduleKey),
               assignee: u ? u.id : null, assigneeName: u ? u.name : '', note: '', feedback: '',
@@ -78,6 +97,7 @@ export function generateMonth({ templates, schedules, facilities, ym, existingId
               order: t.order || 0, createdBy: by || '', createdAt: Date.now(),
             },
           });
+        }
         }
       }
     }

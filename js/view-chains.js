@@ -166,11 +166,26 @@ export function viewChains(root, params) {
     return el;
   }
 
+  async function showEvent(e) {
+    let ts = [];
+    try { ts = await S.db.getAll('tasks', scoped([['refId', '==', e.id]])); } catch (er) { toast(er.message, 'err'); return; }
+    const st = { todo: 'Chưa làm', done: 'Đã xong', review: 'Chờ duyệt', fix: 'Cần sửa', approved: 'Đã duyệt', na: 'Không áp dụng', partial: 'Làm dở' };
+    modal({
+      title: e.name, wide: true,
+      body: h('div', { class: 'stack' }, h('p', { class: 'muted' }, `${ts.length} việc. Bấm vào ngày để mở checklist ngày đó.`),
+        h('div', { class: 'scroll' }, h('table', { class: 'tbl' }, h('thead', null, h('tr', null, ['Ngày', 'Cơ sở', 'Công việc', 'Đội', 'Trạng thái'].map((x) => h('th', null, x)))),
+          h('tbody', null, sortBy(ts, 'date', 'facility').map((t) => h('tr', null,
+            h('td', null, h('a', { href: `#/today?date=${t.date}&fac=${t.facility}`, onClick: () => { const o = document.querySelector('.overlay'); if (o) o.remove(); } }, fmtDMY(t.date))),
+            h('td', null, facName(t.facility)), h('td', null, t.title.replace(/^[^:]*: /, '')), h('td', null, GROUP_LABEL[t.group] || t.group), h('td', null, st[t.status] || t.status))))))),
+      actions: [{ label: 'Đóng', kind: 'ghost' }],
+    });
+  }
+
   function historyList() {
     const list = sortBy(history, (e) => -(e.createdAt || 0));
     if (!list.length) return h('p', { class: 'empty' }, 'Chưa có chuỗi việc hoặc sự kiện nào.');
     return h('div', { class: 'stack' }, list.slice(0, 40).map((e) => h('div', { class: 'hist' },
-      h('div', null, h('b', null, e.name), h('div', { class: 'muted small' }, `${e.kind === 'event' ? 'Sự kiện' : 'Chuỗi việc'} · ${e.count} việc · ${e.createdByName || ''} · ${new Date(e.createdAt).toLocaleDateString('vi-VN')}`)),
+      h('div', { class: 'hist-main', role: 'button', tabindex: 0, style: { cursor: 'pointer' }, onClick: () => showEvent(e), onKeydown: (k) => { if (k.key === 'Enter') showEvent(e); } }, h('b', null, e.name, ' ›'), h('div', { class: 'muted small' }, `${e.kind === 'event' ? 'Sự kiện' : 'Chuỗi việc'} · ${e.count} việc · ${e.createdByName || ''} · ${new Date(e.createdAt).toLocaleDateString('vi-VN')}`)),
       isCM() && h('button', { class: 'btn ghost sm danger', type: 'button', onClick: async () => {
         if (!(await confirmDlg(`Hủy "${e.name}"? Các việc chưa làm của nó sẽ bị xóa khỏi checklist, việc đã làm vẫn giữ lại.`, { okLabel: 'Hủy sự kiện', danger: true }))) return;
         const ts = await S.db.getAll('tasks', scoped([['refId', '==', e.id]]));

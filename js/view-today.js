@@ -143,7 +143,7 @@ export function viewToday(root, params) {
   let dayTasks = []; let carry = []; let reports = []; let dayRev = []; let pendRev = [];
   const selected = new Set();
   let grp = isMgr() ? 'all' : (isTA() ? 'ta' : 'cm');
-  let showOthers = false;
+  let showOthers = false; let who = '';
   const unsubs = [];
   const redraw = makeRedraw(root, render);
 
@@ -162,7 +162,7 @@ export function viewToday(root, params) {
     const ids = new Set(dayTasks.map((t) => t.id));
     const carried = date >= todayStr() ? carry.filter((t) => t.date < date && !ids.has(t.id)) : [];
     const all = [...dayTasks, ...carried];
-    return all.filter((t) => grp === 'all' || t.group === grp || t.group === 'both');
+    return all.filter((t) => (grp === 'all' || t.group === grp || t.group === 'both') && (!who || t.assignee === who));
   }
 
   function revList() {
@@ -204,6 +204,8 @@ export function viewToday(root, params) {
       h('div', { class: 'toolbar' },
         isCM() && h('div', { class: 'seg', role: 'group', 'aria-label': 'Lọc theo đội' }, [['all', 'Tất cả'], ['ta', 'Việc Trợ giảng'], ['cm', 'Việc Chuyên môn']].map(([v, l]) =>
           h('button', { class: 'seg-b' + (grp === v ? ' on' : ''), type: 'button', onClick: () => { grp = v; render(); } }, l))),
+        isCM() && h('select', { class: 'sel-sm', 'aria-label': 'Lọc theo người', onChange: (e) => { who = e.target.value; render(); } },
+          h('option', { value: '' }, 'Mọi người'), sortBy(S.users.filter((u) => !u.disabled && (isMgr() ? true : u.role !== 'admin') && (grp === 'ta' ? u.role === 'ta' : grp === 'cm' ? u.role !== 'ta' : true)), 'name').map((u) => h('option', { value: u.id, selected: u.id === who }, u.name))),
         h('div', { class: 'progress', title: `${doneN}/${relevantTotal.length} việc đã xong` }, h('div', { class: 'bar' }, h('span', { style: { width: pct + '%' } })), h('span', null, `${doneN}/${relevantTotal.length} xong`)),
         h('div', { class: 'row-actions' },
           h('button', { class: 'btn', type: 'button', onClick: () => addTaskModal({ date }) }, '+ Thêm việc'),

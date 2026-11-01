@@ -103,7 +103,8 @@ export async function postpone(t, date, progress = '') {
 
 export async function approve(t) {
   const next = t.sendCSKH ? 'approved' : 'done';
-  await patchTask(t, { status: next, flagged: false, feedback: '' });
+  const own = !t.assignee && t.doneBy ? { assignee: t.doneBy, assigneeName: t.doneByName || userName(t.doneBy) } : {};
+  await patchTask(t, { status: next, flagged: false, feedback: '', ...own });
   const to = t.doneBy || t.assignee;
   if (to) await notify([to], t.sendCSKH ? `Chuyên môn đã duyệt, hãy gửi CSKH: ${t.title}` : `Chuyên môn đã duyệt: ${t.title}`, `#/today?date=${t.date}&fac=${t.facility}`);
 }

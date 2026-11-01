@@ -101,7 +101,7 @@ export async function importReviews(items, fac, existingIds) {
         ops.push({ op: 'set', col: 'students', id: sid, data: { facility: fac, classId: it.cls.id, classCode: it.cls.code, name: st.name, tag: st.tag, watch: true, createdAt: Date.now(), createdBy: S.user.id } });
       }
       ops.push({ op: 'set', col: 'reviews', id: rid, data: {
-        facility: fac, date: it.date, classId: it.cls.id, classCode: it.cls.code, studentId: sid, studentName: st.name, kind: kindOf(it.content),
+        facility: fac, date: it.date, classId: it.cls.id, classCode: it.cls.code, studentId: sid, studentName: st.name, kind: it.kind || kindOf(it.content), ...(it.track ? { track: true } : {}),
         content: it.content || '', status: 'pending', note: '', history: [], createdBy: S.user.id, createdByName: S.user.name, createdAt: Date.now(),
       } });
       existingIds.add(rid); added++;
@@ -115,6 +115,16 @@ const histEntry = (date, result, note) => ({ date, result, note: note || '', by:
 export const reviewDone = (r, note) => S.db.update('reviews', r.id, {
   status: 'done', note: note ?? r.note ?? '', doneBy: S.user.id, doneByName: S.user.name, doneAt: Date.now(),
   history: [...(r.history || []), histEntry(r.date, 'done', note ?? r.note)],
+});
+/** Mục theo dõi liên tục: ghi đã ôn buổi này rồi sang buổi học kế tiếp, cho đến khi bấm kết thúc theo dõi. */
+export async function reviewSession(r, from, note) {
+  const op = moveOp(r, from, 'done', note);
+  await S.db.update('reviews', r.id, { ...op.data, movedCount: r.movedCount || 0 });
+  return op.next;
+}
+export const reviewEnd = (r, note) => S.db.update('reviews', r.id, {
+  status: 'done', ended: true, note: note ?? r.note ?? '', doneBy: S.user.id, doneByName: S.user.name, doneAt: Date.now(),
+  history: [...(r.history || []), histEntry(r.date, 'done', (note ?? r.note ?? '') + ' (kết thúc theo dõi)')],
 });
 export const reviewReopen = (r) => S.db.update('reviews', r.id, { status: 'pending', doneBy: null, doneByName: '', doneAt: null });
 export const reviewNote = (r, note) => S.db.update('reviews', r.id, { note });

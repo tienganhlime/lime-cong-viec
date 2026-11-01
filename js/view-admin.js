@@ -10,7 +10,7 @@ export async function applyCmAssignment() {
   const missing = Object.keys(PEOPLE).filter((k) => !byName[k]);
   if (missing.length) { toast('Chưa có tài khoản: ' + missing.join(', '), 'err'); return; }
   const ops = [];
-  for (const [un, p] of Object.entries(PEOPLE)) ops.push({ op: 'update', col: 'users', id: byName[un].id, data: { classCodes: p.classes } });
+  for (const [un, p] of Object.entries(PEOPLE)) ops.push({ op: 'update', col: 'users', id: byName[un].id, data: { classCodes: p.classes, cmType: p.type } });
   const tpls = S.templates.filter((t) => t.group === 'cm');
   const today = todayStr();
   for (const t of tpls) {
@@ -33,7 +33,7 @@ export async function applyCmAssignment() {
     const ym = g.slice(4);
     if (ym < monthOf(today)) continue;
     const existing = await S.db.getAll('tasks', [['month', '==', ym]]);
-    const gen = generateMonth({ templates: fresh, schedules: S.schedules, facilities: S.facilities.map((f) => f.id), ym, existingIds: new Set(existing.map((x) => x.id)), by: S.user.id, cutoff: today, users });
+    const gen = generateMonth({ templates: fresh, schedules: S.schedules, facilities: S.facilities.map((f) => f.id), ym, existingIds: new Set(existing.map((x) => x.id)), by: S.user.id, cutoff: today, users, classes: S.classes });
     for (const x of gen) add.push({ op: 'set', col: 'tasks', id: x.id, data: x.data });
   }
   await S.db.batch([...del, ...add]);
@@ -53,7 +53,7 @@ export function ruleText(r) {
 export async function generateFor(ym, facilities) {
   const existing = await S.db.getAll('tasks', [['month', '==', ym]]);
   const ids = new Set(existing.map((t) => t.id));
-  const gen = generateMonth({ templates: S.templates, schedules: S.schedules, facilities, ym, existingIds: ids, by: S.user.id, cutoff: todayStr(), users: S.users });
+  const gen = generateMonth({ templates: S.templates, schedules: S.schedules, facilities, ym, existingIds: ids, by: S.user.id, cutoff: todayStr(), users: S.users, classes: S.classes });
   await S.db.batch(gen.map((g) => ({ op: 'set', col: 'tasks', id: g.id, data: g.data })));
   return gen.length;
 }
@@ -78,7 +78,7 @@ export async function syncSchedule(fac, key, schedules) {
   let added = 0;
   for (const ym of [...new Set([monthOf(from), ...[...S.gen || []].map((g) => g.slice(4)).filter((m) => m >= monthOf(from))])]) {
     const ids = new Set(olds.map((o) => o.id));
-    const gen = generateMonth({ templates: tpls, schedules, facilities: [fac], ym, existingIds: ids, by: S.user.id, cutoff: from, users: S.users });
+    const gen = generateMonth({ templates: tpls, schedules, facilities: [fac], ym, existingIds: ids, by: S.user.id, cutoff: from, users: S.users, classes: S.classes });
     for (const g of gen) { ops.push({ op: 'set', col: 'tasks', id: g.id, data: g.data }); added++; }
   }
   if (ops.length) await S.db.batch(ops);
@@ -110,6 +110,7 @@ function templateModal(tpl) {
   keySel.value = t.scheduleKey || '';
   const cms = S.users.filter((u) => (u.role === 'cm' || u.role === 'manager') && !u.disabled);
   const asg = cms.map((u) => ({ u, el: h('input', { type: 'checkbox', checked: (t.assignees || []).includes(u.id) }) }));
+  const wk = h('input', { type: 'checkbox', checked: t.weekendShifts == null ? (t.group === 'cm' && t.rule.type === 'daily' && !t.scheduleKey) : !!t.weekendShifts });
   const perClass = h('input', { type: 'checkbox', checked: !!t.perClass });
   const asgBox = h('div', { class: 'stack' }, h('div', { class: 'lab' }, 'Giao cho (chỉ áp dụng đội Chuyên môn; không chọn ai = việc chung, ai làm cũng được)'),
     h('div', { class: 'checks' }, asg.length ? asg.map((x) => h('label', { class: 'check' }, x.el, x.u.name)) : h('span', { class: 'muted small' }, 'Chưa có tài khoản Chuyên môn')),
@@ -125,6 +126,7 @@ function templateModal(tpl) {
       h('label', null, 'Kiểu lặp', rtype), wDow, wDay,
       h('label', null, 'Gắn với lịch lớp (danh sách lớp hiện kèm trong việc)', keySel),
       asgBox,
+      h('div', { class: 'checks' }, h('label', { class: 'check' }, wk, 'Thứ 7 / Chủ nhật: lặp lại theo ca (sáng, chiều, tối) cho các lớp của từng ca')),
       h('label', null, 'Hướng dẫn chi tiết', content),
       h('div', null, h('div', { class: 'lab' }, 'Áp dụng ở cơ sở'), h('div', { class: 'checks' }, facs.map((x) => h('label', { class: 'check' }, x.el, x.f.name)))),
       h('div', { class: 'checks' }, h('label', { class: 'check' }, review, 'Cần chuyên môn duyệt sau khi làm xong'), h('label', { class: 'check' }, csk, 'Sau khi duyệt, trợ giảng gửi CSKH'))),
@@ -146,7 +148,7 @@ function templateModal(tpl) {
           needsReview: review.checked, reviewText: review.checked ? 'Có' : 'Không', sendCSKH: csk.checked,
           facilities: facs.filter((x) => x.el.checked).map((x) => x.f.id), repeatText: ruleText(rule), scheduleKey: key || null,
           scheduleMode: key ? (S.scheduleKeys[key] || {}).mode : null,
-          assignees: group.value === 'cm' ? asg.filter((x) => x.el.checked).map((x) => x.u.id) : [], perClass: group.value === 'cm' && perClass.checked,
+          assignees: group.value === 'cm' ? asg.filter((x) => x.el.checked).map((x) => x.u.id) : [], perClass: group.value === 'cm' && perClass.checked, weekendShifts: wk.checked,
         };
         if (!data.scheduleKey) { delete data.scheduleKey; delete data.scheduleMode; }
         if (tpl) await S.db.set('templates', tpl.id, data);
@@ -252,6 +254,8 @@ function userModal(u) {
   const pw = h('input', { type: 'text', placeholder: 'Ít nhất 6 ký tự', autocomplete: 'off' });
   const role = h('select', null, roleChoices().map((r) => h('option', { value: r }, ROLE_LABEL[r])));
   if (u) role.value = u.role;
+  const cmType = h('select', null, h('option', { value: '' }, '—'), h('option', { value: 'hc' }, 'Chuyên môn hành chính'), h('option', { value: 'ht' }, 'Chuyên môn học thuật'));
+  cmType.value = (u && u.cmType) || '';
   const codes = [...new Set([...S.classes.map((c) => c.code), ...((u && u.classCodes) || [])])].sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
   const have = new Set((u && u.classCodes) || []);
   const clsBoxes = codes.map((c) => ({ c, el: h('input', { type: 'checkbox', checked: have.has(c) }) }));
@@ -259,20 +263,20 @@ function userModal(u) {
   const pickedCodes = () => clsBoxes.filter((x) => x.el.checked).map((x) => x.c);
   modal({
     title: u ? 'Sửa tài khoản' : 'Tạo tài khoản',
-    body: h('div', { class: 'stack' }, h('label', null, 'Họ tên', name), h('label', null, 'Tên đăng nhập', un), !u && h('label', null, 'Mật khẩu ban đầu', pw), h('label', null, 'Vai trò', role), h('div', null, h('div', { class: 'lab' }, 'Lớp phụ trách (chỉ cho Chuyên môn/Quản lý trực tiếp làm việc; tick để chọn)'), classes)),
+    body: h('div', { class: 'stack' }, h('label', null, 'Họ tên', name), h('label', null, 'Tên đăng nhập', un), !u && h('label', null, 'Mật khẩu ban đầu', pw), h('label', null, 'Vai trò', role), h('label', null, 'Loại chuyên môn (để lọc thống kê)', cmType), h('div', null, h('div', { class: 'lab' }, 'Lớp phụ trách (chỉ cho Chuyên môn/Quản lý trực tiếp làm việc; tick để chọn)'), classes)),
     actions: [{ label: 'Hủy', kind: 'ghost' }, {
       label: 'Lưu', kind: 'primary',
       onClick: async () => {
         if (!name.value.trim()) { toast('Hãy nhập họ tên', 'err'); return false; }
         try {
-          if (u) await S.db.update('users', u.id, { name: name.value.trim(), role: role.value, classCodes: pickedCodes() });
+          if (u) await S.db.update('users', u.id, { name: name.value.trim(), role: role.value, classCodes: pickedCodes(), cmType: cmType.value });
           else {
             const uname = normUsername(un.value);
             if (!USERNAME_RE.test(uname)) { toast('Tên đăng nhập gồm 3–30 ký tự: chữ thường, số, dấu . _ -', 'err'); return false; }
             if (pw.value.length < 6) { toast('Mật khẩu cần ít nhất 6 ký tự', 'err'); return false; }
             const stale = S.users.find((x) => x.username === uname);
             if (stale && stale.disabled) await S.db.update('users', stale.id, { username: `${uname}_cu_${Date.now().toString(36)}` });
-            await S.db.createUser(uname, pw.value, { name: name.value.trim(), role: role.value, classCodes: pickedCodes() });
+            await S.db.createUser(uname, pw.value, { name: name.value.trim(), role: role.value, classCodes: pickedCodes(), cmType: cmType.value });
             toast(`Đã tạo tài khoản ${uname}. Hãy gửi tên đăng nhập và mật khẩu cho người dùng.`);
           }
         } catch (e) { toast(errMsg(e), 'err'); return false; }

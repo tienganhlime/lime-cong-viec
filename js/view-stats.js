@@ -15,7 +15,7 @@ export function viewStats(root) {
   const today = todayStr();
   const weekStart = (d) => addDays(d, -(dow(d) - 1));
   let from = weekStart(today); let to = addDays(weekStart(today), 6);
-  let facSel = 'all'; let withCM = false; let preset = 'week';
+  let facSel = 'all'; let withCM = false; let cmType = ''; let preset = 'week';
   let tasks = []; let reports = []; let evals = []; let loading = false;
   let selTA = '';
   const redraw = makeRedraw(root, render);
@@ -57,7 +57,7 @@ export function viewStats(root) {
   };
 
   function render() {
-    const people = S.users.filter((u) => !u.disabled && (u.role === 'ta' || (withCM && (u.role === 'cm'))));
+    const people = S.users.filter((u) => !u.disabled && (cmType ? (u.cmType === cmType) : (u.role === 'ta' || (withCM && (u.role === 'cm' || u.role === 'manager')))));
     const inRange = tasks.filter((t) => t.date >= from && t.date <= to && t.status !== 'na' && t.status !== 'partial');
     const rows = people.map((u) => {
       const mine = inRange.filter((t) => t.assignee === u.id);
@@ -107,7 +107,8 @@ export function viewStats(root) {
         h('button', { class: 'btn sm', type: 'button', onClick: () => load() }, 'Xem'),
         h('button', { class: 'btn ghost sm', type: 'button', title: 'Đọc lại dữ liệu mới nhất', onClick: () => load(true) }, 'Tải lại'),
         h('select', { onChange: (e) => { facSel = e.target.value; load(); } }, h('option', { value: 'all' }, 'Cả 2 cơ sở'), S.facilities.map((f) => h('option', { value: f.id, selected: f.id === facSel }, f.name))),
-        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: withCM, onChange: (e) => { withCM = e.target.checked; render(); } }), 'Gồm cả Chuyên môn')),
+        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: withCM, onChange: (e) => { withCM = e.target.checked; render(); } }), 'Gồm cả Chuyên môn'),
+        h('select', { class: 'sel-sm', 'aria-label': 'Loại chuyên môn', onChange: (e) => { cmType = e.target.value; render(); } }, h('option', { value: '' }, 'Mọi loại'), h('option', { value: 'hc', selected: cmType === 'hc' }, 'Chỉ CM hành chính'), h('option', { value: 'ht', selected: cmType === 'ht' }, 'Chỉ CM học thuật'))),
       loading ? h('div', { class: 'banner' }, 'Đang tải số liệu…') : null,
       unassignedOpen ? h('div', { class: 'banner warn' }, `${unassignedOpen} việc đến hạn nhưng chưa có người nhận hoặc chưa làm.`) : null,
       h('section', { class: 'sec' }, h('div', { class: 'sec-head' }, h('h3', null, 'Tổng hợp theo người')), people.length ? h('div', { class: 'scroll' }, sumT) : h('p', { class: 'empty' }, 'Chưa có tài khoản trợ giảng.')),

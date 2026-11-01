@@ -3,12 +3,13 @@ import { S, isCM, facName } from './core.js';
 import { todayStr, addDays, monthOf, DOW_NAMES, dow } from './rules.js';
 import {
   DOW_LABEL, classesOf, slotText, slotOn, parsePaste, importReviews, reviewDone, reviewReopen, reviewNote, reviewMove,
-  addTestScore, addStudentNote, summarize, normCode,
+  addTestScore, addStudentNote, summarize, normCode, reviewSession, reviewEnd, nextClassDate,
 } from './students.js';
 
 /* ================= Khối "Ôn bài / bù bài" trong màn hình Hôm nay ================= */
 export function reviewSection(list, date, redraw) {
-  if (!list.length) return null;
+  const addBtn = h('button', { class: 'btn sm', type: 'button', onClick: () => addReviewModal({ date, fac: S.facility }) }, '+ Thêm học sinh ôn / bù bài');
+  if (!list.length) return h('section', { class: 'sec' }, h('div', { class: 'sec-head' }, h('h3', null, 'Ôn bài / bù bài', h('span', { class: 'count' }, '0')), addBtn), h('p', { class: 'empty' }, 'Hôm nay chưa có học sinh ôn / bù bài. Bấm "Thêm" hoặc dán danh sách ở tab Học sinh.'));
   const today = todayStr();
   const byClass = new Map();
   for (const r of sortBy(list, 'classCode', 'studentName')) {
@@ -30,14 +31,17 @@ export function reviewSection(list, date, redraw) {
         onChange: (e) => reviewNote(r, e.target.value).catch((er) => toast(er.message, 'err')),
       });
       return h('div', { class: 'rv-row s-' + r.status },
-        h('div', { class: 'rv-who' }, h('div', { class: 'rv-name' }, h('b', null, r.studentName), h('span', { class: 'chip ' + (r.kind === 'bu' ? 'warn' : '') }, r.kind === 'bu' ? 'Bù bài' : 'Ôn bài'),
+        h('div', { class: 'rv-who' }, h('div', { class: 'rv-name' }, h('b', null, r.studentName), h('span', { class: 'chip ' + (r.kind === 'bu' ? 'warn' : '') }, r.kind === 'bu' ? 'Bù bài' : 'Ôn bài'), r.track ? h('span', { class: 'chip info', title: 'Theo dõi liên tục đến khi bấm Kết thúc theo dõi' }, 'Theo dõi') : null,
           late && h('span', { class: 'chip bad' }, `Từ ${fmtDM(r.date)}`), r.movedCount ? h('span', { class: 'muted' }, ` · đã lùi ${r.movedCount} lần`) : null),
           !shared && r.content ? h('div', { class: 'rv-content sm' }, r.content) : null),
         r.status === 'done'
           ? h('div', { class: 'rv-acts' }, h('span', { class: 'ok-text' }, `✓ Đã ôn${r.doneByName ? ' · ' + r.doneByName : ''}`), r.note ? h('span', { class: 'muted' }, r.note) : null,
             h('button', { class: 'btn ghost sm', type: 'button', onClick: () => run(() => reviewReopen(r)) }, 'Mở lại'))
           : h('div', { class: 'rv-acts' }, note,
-            h('button', { class: 'btn primary sm', type: 'button', onClick: () => run(async () => { await reviewDone(r, note.value); toast('Đã ghi: ' + r.studentName + ' đã ôn'); }) }, '✓ Đã ôn'),
+            r.track
+              ? h('button', { class: 'btn primary sm', type: 'button', title: 'Ghi đã ôn buổi này, tiếp tục theo dõi ở buổi học sau', onClick: () => run(async () => { const d = await reviewSession(r, date, note.value); toast(`${r.studentName}: đã ôn buổi này, theo dõi tiếp ${fmtDM(d)}`); }) }, '✓ Đã ôn buổi này')
+              : h('button', { class: 'btn primary sm', type: 'button', onClick: () => run(async () => { await reviewDone(r, note.value); toast('Đã ghi: ' + r.studentName + ' đã ôn'); }) }, '✓ Đã ôn'),
+            r.track ? h('button', { class: 'btn sm', type: 'button', title: 'Học sinh đã ôn / bù đủ, dừng theo dõi', onClick: () => run(async () => { if (await confirmDlg(`Kết thúc theo dõi ${r.studentName}? Sẽ không còn xuất hiện ở các buổi sau.`, { okLabel: 'Kết thúc theo dõi' })) { await reviewEnd(r, note.value); toast('Đã kết thúc theo dõi ' + r.studentName); } }) }, 'Kết thúc theo dõi') : null,
             h('button', { class: 'btn sm', type: 'button', title: 'Chuyển sang buổi học kế tiếp của lớp', onClick: () => run(async () => {
               const d = await reviewMove(r, date, 'moved', note.value); toast(`${r.studentName} chuyển sang ${fmtDM(d)}`);
             }) }, 'Chưa ôn → buổi sau'),
@@ -52,7 +56,7 @@ export function reviewSection(list, date, redraw) {
   });
   return h('section', { class: 'sec' },
     h('div', { class: 'sec-head' }, h('h3', null, 'Ôn bài / bù bài', h('span', { class: 'count' }, `${done}/${list.length}`)),
-      date < today ? null : h('span', { class: 'muted' }, 'Cuối ca: học sinh chưa ôn sẽ tự chuyển sang buổi học kế tiếp')), cards);
+      h('div', { class: 'row-actions' }, date < today ? null : h('span', { class: 'muted' }, 'Cuối ca: học sinh chưa ôn sẽ tự chuyển sang buổi học kế tiếp'), addBtn)), cards);
 }
 
 /* ================= Trang "Học sinh" ================= */
@@ -215,9 +219,65 @@ export function viewStudents(root, params) {
     mount(root,
       h('div', { class: 'page-head' }, h('div', null, h('h2', null, 'Học sinh'), h('p', { class: 'muted' }, `${facName(fac)} · theo dõi ôn bài, bù bài, nhận xét và test hàng tuần`))),
       h('p', { class: 'muted' }, `Đang hiển thị lượt ôn bài từ ${fmtDM(winDates(nWin - 1)[0])} trở đi. `, h('button', { class: 'btn ghost sm', type: 'button', onClick: () => { openWindow(); render(); } }, 'Mở thêm 2 tuần trước')),
-      h('div', { class: 'seg' }, tabs.map(([v, l]) => h('button', { class: 'seg-b' + (tab === v ? ' on' : ''), type: 'button', onClick: () => { tab = v; render(); } }, l))),
+      h('div', { class: 'toolbar' }, h('div', { class: 'seg' }, tabs.map(([v, l]) => h('button', { class: 'seg-b' + (tab === v ? ' on' : ''), type: 'button', onClick: () => { tab = v; render(); } }, l))),
+        h('button', { class: 'btn primary sm', type: 'button', onClick: () => addReviewModal({ date: todayStr(), fac }) }, '+ Thêm học sinh ôn / bù bài')),
       tab === 'list' ? listTab() : tab === 'paste' ? pasteTab() : tkbTab());
   }
   render();
   return () => unsubs.forEach((u) => u());
+}
+
+
+/* ================= Thêm học sinh ôn / bù bài thủ công (danh sách thay đổi hàng tuần) ================= */
+export function addReviewModal({ date, fac, onDone }) {
+  const classes = sortBy(classesOf(fac), 'code');
+  if (!classes.length) { toast('Chưa có danh sách lớp. Vào Học sinh > Thời khóa biểu để nạp.', 'err'); return; }
+  const clsSel = h('select', null, h('option', { value: '' }, '— Chọn lớp —'), classes.map((c) => h('option', { value: c.id }, `${c.code} · ${c.teacher || ''}`)));
+  const names = h('textarea', { rows: 3, placeholder: 'Tên học sinh, ngăn cách bằng dấu phẩy hoặc xuống dòng' });
+  const known = h('div', { class: 'checks' });
+  const kind = h('select', null, h('option', { value: 'on' }, 'Ôn bài'), h('option', { value: 'bu' }, 'Bù bài'));
+  const content = h('textarea', { rows: 2, placeholder: 'Nội dung cần ôn / bù (không bắt buộc)' });
+  const mode = h('select', null, h('option', { value: 'dates' }, 'Theo ngày cụ thể (chọn các buổi học)'), h('option', { value: 'track' }, 'Theo dõi liên tục đến khi bấm "Kết thúc theo dõi"'));
+  const datesBox = h('div', { class: 'checks' });
+  let pickedKnown = [];
+  let dateBoxes = [];
+  const drawDates = () => {
+    const cls = classes.find((c) => c.id === clsSel.value);
+    dateBoxes = [];
+    let d = addDays(date, -1);
+    const list = [];
+    for (let i = 0; i < 8; i++) { d = nextClassDate(cls, d); list.push(d); }
+    mount(datesBox, list.map((x, i) => { const el = h('input', { type: 'checkbox', checked: i === 0 }); dateBoxes.push({ x, el }); return h('label', { class: 'check' }, el, `${DOW_NAMES[dow(x)]} ${fmtDM(x)}`); }));
+    pickedKnown = [];
+    const sts = (S.students || []).filter((s) => s.classId === clsSel.value && s.watch !== false);
+    mount(known, sts.length ? sts.map((s) => { const el = h('input', { type: 'checkbox' }); pickedKnown.push({ s, el }); return h('label', { class: 'check' }, el, s.name); }) : null);
+  };
+  const syncMode = () => datesBox.parentElement && datesBox.parentElement.classList.toggle('hidden', mode.value === 'track');
+  clsSel.addEventListener('change', drawDates); mode.addEventListener('change', syncMode);
+  modal({
+    title: 'Thêm học sinh ôn / bù bài', wide: true,
+    body: h('div', { class: 'stack' },
+      h('label', null, 'Lớp', clsSel), known, h('label', null, 'Học sinh', names),
+      h('div', { class: 'grid2' }, h('label', null, 'Loại', kind), h('label', null, 'Cách theo dõi', mode)),
+      h('label', null, 'Nội dung', content),
+      h('div', null, h('div', { class: 'lab' }, 'Các buổi học cần ôn / bù'), datesBox)),
+    actions: [{ label: 'Hủy', kind: 'ghost' }, {
+      label: 'Thêm', kind: 'primary',
+      onClick: async () => {
+        const cls = classes.find((c) => c.id === clsSel.value);
+        if (!cls) { toast('Hãy chọn lớp', 'err'); return false; }
+        const list = [...pickedKnown.filter((x) => x.el.checked).map((x) => x.s.name), ...names.value.split(/[,;\n]+/).map((x) => x.trim()).filter(Boolean)];
+        if (!list.length) { toast('Hãy nhập hoặc chọn học sinh', 'err'); return false; }
+        const dates = mode.value === 'track' ? [date] : dateBoxes.filter((x) => x.el.checked).map((x) => x.x);
+        if (!dates.length) { toast('Hãy chọn ít nhất một buổi học', 'err'); return false; }
+        const items = dates.map((d) => ({ date: d, cls, students: [...new Set(list)].map((n) => ({ name: n, tag: '' })), content: content.value.trim(), kind: kind.value, track: mode.value === 'track' }));
+        try {
+          const ex = await S.db.getAll('reviews', [['facility', '==', fac], ['date', 'in', dates]]);
+          const { added, skipped } = await importReviews(items, fac, new Set(ex.map((r) => r.id)));
+          toast(`Đã thêm ${added} mục${skipped ? `, bỏ qua ${skipped} mục đã có` : ''}`);
+          if (onDone) onDone();
+        } catch (e) { toast(e.message || 'Có lỗi', 'err'); return false; }
+      },
+    }],
+  });
 }

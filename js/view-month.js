@@ -1,5 +1,5 @@
 import { h, mount, modal, makeRedraw, fmtDM, sortBy, uniq } from './ui.js';
-import { S, scoped, facName, GROUP_LABEL, isOverdue, taskKey } from './core.js';
+import { S, scoped, isCM, facName, GROUP_LABEL, isOverdue, taskKey } from './core.js';
 import { taskModal } from './taskui.js';
 import { todayStr, addMonths, daysInMonth, pad, dow, DOW_NAMES, monthOf, isOpen } from './rules.js';
 
@@ -9,7 +9,7 @@ export function viewMonth(root, params) {
   const fac = S.facility;
   const ym = params.m || monthOf(todayStr());
   let tasks = []; let reports = [];
-  let groupFilter = 'all'; let onlyOpen = false; let q = '';
+  let groupFilter = 'all'; let onlyOpen = false; let q = ''; let who = '';
   const unsubs = [];
   const redraw = makeRedraw(root, render);
   unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['month', '==', ym]]), (r) => { tasks = r; redraw(); }));
@@ -24,6 +24,7 @@ export function viewMonth(root, params) {
     const rowsMap = new Map();
     for (const t of tasks) {
       if (groupFilter !== 'all' && t.group !== groupFilter && t.group !== 'both') continue;
+      if (who && t.assignee !== who) continue;
       if (q && !(t.title + ' ' + (t.extra || '')).toLowerCase().includes(q.toLowerCase())) continue;
       const key = t.tplId || 'x:' + t.title;
       if (!rowsMap.has(key)) rowsMap.set(key, { key, title: t.title, group: t.group, order: t.order || 0, byDay: {} });
@@ -76,11 +77,13 @@ export function viewMonth(root, params) {
         days.map((d) => {
           const ts = r.byDay[d];
           if (!ts) return h('td', { class: 'cell empty' });
-          const t = sortBy(ts, taskKey)[0];
+          const sorted = sortBy(ts, taskKey);
+          // nhiều việc cùng ngày (theo người / theo ca): hiện việc đang thiếu trước
+          const t = sorted.find((x) => isOverdue(x)) || sorted.find((x) => isOpen(x)) || sorted[0];
           const od = isOverdue(t);
           return h('td', {
             class: `cell s-${t.status}${od ? ' late' : ''}${t.flagged ? ' flag' : ''}`, tabindex: 0, role: 'button',
-            title: `${t.assigneeName || 'Chưa có người nhận'}${t.extra ? ' · ' + t.extra : ''}`,
+            title: ts.length > 1 ? ts.map((x) => `${x.assigneeName || 'Chưa có người'}: ${SYMBOL[x.status] || ''}${x.shift ? ' (ca ' + x.shift + ')' : ''}`).join('\n') : `${t.assigneeName || 'Chưa có người nhận'}${t.extra ? ' · ' + t.extra : ''}`,
             onClick: () => taskModal(t), onKeydown: (e) => { if (e.key === 'Enter') taskModal(t); },
           }, od && t.status === 'todo' ? '✗' : SYMBOL[t.status]);
         }),
@@ -99,6 +102,7 @@ export function viewMonth(root, params) {
       h('div', { class: 'toolbar' },
         h('div', { class: 'seg' }, [['all', 'Tất cả'], ['ta', 'Trợ giảng'], ['cm', 'Chuyên môn']].map(([v, l]) =>
           h('button', { class: 'seg-b' + (groupFilter === v ? ' on' : ''), type: 'button', onClick: () => { groupFilter = v; render(); } }, l))),
+        isCM() && h('select', { class: 'sel-sm', 'aria-label': 'Lọc theo người', onChange: (e) => { who = e.target.value; render(); } }, h('option', { value: '' }, 'Mọi người'), sortBy(S.users.filter((u) => !u.disabled && u.role !== 'admin'), 'name').map((u) => h('option', { value: u.id, selected: u.id === who }, u.name))),
         h('input', { type: 'search', placeholder: 'Tìm công việc…', value: q, class: 'search', onInput: (e) => { q = e.target.value; redraw(); } }),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: onlyOpen, onChange: (e) => { onlyOpen = e.target.checked; render(); } }), 'Chỉ việc chưa xong')),
       h('div', { class: 'legend' }, [['✓', 'Đã xong'], ['·', 'Chưa làm'], ['✗', 'Quá hạn chưa làm'], ['◔', 'Chờ duyệt'], ['!', 'Cần sửa'], ['✉', 'Chờ gửi CSKH'], ['◐', 'Làm dở, đã chuyển ngày'], ['–', 'Không áp dụng']].map(([s, l]) => h('span', null, h('i', null, s), l))),
