@@ -40,10 +40,34 @@ export async function applyCmAssignment() {
   toast(`Đã phân công xong: xóa ${del.length} việc chung chưa làm, tạo ${add.length} việc theo người`);
 }
 
+/** Sửa các việc cũ bị gắn nhầm mẫu (do mã mẫu bị đánh số lại): đối chiếu theo tên việc, chuyển về đúng mẫu. */
+export async function fixStaleTemplateLinks() {
+  const ids = S.templates.map((t) => t.id).filter((id) => Number(id.slice(1)) >= 81);
+  const found = [];
+  for (let i = 0; i < ids.length; i += 10) found.push(...(await S.db.getAll('tasks', [['tplId', 'in', ids.slice(i, i + 10)]])));
+  const byName = new Map(S.templates.map((t) => [t.name, t]));
+  const moves = []; const keep = new Set();
+  for (const t of found) {
+    const want = byName.get(String(t.title).replace(/ \(ca (sáng|chiều|tối)\)$/, ''));
+    if (want && want.id !== t.tplId) moves.push({ t, want }); else keep.add(t.id);
+  }
+  const dels = []; const sets = []; let relinked = 0;
+  for (const { t, want } of moves) {
+    const nid = t.id.includes(`_${t.tplId}`) ? t.id.replace(`_${t.tplId}`, `_${want.id}`) : t.id;
+    const { id: _o, ...rest } = t;
+    if (nid === t.id || keep.has(nid)) { sets.push({ op: 'update', col: 'tasks', id: t.id, data: { tplId: want.id, order: want.order || 0 } }); relinked++; continue; }
+    dels.push({ op: 'delete', col: 'tasks', id: t.id });
+    sets.push({ op: 'set', col: 'tasks', id: nid, data: { ...rest, tplId: want.id, order: want.order || 0 } });
+  }
+  if (dels.length || sets.length) await S.db.batch([...dels, ...sets]);
+  return { checked: found.length, moved: moves.length, relinked };
+}
+
 /* ====================== MẪU VIỆC ====================== */
 export function ruleText(r) {
   if (!r) return '';
   if (r.type === 'daily') return 'Hàng ngày';
+  if (r.type === 'biweekly') return `2 tuần 1 lần, ${(r.dow || []).map((d) => DOW_NAMES[d]).join(', ')} (từ ${r.anchor ? r.anchor.split('-').reverse().join('/') : '?'})`;
   if (r.type === 'weekly') return 'Thứ: ' + (r.dow || []).map((d) => DOW_NAMES[d]).join(', ');
   if (r.type === 'monthly') return 'Ngày ' + (r.days || []).join(', ') + (r.months && r.months.length ? ` (tháng ${r.months.join(', ')})` : '');
   if (r.type === 'weekstart') return 'Đầu mỗi tuần';
@@ -90,15 +114,17 @@ function templateModal(tpl) {
   const name = h('input', { type: 'text', value: t.name });
   const group = h('select', null, ['ta', 'cm', 'both'].map((g) => h('option', { value: g }, GROUP_LABEL[g])));
   group.value = t.group;
-  const rtype = h('select', null, [['daily', 'Hàng ngày'], ['weekly', 'Theo thứ trong tuần'], ['monthly', 'Theo ngày trong tháng'], ['weekstart', 'Đầu mỗi tuần'], ['none', 'Không tự sinh (chỉ tạo khi cần)']].map(([v, l]) => h('option', { value: v }, l)));
+  const rtype = h('select', null, [['daily', 'Hàng ngày'], ['weekly', 'Theo thứ trong tuần'], ['biweekly', '2 tuần 1 lần (chọn thứ + ngày bắt đầu)'], ['monthly', 'Theo ngày trong tháng'], ['weekstart', 'Đầu mỗi tuần'], ['none', 'Không tự sinh (chỉ tạo khi cần)']].map(([v, l]) => h('option', { value: v }, l)));
   rtype.value = t.rule.type || 'none';
   const dows = [1, 2, 3, 4, 5, 6, 7].map((d) => ({ d, el: h('input', { type: 'checkbox', checked: (t.rule.dow || []).includes(d) }) }));
   const dowWrap = h('div', { class: 'checks' }, dows.map((x) => h('label', { class: 'check' }, x.el, DOW_NAMES[x.d])));
   const days = h('input', { type: 'text', placeholder: 'Ví dụ: 5, 20', value: (t.rule.days || []).join(', ') });
   const months = h('input', { type: 'text', placeholder: 'Để trống = mọi tháng; ví dụ: 1, 8', value: (t.rule.months || []).join(', ') });
-  const wDow = h('div', { class: 'stack' }, h('div', { class: 'lab' }, 'Chọn thứ'), dowWrap);
+  const anchor = h('input', { type: 'date', value: t.rule.anchor || '' });
+  const wAnchor = h('label', null, 'Tuần đầu tiên làm việc này (chọn một ngày trong tuần đó, các tuần sau cách 2 tuần)', anchor);
+  const wDow = h('div', { class: 'stack' }, h('div', { class: 'lab' }, 'Chọn thứ'), dowWrap, wAnchor);
   const wDay = h('div', { class: 'stack' }, h('label', null, 'Ngày trong tháng', days), h('label', null, 'Chỉ các tháng', months));
-  const sync = () => { wDow.classList.toggle('hidden', rtype.value !== 'weekly'); wDay.classList.toggle('hidden', rtype.value !== 'monthly'); };
+  const sync = () => { wDow.classList.toggle('hidden', rtype.value !== 'weekly' && rtype.value !== 'biweekly'); wAnchor.classList.toggle('hidden', rtype.value !== 'biweekly'); wDay.classList.toggle('hidden', rtype.value !== 'monthly'); };
   rtype.addEventListener('change', sync); sync();
   const time = h('input', { type: 'text', placeholder: 'Ví dụ: Sáng 7h30; chiều tối 16h30', value: t.time || '' });
   const content = h('textarea', { rows: 5, placeholder: 'Hướng dẫn chi tiết cách làm', value: t.content || '' });
@@ -108,6 +134,8 @@ function templateModal(tpl) {
   const keySel = h('select', null, h('option', { value: '' }, 'Không (dùng chung cho mọi ngày)'),
     Object.entries(S.scheduleKeys).map(([k, v]) => h('option', { value: k }, 'Theo lịch lớp: ' + v.label)));
   keySel.value = t.scheduleKey || '';
+  const sch = scheduleBox(() => keySel.value);
+  keySel.addEventListener('change', () => sch.draw());
   const cms = S.users.filter((u) => (u.role === 'cm' || u.role === 'manager') && !u.disabled);
   const asg = cms.map((u) => ({ u, el: h('input', { type: 'checkbox', checked: (t.assignees || []).includes(u.id) }) }));
   const wk = h('input', { type: 'checkbox', checked: t.weekendShifts == null ? (t.group === 'cm' && t.rule.type === 'daily' && !t.scheduleKey) : !!t.weekendShifts });
@@ -124,7 +152,7 @@ function templateModal(tpl) {
       h('label', null, 'Tên công việc *', name),
       h('div', { class: 'grid2' }, h('label', null, 'Đội thực hiện', group), h('label', null, 'Giờ làm', time)),
       h('label', null, 'Kiểu lặp', rtype), wDow, wDay,
-      h('label', null, 'Gắn với lịch lớp (danh sách lớp hiện kèm trong việc)', keySel),
+      h('label', null, 'Gắn với lịch lớp (danh sách lớp hiện kèm trong việc)', keySel), sch.box,
       asgBox,
       h('div', { class: 'checks' }, h('label', { class: 'check' }, wk, 'Thứ 7 / Chủ nhật: lặp lại theo ca (sáng, chiều, tối) cho các lớp của từng ca')),
       h('label', null, 'Hướng dẫn chi tiết', content),
@@ -135,7 +163,8 @@ function templateModal(tpl) {
       onClick: async () => {
         if (!name.value.trim()) { toast('Hãy nhập tên công việc', 'err'); return false; }
         const rule = { type: rtype.value };
-        if (rule.type === 'weekly') rule.dow = dows.filter((x) => x.el.checked).map((x) => x.d);
+        if (rule.type === 'weekly' || rule.type === 'biweekly') rule.dow = dows.filter((x) => x.el.checked).map((x) => x.d);
+        if (rule.type === 'biweekly') { rule.anchor = anchor.value; if (!rule.anchor) { toast('Hãy chọn tuần bắt đầu cho việc 2 tuần 1 lần', 'err'); return false; } }
         if (rule.type === 'monthly') {
           rule.days = days.value.split(/[,;\s]+/).map(Number).filter((n) => n >= 1 && n <= 31);
           const ms = months.value.split(/[,;\s]+/).map(Number).filter((n) => n >= 1 && n <= 12);
@@ -202,6 +231,43 @@ export function viewTemplates(root) {
 }
 
 /* ====================== LỊCH LỚP ====================== */
+function scheduleLabels(k) {
+  return k.mode === 'monthday' ? Array.from({ length: 31 }, (_, i) => [String(i + 1), `Ngày ${i + 1}`])
+    : k.mode === 'weekidx' ? [1, 2, 3, 4, 5].map((i) => [String(i), `Tuần ${i} của tháng`])
+      : DOW_NAMES.slice(1).map((n, i) => [String(i + 1), n]);
+}
+async function saveSchedule(fac, key, draft) {
+  const clean = {}; for (const [a, b] of Object.entries(draft)) if (String(b).trim()) clean[a] = String(b).trim();
+  const data = JSON.parse(JSON.stringify(S.schedules || {})); data[fac] = data[fac] || {}; data[fac][key] = clean;
+  await S.db.set('meta', 'schedules', { data, keys: S.scheduleKeys });
+  toast('Đã lưu lịch lớp.');
+  if (await confirmDlg('Áp dụng lịch mới vào các việc đã tạo từ hôm nay trở đi? (Sửa danh sách lớp, thêm ngày mới, bỏ ngày không còn việc.)', { okLabel: 'Áp dụng', title: 'Lịch lớp đã đổi' })) {
+    const r = await syncSchedule(fac, key, data);
+    toast(`Đã cập nhật ${r.changed} việc, thêm ${r.added}, bỏ ${r.removed}`);
+  }
+}
+/** Bảng sửa lịch lớp ngay trong màn hình sửa mẫu việc: chọn cơ sở, sửa từng tuần / thứ / ngày. */
+function scheduleBox(getKey) {
+  const box = h('div', { class: 'stack sch-box' });
+  let fac = S.facility; let draft = {};
+  const draw = () => {
+    const key = getKey();
+    box.classList.toggle('hidden', !key);
+    if (!key) return;
+    draft = { ...((S.schedules[fac] && S.schedules[fac][key]) || {}) };
+    const k = S.scheduleKeys[key] || { mode: 'weekday' };
+    mount(box,
+      h('div', { class: 'lab' }, 'Nội dung từng ' + (k.mode === 'weekidx' ? 'tuần trong tháng' : k.mode === 'monthday' ? 'ngày trong tháng' : 'thứ') + ' (ví dụ tuần 1: khối DORY3, tuần 2: khối DORY4)'),
+      h('select', { onChange: (e) => { fac = e.target.value; draw(); } }, S.facilities.map((f) => h('option', { value: f.id, selected: f.id === fac }, f.name))),
+      scheduleLabels(k).map(([id, lab]) => h('label', { class: 'sch-row' }, h('span', null, lab),
+        h('input', { type: 'text', value: draft[id] || '', placeholder: 'Để trống nếu không có việc', onInput: (e) => { draft[id] = e.target.value; } }))),
+      h('div', { class: 'row-actions' }, h('button', { class: 'btn primary sm', type: 'button', onClick: () => saveSchedule(fac, getKey(), draft).catch((e) => toast(e.message, 'err')) }, 'Lưu nội dung này'),
+        h('span', { class: 'hint' }, 'Lưu riêng cho cơ sở đang chọn. Đổi cơ sở để sửa cơ sở kia.')));
+  };
+  draw();
+  return { box, draw };
+}
+
 export function viewSchedules(root) {
   let fac = S.facility; let key = Object.keys(S.scheduleKeys)[0];
   let draft = null;
@@ -311,6 +377,7 @@ export function viewUsers(root) {
           h('p', { class: 'muted' }, isFirebase ? 'Đang kết nối Firebase thật.' : 'Đang chạy ở chế độ chạy thử: dữ liệu chỉ nằm trong trình duyệt này.'),
           h('div', { class: 'row-actions' },
             h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Gán lớp phụ trách cho Hồng, Liễu, Ruby, Mai Phương và giao việc chuyên môn theo file phân công? Việc chung chưa làm từ hôm nay sẽ được thay bằng việc theo từng người. Việc đã làm giữ nguyên.', { okLabel: 'Áp phân công' })) await applyCmAssignment(); } }, 'Áp phân công chuyên môn theo file'),
+            h('button', { class: 'btn ghost', type: 'button', title: 'Dùng khi hướng dẫn trong thẻ việc bị lệch sang việc khác', onClick: async () => { if (await confirmDlg('Rà các việc cũ của trợ giảng bị gắn nhầm hướng dẫn / mẫu việc khác và sửa lại cho đúng theo tên việc? (Chỉ đọc các việc thuộc mẫu số 81 trở lên.)', { okLabel: 'Sửa liên kết' })) { try { const r = await fixStaleTemplateLinks(); toast(`Đã rà ${r.checked} việc, sửa ${r.moved} việc`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } } } }, 'Sửa liên kết việc cũ bị lệch hướng dẫn'),
             h('button', { class: 'btn ghost', type: 'button', onClick: async () => { if (await confirmDlg('Nạp lại toàn bộ mẫu việc, chuỗi việc và lịch lớp từ bảng gốc? Các chỉnh sửa mẫu bạn đã làm sẽ bị ghi đè.', { okLabel: 'Nạp lại', danger: true })) { await S.db.loadSeed(); toast('Đã nạp lại mẫu việc'); } } }, 'Nạp lại mẫu việc từ bảng gốc'),
             !isFirebase && h('button', { class: 'btn ghost danger', type: 'button', onClick: async () => { if (await confirmDlg('Xóa toàn bộ dữ liệu chạy thử và bắt đầu lại?', { okLabel: 'Xóa hết', danger: true })) S.db.resetDemo(); } }, 'Xóa dữ liệu chạy thử'))))) : null);
   }

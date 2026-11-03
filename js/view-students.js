@@ -18,7 +18,7 @@ export function reviewSection(list, date, redraw) {
   }
   const done = list.filter((r) => r.status === 'done').length;
   const run = async (fn) => { try { await fn(); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } if (redraw) redraw(); };
-  const cards = [...byClass.entries()].map(([cid, rows]) => {
+  const cards = [...byClass.entries()].map(([cid, rows], ci) => {
     const cls = (S.classes || []).find((c) => c.id === cid);
     const slots = slotOn(cls, date);
     // chỉ hiện nội dung chung ở đầu lớp khi mọi học sinh trong lớp có cùng một nội dung
@@ -49,7 +49,7 @@ export function reviewSection(list, date, redraw) {
               const d = await reviewMove(r, date, 'absent', note.value || 'Vắng'); toast(`${r.studentName} vắng, chuyển sang ${fmtDM(d)}`);
             }) }, 'Vắng')));
     });
-    return h('div', { class: 'rv-card' },
+    return h('div', { class: 'rv-card band-' + (ci % 2 ? 'b' : 'a') },
       h('div', { class: 'rv-head' }, h('b', null, cls ? cls.code : rows[0].classCode), cls && h('span', { class: 'muted' }, ` · ${cls.teacher}`),
         slots.length ? h('span', { class: 'chip' }, slots.map((s) => `${s.start}-${s.end} P.${s.room}`).join(', ')) : null),
       shared ? h('div', { class: 'rv-content' }, shared) : null, studentRows);
@@ -120,6 +120,7 @@ export function viewStudents(root, params) {
     const cls = classesOf(fac);
     let rows = students.filter((s) => (!onlyWatch || s.watch) && (!clsFilter || s.classId === clsFilter) && (!q || s.name.toLowerCase().includes(q.toLowerCase())));
     rows = sortBy(rows, 'classCode', 'name');
+    let band = 1;
     const reportBtn = h('button', { class: 'btn', type: 'button', disabled: !rows.length, onClick: async () => {
       const groups = new Map();
       for (const s of rows) { if (!groups.has(s.classId)) groups.set(s.classId, []); groups.get(s.classId).push(s); }
@@ -142,7 +143,7 @@ export function viewStudents(root, params) {
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: onlyWatch, onChange: (e) => { onlyWatch = e.target.checked; render(); } }), 'Chỉ học sinh đang theo dõi'), reportBtn),
       rows.length ? h('div', { class: 'matrix-wrap' }, h('table', { class: 'tbl' },
         h('thead', null, h('tr', null, ['Học sinh', 'Lớp', 'Đã ôn', 'Đang chờ', 'Lần lùi buổi', ''].map((t) => h('th', null, t)))),
-        h('tbody', null, rows.map((s) => { const x = stats(s.id); return h('tr', { class: 'clickable', tabindex: 0, onClick: () => profile(s), onKeydown: (e) => { if (e.key === 'Enter') profile(s); } },
+        h('tbody', null, rows.map((s, i) => { const x = stats(s.id); if (i === 0 || rows[i - 1].classId !== s.classId) band = 1 - band; return h('tr', { class: 'clickable band-' + (band ? 'a' : 'b'), tabindex: 0, onClick: () => profile(s), onKeydown: (e) => { if (e.key === 'Enter') profile(s); } },
           h('td', null, h('b', null, s.name), s.tag ? h('span', { class: 'muted' }, ` (${s.tag})`) : null), h('td', null, s.classCode), h('td', null, x.done), h('td', null, x.pending ? h('span', { class: 'chip warn' }, x.pending) : 0), h('td', null, x.moved), h('td', null, s.watch ? '👁' : '')); }))))
         : h('div', { class: 'empty-state' }, h('h3', null, 'Chưa có học sinh nào'), h('p', null, 'Dán danh sách ôn bài / bù bài ở thẻ bên cạnh, học sinh sẽ tự được thêm vào đây.')));
   }

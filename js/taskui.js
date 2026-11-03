@@ -1,7 +1,7 @@
 // Thẻ công việc dùng chung cho các màn hình
 import { h, modal, toast, confirmDlg, fmtDM } from './ui.js';
 import { S, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, reopen, markNA, moveDate, approve, requestFix,
-  removeTask, saveNote, postpone, unclaim, assignTo, claim, isOverdue } from './core.js';
+  removeTask, tplOf, saveNote, postpone, unclaim, assignTo, claim, isOverdue } from './core.js';
 import { todayStr, addDays } from './rules.js';
 import { linksFor, linkUrl } from './links.js';
 
@@ -130,7 +130,7 @@ export function taskCard(t, o = {}) {
   if (t.desc || t.source !== 'template') {
     // mô tả của việc tạo từ chuỗi hoặc sự kiện
   }
-  const tpl = S.templates.find((x) => x.id === t.tplId);
+  const tpl = tplOf(t);
   const text = t.desc || (tpl && tpl.content) || '';
   if (text) detail.append(h('div', { class: 'desc' }, text));
   if (t.feedback) detail.append(h('div', { class: 'feedback' }, h('b', null, 'Phản hồi: '), t.feedback));

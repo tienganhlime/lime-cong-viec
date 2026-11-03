@@ -207,3 +207,15 @@ label.inline input { width: auto; }
 .chip.warn { background:#fff1cf; color:#8a5a00; } .tbl { width:100%; border-collapse:collapse; } .tbl th, .tbl td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--line,#ddd); } .tbl tr.clickable { cursor:pointer; } .tbl tr.clickable:hover { background:var(--surface-2,#f4f4ef); }
 .rv-who { flex: 1 1 260px; min-width: 220px; } .rv-who .rv-content { margin: 4px 0 0; max-height: 7em; }
 .sel-sm { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, #fff); color: inherit; font: inherit; font-size: 14px; }
+/* dải màu nền nhạt xen kẽ theo lớp */
+.tbl tr.band-a td, .rv-card.band-a { background: rgba(80, 140, 220, .09); }
+.tbl tr.band-b td, .rv-card.band-b { background: rgba(230, 160, 60, .10); }
+/* Checklist tháng: chế độ xem ghi chép chi tiết */
+.matrix .cell.detail { min-width: 190px; max-width: 260px; text-align: left; vertical-align: top; font-size: 12.5px; white-space: normal; padding: 6px 8px; }
+.matrix .dline { padding: 3px 0; border-bottom: 1px dashed var(--line); }
+.matrix .dline:last-child { border-bottom: 0; }
+.matrix .dsym { font-weight: 700; margin-right: 6px; }
+.matrix .dwho { color: var(--muted); }
+.matrix .dnote { margin-top: 2px; line-height: 1.35; word-break: break-word; }
+.sch-box { padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+.sch-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: center; }

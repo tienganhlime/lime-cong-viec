@@ -26,6 +26,11 @@ export function ruleMatches(rule, date) {
       const last = daysInMonth(date.slice(0, 7));
       return (rule.days || []).some((x) => x === d || (x > last && d === last));
     }
+    case 'biweekly': { // 2 tuần 1 lần: các thứ đã chọn, tính từ tuần của ngày bắt đầu
+      if (!(rule.dow || []).includes(dow(date)) || !rule.anchor) return false;
+      const wk = (x) => Math.floor((parseYmd(addDays(x, -(dow(x) - 1))) - 0) / 86400000 / 7 + 0.0001);
+      return (wk(date) - wk(rule.anchor)) % 2 === 0 && date >= rule.anchor;
+    }
     case 'weekstart': return dow(date) === 1 || d === 1; // đầu tuần (thứ 2) hoặc mùng 1
     default: return false;
   }

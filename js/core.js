@@ -123,5 +123,15 @@ export function taskSort(a, b) {
   return (a.time || 'zz').localeCompare(b.time || 'zz') || (a.order || 0) - (b.order || 0) || a.title.localeCompare(b.title);
 }
 
+/** Mẫu việc của một việc. Đối chiếu theo tên để không lấy nhầm hướng dẫn của mẫu khác khi mã mẫu bị đánh số lại. */
+export function tplOf(t) {
+  if (!t.tplId) return null;
+  const title = String(t.title || '').replace(/ \(ca (sáng|chiều|tối)\)$/, '');
+  const byId = S.templates.find((x) => x.id === t.tplId);
+  if (byId && byId.name === title) return byId;
+  const byName = S.templates.find((x) => x.name === title);
+  if (byName) return byName;
+  return byId && Number(String(byId.id).slice(1)) < 81 ? byId : null;
+}
 export function isOverdue(t) { return isOpen(t) && t.date < todayStr(); }
 export function tomorrow() { return addDays(todayStr(), 1); }

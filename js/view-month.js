@@ -9,7 +9,7 @@ export function viewMonth(root, params) {
   const fac = S.facility;
   const ym = params.m || monthOf(todayStr());
   let tasks = []; let reports = [];
-  let groupFilter = 'all'; let onlyOpen = false; let q = ''; let who = '';
+  let groupFilter = 'all'; let onlyOpen = false; let q = ''; let who = ''; let detail = false;
   const unsubs = [];
   const redraw = makeRedraw(root, render);
   unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['month', '==', ym]]), (r) => { tasks = r; redraw(); }));
@@ -33,6 +33,7 @@ export function viewMonth(root, params) {
     }
     let rows = [...rowsMap.values()];
     if (onlyOpen) rows = rows.filter((r) => Object.values(r.byDay).flat().some((t) => isOpen(t) || t.status === 'review' || t.status === 'approved'));
+    const shown = detail ? days.filter((d) => rows.some((r) => r.byDay[d])) : days; // chế độ chi tiết: chỉ hiện ngày có việc
     const gRank = { ta: 0, cm: 1, both: 2 };
     rows = sortBy(rows, (r) => gRank[r.group] ?? 3, 'order', 'title');
 
@@ -44,12 +45,12 @@ export function viewMonth(root, params) {
     const missing = days.filter((d) => needRep(d) && !repByDay[d]).length;
 
     const head = h('tr', null, h('th', { class: 'stick' }, 'Công việc'),
-      days.map((d) => h('th', { class: 'dcol' + (d === today ? ' today' : '') + (dow(d) >= 6 ? ' wkend' : ''), title: `${DOW_NAMES[dow(d)]} ${fmtDM(d)}` },
+      shown.map((d) => h('th', { class: 'dcol' + (d === today ? ' today' : '') + (dow(d) >= 6 ? ' wkend' : ''), title: `${DOW_NAMES[dow(d)]} ${fmtDM(d)}` },
         h('a', { href: `#/today?date=${d}` }, Number(d.slice(8))), h('small', null, dow(d) === 7 ? 'CN' : 'T' + (dow(d) + 1)))),
       h('th', { class: 'sumcol' }, 'Xong'));
 
     const repRow = h('tr', { class: 'rep-line' }, h('td', { class: 'stick' }, 'Báo cáo cuối ca'),
-      days.map((d) => {
+      shown.map((d) => {
         const has = repByDay[d];
         const cls = has ? 'ok' : needRep(d) ? 'miss' : '';
         return h('td', {
@@ -68,24 +69,29 @@ export function viewMonth(root, params) {
     for (const r of rows) {
       if (r.group !== lastG) {
         lastG = r.group;
-        bodyRows.push(h('tr', { class: 'grp' }, h('td', { colspan: n + 2 }, 'Việc của ' + (GROUP_LABEL[r.group] || r.group))));
+        bodyRows.push(h('tr', { class: 'grp' }, h('td', { colspan: shown.length + 2 }, 'Việc của ' + (GROUP_LABEL[r.group] || r.group))));
       }
       const all = Object.values(r.byDay).flat();
       const doneN = all.filter((t) => t.status === 'done' || t.status === 'na' || t.status === 'partial').length;
       bodyRows.push(h('tr', null,
         h('td', { class: 'stick rowname', title: r.title }, r.title),
-        days.map((d) => {
+        shown.map((d) => {
           const ts = r.byDay[d];
           if (!ts) return h('td', { class: 'cell empty' });
           const sorted = sortBy(ts, taskKey);
           // nhiều việc cùng ngày (theo người / theo ca): hiện việc đang thiếu trước
           const t = sorted.find((x) => isOverdue(x)) || sorted.find((x) => isOpen(x)) || sorted[0];
           const od = isOverdue(t);
+          const noteOf = (x) => [x.note, x.feedback && 'CM: ' + x.feedback].filter(Boolean).join(' · ');
+          const lines = detail ? sorted.map((x) => h('div', { class: 'dline s-' + x.status },
+            h('span', { class: 'dsym' }, (isOverdue(x) && x.status === 'todo') ? '✗' : SYMBOL[x.status]),
+            h('span', { class: 'dwho' }, [x.assigneeName || x.doneByName, x.shift && `ca ${x.shift}`].filter(Boolean).join(' · ')),
+            noteOf(x) ? h('div', { class: 'dnote' }, noteOf(x)) : (x.extra ? h('div', { class: 'dnote muted' }, x.extra) : null))) : null;
           return h('td', {
-            class: `cell s-${t.status}${od ? ' late' : ''}${t.flagged ? ' flag' : ''}`, tabindex: 0, role: 'button',
+            class: `cell s-${t.status}${od ? ' late' : ''}${t.flagged ? ' flag' : ''}${detail ? ' detail' : ''}`, tabindex: 0, role: 'button',
             title: ts.length > 1 ? ts.map((x) => `${x.assigneeName || 'Chưa có người'}: ${SYMBOL[x.status] || ''}${x.shift ? ' (ca ' + x.shift + ')' : ''}`).join('\n') : `${t.assigneeName || 'Chưa có người nhận'}${t.extra ? ' · ' + t.extra : ''}`,
             onClick: () => taskModal(t), onKeydown: (e) => { if (e.key === 'Enter') taskModal(t); },
-          }, od && t.status === 'todo' ? '✗' : SYMBOL[t.status]);
+          }, detail ? lines : (od && t.status === 'todo' ? '✗' : SYMBOL[t.status]));
         }),
         h('td', { class: 'sumcol' }, `${doneN}/${all.length}`)));
     }
@@ -104,6 +110,7 @@ export function viewMonth(root, params) {
           h('button', { class: 'seg-b' + (groupFilter === v ? ' on' : ''), type: 'button', onClick: () => { groupFilter = v; render(); } }, l))),
         isCM() && h('select', { class: 'sel-sm', 'aria-label': 'Lọc theo người', onChange: (e) => { who = e.target.value; render(); } }, h('option', { value: '' }, 'Mọi người'), sortBy(S.users.filter((u) => !u.disabled && u.role !== 'admin'), 'name').map((u) => h('option', { value: u.id, selected: u.id === who }, u.name))),
         h('input', { type: 'search', placeholder: 'Tìm công việc…', value: q, class: 'search', onInput: (e) => { q = e.target.value; redraw(); } }),
+        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: detail, onChange: (e) => { detail = e.target.checked; render(); } }), 'Xem ghi chép chi tiết'),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: onlyOpen, onChange: (e) => { onlyOpen = e.target.checked; render(); } }), 'Chỉ việc chưa xong')),
       h('div', { class: 'legend' }, [['✓', 'Đã xong'], ['·', 'Chưa làm'], ['✗', 'Quá hạn chưa làm'], ['◔', 'Chờ duyệt'], ['!', 'Cần sửa'], ['✉', 'Chờ gửi CSKH'], ['◐', 'Làm dở, đã chuyển ngày'], ['–', 'Không áp dụng']].map(([s, l]) => h('span', null, h('i', null, s), l))),
       tasks.length ? h('div', { class: 'matrix-wrap' }, h('table', { class: 'matrix' }, h('thead', null, head), h('tbody', null, repRow, bodyRows)))
