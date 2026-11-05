@@ -10,6 +10,8 @@ export const addMonths = (ym, n) => { const [y, m] = ym.split('-').map(Number); 
 export const todayStr = () => ymd(new Date());
 export const DOW_NAMES = ['', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 
+export const ROTATE_ANCHOR = '2026-11-02';
+export const daysBetween = (a, b) => Math.round((parseYmd(b) - parseYmd(a)) / 86400000);
 export const SHIFTS = ['sáng', 'chiều', 'tối'];
 const SHIFT_ID = { sáng: 's', chiều: 'c', tối: 't' };
 export const shiftOf = (start) => { const h = Number(String(start).split(':')[0]); return h < 12 ? 'sáng' : h < 17 ? 'chiều' : 'tối'; };
@@ -56,18 +58,37 @@ export function scheduleText(tpl, fac, date, schedules) {
   return { skip: false, text: v };
 }
 
+/** Các thứ (1..7) có lớp học của một cơ sở. Trả về null nếu chưa có dữ liệu lớp (coi như ngày nào cũng làm việc). */
+export function workDows(classes, fac) {
+  const set = new Set();
+  for (const c of classes || []) if (c.facility === fac) for (const s of c.slots || []) set.add(s.dow);
+  return set.size ? set : null;
+}
+export const isWorkDay = (date, set) => !set || set.has(dow(date));
+/** Ngày làm việc kế tiếp (kể cả chính ngày đó nếu có lớp). */
+export function nextWorkDay(date, set) {
+  let d = date;
+  for (let i = 0; i < 8; i++) { if (isWorkDay(d, set)) return d; d = addDays(d, 1); }
+  return date;
+}
+
 export function generateMonth({ templates, schedules, facilities, ym, existingIds, by, cutoff, users = [], classes = [] }) {
   const out = [];
   const n = daysInMonth(ym);
   for (const fac of facilities) {
+    const W = workDows(classes, fac);
+    const seen = new Set();
     for (let d = 1; d <= n; d++) {
-      const date = `${ym}-${pad(d)}`;
+      const baseDate = `${ym}-${pad(d)}`;
       for (const t of templates) {
         if (!t.auto || !t.rule || t.rule.type === 'none') continue;
         if (t.facilities && !t.facilities.includes(fac)) continue;
-        if (!ruleMatches(t.rule, date)) continue;
-        const sc = scheduleText(t, fac, date, schedules);
+        if (!ruleMatches(t.rule, baseDate)) continue;
+        const sc = scheduleText(t, fac, baseDate, schedules);
         if (sc.skip) continue;
+        // Cơ sở không có lớp ngày hôm đó thì không có ca làm việc: việc hàng ngày bỏ qua, việc khác dời sang ngày có lớp kế tiếp
+        let date = baseDate;
+        if (!isWorkDay(baseDate, W)) { if (t.rule.type === 'daily') continue; date = nextWorkDay(baseDate, W); }
         if (cutoff && date < cutoff) continue; // ngày đã qua trước khi tạo checklist: không tạo (đỡ ghi dữ liệu thừa)
         // Thứ 7 / CN có nhiều ca (sáng/chiều/tối): việc hàng ngày lặp lại theo ca, mỗi ca ghi các lớp của ca đó
         const wantShift = t.weekendShifts === true || (t.weekendShifts == null && t.group === 'cm' && t.rule.type === 'daily' && !t.scheduleKey);
@@ -82,19 +103,33 @@ export function generateMonth({ templates, schedules, facilities, ym, existingId
           if (ks.length) shifts = ks.map((k) => ({ key: k, codes: byShift[k] }));
         }
         for (const sh of shifts) {
-        // Việc chuyên môn giao theo người: mỗi người một việc riêng (gán sẵn, chuyển sang ngày sau nếu chưa xong)
-        const people = t.group === 'cm' ? (t.assignees || []).map((uid) => users.find((u) => u.id === uid)).filter((u) => u && !u.disabled && (!u.facilities || !u.facilities.length || u.facilities.includes(fac))) : [];
+        // Việc chuyên môn giao theo người; hành chính thì mỗi cơ sở một người (assigneesByFac)
+        const ids = (t.assigneesByFac && t.assigneesByFac[fac]) || t.assignees || [];
+        const people = t.group === 'cm' ? ids.map((uid) => users.find((u) => u.id === uid)).filter((u) => u && !u.disabled && (!u.cmFacilities || !u.cmFacilities.length || u.cmFacilities.includes(fac))) : [];
         const targets = people.length ? people : [null];
+        const facCodes = new Set(classes.filter((c) => c.facility === fac).map((c) => c.code));
         for (const u of targets) {
           const id = (u ? `${fac}_${date}_${t.id}_${u.id}` : `${fac}_${date}_${t.id}`) + (sh ? `_${SHIFT_ID[sh.key]}` : '');
-          if (existingIds && existingIds.has(id)) continue;
-          let mine = u && t.perClass && u.classCodes && u.classCodes.length ? u.classCodes : [];
-          if (sh) { const inShift = (mine.length ? mine.filter((c) => sh.codes.has(c)) : [...sh.codes]); if (u && t.perClass && !inShift.length) continue; mine = inShift; }
-          const own = mine.join(', ');
+          if ((existingIds && existingIds.has(id)) || seen.has(id)) continue;
+          // Lớp ghi kèm: chỉ khi thật sự cần
+          const mine = u && u.classCodes ? u.classCodes.filter((c) => facCodes.has(c)) : [];
+          let own = [];
+          if (t.rotate && u) {
+            // chia đều các lớp phụ trách trong chu kỳ 14 ngày: mỗi ngày kiểm tra 1-2 lớp, hết chu kỳ là đủ lớp
+            const days = []; const start = addDays(ROTATE_ANCHOR, Math.floor(daysBetween(ROTATE_ANCHOR, date) / 14) * 14);
+            for (let i = 0; i < 14; i++) { const x = addDays(start, i); if (isWorkDay(x, W)) days.push(x); }
+            const pos = days.indexOf(date);
+            own = pos < 0 || !days.length ? [] : mine.filter((_, k) => k % days.length === pos);
+            if (!own.length) continue; // hôm nay không phải kiểm tra lớp nào
+          } else if (sh) {
+            own = u ? (mine.length ? mine.filter((c) => sh.codes.has(c)) : []) : [...sh.codes];
+            if (u && mine.length && !own.length) continue; // ca này người đó không có lớp
+          } else if (t.perClass === true && u) own = mine;
+          seen.add(id);
           out.push({
             id,
             data: {
-              facility: fac, date, month: ym, title: sh ? `${t.name} (ca ${sh.key})` : t.name, extra: [sc.text, own].filter(Boolean).join(' · '), time: t.time || '', ...(sh ? { shift: sh.key } : {}),
+              facility: fac, date, month: date.slice(0, 7), title: sh ? `${t.name} (ca ${sh.key})` : t.name, extra: [sc.text, own.join(', ')].filter(Boolean).join(' · '), time: t.time || '', ...(sh ? { shift: sh.key } : {}),
               group: t.group, tplId: t.id, source: 'template', status: 'todo', open: true,
               carry: u ? true : !(t.rule.type === 'daily' && !t.scheduleKey),
               assignee: u ? u.id : null, assigneeName: u ? u.name : '', note: '', feedback: '',

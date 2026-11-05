@@ -1,6 +1,6 @@
 // Trạng thái dùng chung và các thao tác trên công việc
 import { FACILITIES } from './config.js';
-import { isOpen, addDays, todayStr } from './rules.js';
+import { isOpen, addDays, todayStr, workDows, nextWorkDay } from './rules.js';
 
 export const S = {
   db: null, user: null, users: [], templates: [], chains: [], classes: [], students: [], schedules: {}, scheduleKeys: {},
@@ -133,5 +133,10 @@ export function tplOf(t) {
   if (byName) return byName;
   return byId && Number(String(byId.id).slice(1)) < 81 ? byId : null;
 }
-export function isOverdue(t) { return isOpen(t) && t.date < todayStr(); }
+export function isOverdue(t) {
+  if (!isOpen(t) || t.date >= todayStr()) return false;
+  // ngày cơ sở không có lớp: việc làm ở ngày có lớp kế tiếp, chỉ quá hạn khi ngày đó đã qua
+  const W = workDows(S.classes, t.facility);
+  return nextWorkDay(t.date, W) < todayStr();
+}
 export function tomorrow() { return addDays(todayStr(), 1); }

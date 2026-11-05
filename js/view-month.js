@@ -26,8 +26,11 @@ export function viewMonth(root, params) {
       if (groupFilter !== 'all' && t.group !== groupFilter && t.group !== 'both') continue;
       if (who && t.assignee !== who) continue;
       if (q && !(t.title + ' ' + (t.extra || '')).toLowerCase().includes(q.toLowerCase())) continue;
-      const key = t.tplId || 'x:' + t.title;
-      if (!rowsMap.has(key)) rowsMap.set(key, { key, title: t.title, group: t.group, order: t.order || 0, byDay: {} });
+      // việc chuyên môn giao theo người: mỗi người một dòng riêng để bảng gọn và nhìn được toàn cảnh
+      const perPerson = t.group === 'cm' && t.assignee && t.tplId && t.source === 'template';
+      const key = (t.tplId || 'x:' + t.title) + (perPerson ? '|' + t.assignee : '');
+      const nick = perPerson ? ((S.users.find((u) => u.id === t.assignee) || {}).nick || t.assigneeName) : '';
+      if (!rowsMap.has(key)) rowsMap.set(key, { key, title: (perPerson ? `${t.title.replace(/ \(ca (sáng|chiều|tối)\)$/, '')} · ${nick}` : t.title), group: t.group, order: t.order || 0, byDay: {} });
       const r = rowsMap.get(key);
       (r.byDay[t.date] = r.byDay[t.date] || []).push(t);
     }

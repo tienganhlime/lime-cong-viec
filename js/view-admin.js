@@ -1,43 +1,78 @@
 import { h, mount, toast, modal, confirmDlg, makeRedraw, sortBy, fmtDM } from './ui.js';
 import { S, isMgr, isCM, ROLE_LABEL, GROUP_LABEL, facName } from './core.js';
-import { generateMonth, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth } from './rules.js';
-import { PEOPLE, tplAssign } from './assign.js';
+import { generateMonth, workDows, isWorkDay, nextWorkDay, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth } from './rules.js';
+import { PEOPLE, LEFT, tplPlan } from './assign.js';
 import { USERNAME_RE, normUsername, errMsg, isFirebase } from './db.js';
 
-/** Áp phân công theo file chuyên môn: lớp phụ trách của từng người + người làm của từng mẫu việc, rồi tạo lại việc từ hôm nay. */
+/** Áp phân công chuyên môn: lớp phụ trách + cơ sở làm việc của từng người, người làm của từng mẫu việc, khóa tài khoản người đã nghỉ,
+    rồi tạo lại các việc chuyên môn chưa làm từ hôm nay. Việc đã làm hoặc đã ghi chú được giữ nguyên. */
 export async function applyCmAssignment() {
   const byName = {}; for (const u of S.users) byName[u.username] = u;
   const missing = Object.keys(PEOPLE).filter((k) => !byName[k]);
   if (missing.length) { toast('Chưa có tài khoản: ' + missing.join(', '), 'err'); return; }
+  const today = todayStr(); const facs = S.facilities.map((f) => f.id);
+  const idOf = (un) => byName[un].id;
   const ops = [];
-  for (const [un, p] of Object.entries(PEOPLE)) ops.push({ op: 'update', col: 'users', id: byName[un].id, data: { classCodes: p.classes, cmType: p.type } });
-  const tpls = S.templates.filter((t) => t.group === 'cm');
-  const today = todayStr();
-  for (const t of tpls) {
-    const ids = tplAssign(t.id).map((un) => byName[un].id);
-    ops.push({ op: 'update', col: 'templates', id: t.id, data: { assignees: ids, perClass: true } });
+  const patchU = {};
+  for (const [un, p] of Object.entries(PEOPLE)) { patchU[idOf(un)] = { classCodes: p.classes, cmFacilities: p.cmFacilities, cmType: p.type, nick: p.nick }; }
+  for (const un of LEFT) if (byName[un]) patchU[idOf(un)] = { disabled: true };
+  for (const [id, data] of Object.entries(patchU)) ops.push({ op: 'update', col: 'users', id, data });
+  // việc của người đã nghỉ: xóa các việc chưa làm từ hôm nay
+  const del = [];
+  for (const un of LEFT) {
+    if (!byName[un]) continue;
+    for (const t of await S.db.getAll('tasks', [['assignee', '==', idOf(un)]])) if (t.status === 'todo' && !t.note && t.date >= today) del.push({ op: 'delete', col: 'tasks', id: t.id });
   }
+  const tpls = S.templates.filter((t) => t.group === 'cm').map((t) => {
+    const plan = tplPlan(t.id);
+    const x = { ...t, perClass: false, rotate: !!plan.rotate };
+    if (plan.assignees) { x.assignees = plan.assignees.map(idOf); delete x.assigneesByFac; }
+    else { x.assigneesByFac = Object.fromEntries(Object.entries(plan.byFac).map(([f, l]) => [f, l.map(idOf)])); x.assignees = []; }
+    if (plan.rotate) { x.rule = { type: 'daily' }; x.repeatText = 'Hàng ngày (chia đều các lớp trong 2 tuần)'; x.auto = true; x.weekendShifts = false; }
+    return x;
+  });
+  for (const t of tpls) ops.push({ op: 'update', col: 'templates', id: t.id, data: { assignees: t.assignees, assigneesByFac: t.assigneesByFac || null, perClass: false, rotate: t.rotate, rule: t.rule, repeatText: t.repeatText, auto: t.auto, ...(t.rotate ? { weekendShifts: false } : {}) } });
   await S.db.batch(ops);
-  // làm mới: bỏ việc chung chưa làm từ hôm nay, tạo lại theo từng người
-  const fresh = tpls.map((t) => ({ ...t, assignees: tplAssign(t.id).map((un) => byName[un].id), perClass: true }));
-  const users = S.users.map((u) => (PEOPLE[u.username] ? { ...u, classCodes: PEOPLE[u.username].classes } : u));
-  const del = []; let made = 0;
-  for (const t of fresh.filter((x) => x.auto && x.rule && x.rule.type !== 'none')) {
-    for (const fac of S.facilities.map((f) => f.id)) {
-      const olds = await S.db.getAll('tasks', [['facility', '==', fac], ['tplId', '==', t.id]]);
-      for (const o of olds) if (o.date >= today && !o.assignee && o.status === 'todo') del.push({ op: 'delete', col: 'tasks', id: o.id });
+  // xóa các việc chuyên môn tự sinh chưa làm từ hôm nay (kể cả bản theo người của lần phân công cũ), rồi sinh lại
+  for (const t of tpls.filter((x) => x.auto && x.rule && x.rule.type !== 'none')) {
+    for (const fac of facs) {
+      for (const o of await S.db.getAll('tasks', [['facility', '==', fac], ['tplId', '==', t.id]])) if (o.date >= today && o.status === 'todo' && !o.note && o.source === 'template') del.push({ op: 'delete', col: 'tasks', id: o.id });
     }
   }
+  if (del.length) await S.db.batch(del);
+  const users = S.users.map((u) => (patchU[u.id] ? { ...u, ...patchU[u.id] } : u));
   const add = [];
   for (const g of S.gen || []) {
     const ym = g.slice(4);
     if (ym < monthOf(today)) continue;
     const existing = await S.db.getAll('tasks', [['month', '==', ym]]);
-    const gen = generateMonth({ templates: fresh, schedules: S.schedules, facilities: S.facilities.map((f) => f.id), ym, existingIds: new Set(existing.map((x) => x.id)), by: S.user.id, cutoff: today, users, classes: S.classes });
+    const gen = generateMonth({ templates: tpls, schedules: S.schedules, facilities: facs, ym, existingIds: new Set(existing.map((x) => x.id)), by: S.user.id, cutoff: today, users, classes: S.classes });
     for (const x of gen) add.push({ op: 'set', col: 'tasks', id: x.id, data: x.data });
   }
-  await S.db.batch([...del, ...add]);
-  toast(`Đã phân công xong: xóa ${del.length} việc chung chưa làm, tạo ${add.length} việc theo người`);
+  if (add.length) await S.db.batch(add);
+  toast(`Đã phân công xong: xóa ${del.length} việc cũ chưa làm, tạo ${add.length} việc mới`);
+}
+
+/** Dọn việc đã sinh vào ngày cơ sở không có lớp (từ đầu tháng trước đến hết tháng sau): việc hàng ngày chưa làm thì xóa, việc khác dời sang ngày có lớp kế tiếp. */
+export async function cleanNonWorkDays() {
+  const today = todayStr(); const from = `${addMonths(monthOf(today), -1)}-01`; const to = `${addMonths(monthOf(today), 1)}-31`;
+  let removed = 0; let moved = 0; const ops = [];
+  for (const f of S.facilities) {
+    const W = workDows(S.classes, f.id);
+    if (!W) continue;
+    const dates = []; for (let d = from; d <= to; d = addDays(d, 1)) if (!isWorkDay(d, W) && d.slice(8, 10) <= '31') dates.push(d);
+    for (let i = 0; i < dates.length; i += 30) {
+      const ts = await S.db.getAll('tasks', [['facility', '==', f.id], ['date', 'in', dates.slice(i, i + 30)]]);
+      for (const t of ts) {
+        if (t.status !== 'todo' || t.note) continue;
+        const tpl = t.tplId && S.templates.find((x) => x.id === t.tplId);
+        if (t.source === 'template' && tpl && tpl.rule && tpl.rule.type === 'daily') { ops.push({ op: 'delete', col: 'tasks', id: t.id }); removed++; }
+        else { const nd = nextWorkDay(t.date, W); ops.push({ op: 'update', col: 'tasks', id: t.id, data: { date: nd, month: nd.slice(0, 7) } }); moved++; }
+      }
+    }
+  }
+  if (ops.length) await S.db.batch(ops);
+  return { removed, moved };
 }
 
 /** Sửa các việc cũ bị gắn nhầm mẫu (do mã mẫu bị đánh số lại): đối chiếu theo tên việc, chuyển về đúng mẫu. */
@@ -139,10 +174,11 @@ function templateModal(tpl) {
   const cms = S.users.filter((u) => (u.role === 'cm' || u.role === 'manager') && !u.disabled);
   const asg = cms.map((u) => ({ u, el: h('input', { type: 'checkbox', checked: (t.assignees || []).includes(u.id) }) }));
   const wk = h('input', { type: 'checkbox', checked: t.weekendShifts == null ? (t.group === 'cm' && t.rule.type === 'daily' && !t.scheduleKey) : !!t.weekendShifts });
+  const rot = h('input', { type: 'checkbox', checked: !!t.rotate });
   const perClass = h('input', { type: 'checkbox', checked: !!t.perClass });
   const asgBox = h('div', { class: 'stack' }, h('div', { class: 'lab' }, 'Giao cho (chỉ áp dụng đội Chuyên môn; không chọn ai = việc chung, ai làm cũng được)'),
     h('div', { class: 'checks' }, asg.length ? asg.map((x) => h('label', { class: 'check' }, x.el, x.u.name)) : h('span', { class: 'muted small' }, 'Chưa có tài khoản Chuyên môn')),
-    h('div', { class: 'checks' }, h('label', { class: 'check' }, perClass, 'Ghi kèm "Lớp phụ trách" của từng người vào việc')),
+    h('div', { class: 'checks' }, h('label', { class: 'check' }, perClass, 'Ghi kèm tất cả "Lớp phụ trách" của người đó vào việc'), h('label', { class: 'check' }, rot, 'Chia đều các lớp phụ trách trong 2 tuần (mỗi ngày ghi 1-2 lớp cần kiểm tra hôm nay)')),
     h('p', { class: 'muted small' }, 'Chọn nhiều người = mỗi người nhận một việc riêng, hiện đỏ nếu quá hạn. Chỉ áp dụng cho các ngày được tạo từ lần sau.'));
   const syncAsg = () => asgBox.classList.toggle('hidden', group.value !== 'cm');
   group.addEventListener('change', syncAsg); syncAsg();
@@ -177,7 +213,7 @@ function templateModal(tpl) {
           needsReview: review.checked, reviewText: review.checked ? 'Có' : 'Không', sendCSKH: csk.checked,
           facilities: facs.filter((x) => x.el.checked).map((x) => x.f.id), repeatText: ruleText(rule), scheduleKey: key || null,
           scheduleMode: key ? (S.scheduleKeys[key] || {}).mode : null,
-          assignees: group.value === 'cm' ? asg.filter((x) => x.el.checked).map((x) => x.u.id) : [], perClass: group.value === 'cm' && perClass.checked, weekendShifts: wk.checked,
+          assignees: group.value === 'cm' ? asg.filter((x) => x.el.checked).map((x) => x.u.id) : [], assigneesByFac: group.value === 'cm' && !asg.some((x) => x.el.checked) ? (t.assigneesByFac || null) : null, perClass: group.value === 'cm' && perClass.checked, rotate: group.value === 'cm' && rot.checked, weekendShifts: wk.checked,
         };
         if (!data.scheduleKey) { delete data.scheduleKey; delete data.scheduleMode; }
         if (tpl) await S.db.set('templates', tpl.id, data);
@@ -376,7 +412,8 @@ export function viewUsers(root) {
         h('div', { class: 'panel' }, h('div', { class: 'stack' },
           h('p', { class: 'muted' }, isFirebase ? 'Đang kết nối Firebase thật.' : 'Đang chạy ở chế độ chạy thử: dữ liệu chỉ nằm trong trình duyệt này.'),
           h('div', { class: 'row-actions' },
-            h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Gán lớp phụ trách cho Hồng, Liễu, Ruby, Mai Phương và giao việc chuyên môn theo file phân công? Việc chung chưa làm từ hôm nay sẽ được thay bằng việc theo từng người. Việc đã làm giữ nguyên.', { okLabel: 'Áp phân công' })) await applyCmAssignment(); } }, 'Áp phân công chuyên môn theo file'),
+            h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Áp phân công chuyên môn mới? Hồng nghỉ: khóa tài khoản và xóa việc chưa làm của Hồng. Việc hành chính mỗi cơ sở 1 người (Yên Hòa: Liễu, Trung Hòa: Mai Phương), việc học thuật và việc riêng giao theo từng người. Các việc chuyên môn chưa làm từ hôm nay được tạo lại. Việc đã làm hoặc đã ghi chú giữ nguyên.', { okLabel: 'Áp phân công' })) await applyCmAssignment(); } }, 'Áp phân công chuyên môn theo file'),
+            h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Dọn các việc đã sinh vào ngày cơ sở không có lớp (ví dụ thứ 2 ở Trung Hòa)? Việc hàng ngày chưa làm sẽ bị xóa, việc khác dời sang ngày có lớp kế tiếp. Việc đã làm hoặc đã ghi chú giữ nguyên.', { okLabel: 'Dọn' })) { try { const r = await cleanNonWorkDays(); toast(`Đã xóa ${r.removed} việc, dời ${r.moved} việc`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } } } }, 'Dọn việc ở ngày cơ sở không có lớp'),
             h('button', { class: 'btn ghost', type: 'button', title: 'Dùng khi hướng dẫn trong thẻ việc bị lệch sang việc khác', onClick: async () => { if (await confirmDlg('Rà các việc cũ của trợ giảng bị gắn nhầm hướng dẫn / mẫu việc khác và sửa lại cho đúng theo tên việc? (Chỉ đọc các việc thuộc mẫu số 81 trở lên.)', { okLabel: 'Sửa liên kết' })) { try { const r = await fixStaleTemplateLinks(); toast(`Đã rà ${r.checked} việc, sửa ${r.moved} việc`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } } } }, 'Sửa liên kết việc cũ bị lệch hướng dẫn'),
             h('button', { class: 'btn ghost', type: 'button', onClick: async () => { if (await confirmDlg('Nạp lại toàn bộ mẫu việc, chuỗi việc và lịch lớp từ bảng gốc? Các chỉnh sửa mẫu bạn đã làm sẽ bị ghi đè.', { okLabel: 'Nạp lại', danger: true })) { await S.db.loadSeed(); toast('Đã nạp lại mẫu việc'); } } }, 'Nạp lại mẫu việc từ bảng gốc'),
             !isFirebase && h('button', { class: 'btn ghost danger', type: 'button', onClick: async () => { if (await confirmDlg('Xóa toàn bộ dữ liệu chạy thử và bắt đầu lại?', { okLabel: 'Xóa hết', danger: true })) S.db.resetDemo(); } }, 'Xóa dữ liệu chạy thử'))))) : null);
