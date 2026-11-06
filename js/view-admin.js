@@ -102,7 +102,7 @@ export async function fixStaleTemplateLinks() {
 export function ruleText(r) {
   if (!r) return '';
   if (r.type === 'daily') return 'Hàng ngày';
-  if (r.type === 'biweekly') return `2 tuần 1 lần, ${(r.dow || []).map((d) => DOW_NAMES[d]).join(', ')} (từ ${r.anchor ? r.anchor.split('-').reverse().join('/') : '?'})`;
+  if (r.type === 'biweekly') return `2 tuần 1 lần, ${(r.dow || []).map((d) => DOW_NAMES[d]).join(', ')} (từ ${r.anchor ? fmtDM(r.anchor) : '?'})`;
   if (r.type === 'weekly') return 'Thứ: ' + (r.dow || []).map((d) => DOW_NAMES[d]).join(', ');
   if (r.type === 'monthly') return 'Ngày ' + (r.days || []).join(', ') + (r.months && r.months.length ? ` (tháng ${r.months.join(', ')})` : '');
   if (r.type === 'weekstart') return 'Đầu mỗi tuần';
@@ -130,6 +130,7 @@ export async function syncSchedule(fac, key, schedules) {
     for (const o of olds.filter((x) => x.tplId === t.id && x.date >= from)) {
       months.add(o.month);
       const sc = scheduleText(t, fac, o.date, schedules);
+      if (o.title !== t.name && o.status !== 'na' && !o.shift) ops.push({ op: 'update', col: 'tasks', id: o.id, data: { title: t.name } }); // mẫu đã đổi tên
       if (sc.skip) { if (o.status === 'todo') { ops.push({ op: 'update', col: 'tasks', id: o.id, data: { status: 'na', open: false, note: 'Lịch lớp đã đổi: ngày này không còn việc' } }); removed++; } }
       else if (sc.text !== o.extra && (o.status === 'todo' || o.status === 'fix')) { ops.push({ op: 'update', col: 'tasks', id: o.id, data: { extra: sc.text } }); changed++; }
     }
@@ -306,12 +307,14 @@ function scheduleBox(getKey) {
 
 export function viewSchedules(root) {
   let fac = S.facility; let key = Object.keys(S.scheduleKeys)[0];
-  let draft = null;
+  let draft = null; let scope = ''; // '' = mọi tháng; 'YYYY-MM' = chỉ riêng tháng đó (lịch theo ngày trong tháng)
+  const skey = () => ((S.scheduleKeys[key] || {}).mode === 'monthday' && scope ? `${key}@${scope}` : key);
+  const scopeOpts = () => { const m0 = monthOf(todayStr()); return ['', m0, addMonths(m0, 1), addMonths(m0, 2)]; };
   const redraw = makeRedraw(root, render);
   const unsub = S.db.subscribe('meta', [], () => redraw());
 
   function load() {
-    const src = (S.schedules[fac] && S.schedules[fac][key]) || {};
+    const src = (S.schedules[fac] && S.schedules[fac][skey()]) || {};
     draft = { ...src };
   }
   function render() {
@@ -328,11 +331,12 @@ export function viewSchedules(root) {
       h('div', { class: 'page-head' }, h('div', null, h('h2', null, 'Lịch lớp'), h('p', { class: 'muted' }, 'Danh sách lớp theo thứ hoặc theo ngày của từng cơ sở. Hệ thống dùng lịch này để tự điền lớp vào các việc như test, chấm video, đếm Limevoice, báo cáo + soạn văn.'))),
       h('div', { class: 'toolbar wrap' },
         h('select', { onChange: (e) => { fac = e.target.value; load(); render(); } }, S.facilities.map((f) => h('option', { value: f.id, selected: f.id === fac }, f.name))),
-        h('select', { onChange: (e) => { key = e.target.value; load(); render(); } }, Object.entries(S.scheduleKeys).map(([id, v]) => h('option', { value: id, selected: id === key }, v.label)))),
+        h('select', { onChange: (e) => { key = e.target.value; scope = ''; load(); render(); } }, Object.entries(S.scheduleKeys).map(([id, v]) => h('option', { value: id, selected: id === key }, v.label))),
+        k.mode === 'monthday' ? h('select', { title: 'Lịch này áp dụng cho', onChange: (e) => { scope = e.target.value; load(); render(); } }, scopeOpts().map((m) => h('option', { value: m, selected: m === scope }, m ? `Riêng tháng ${m.slice(5)}/${m.slice(0, 4)}` : 'Mọi tháng'))) : null),
       h('div', { class: 'panel' }, h('div', { class: 'stack' }, inputs,
         h('div', { class: 'row-actions' }, h('button', { class: 'btn primary', type: 'button', onClick: async () => {
           const clean = {}; for (const [a, b] of Object.entries(draft)) if (String(b).trim()) clean[a] = String(b).trim();
-          const data = JSON.parse(JSON.stringify(S.schedules || {})); data[fac] = data[fac] || {}; data[fac][key] = clean;
+          const data = JSON.parse(JSON.stringify(S.schedules || {})); data[fac] = data[fac] || {}; data[fac][skey()] = clean;
           await S.db.set('meta', 'schedules', { data, keys: S.scheduleKeys });
           toast('Đã lưu lịch lớp.');
           if (await confirmDlg('Áp dụng lịch mới vào các việc đã tạo từ hôm nay trở đi? (Sửa danh sách lớp, thêm ngày mới, bỏ ngày không còn việc.)', { okLabel: 'Áp dụng', title: 'Lịch lớp đã đổi' })) {
@@ -415,7 +419,7 @@ export function viewUsers(root) {
             h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Áp phân công chuyên môn mới? Hồng nghỉ: khóa tài khoản và xóa việc chưa làm của Hồng. Việc hành chính mỗi cơ sở 1 người (Yên Hòa: Liễu, Trung Hòa: Mai Phương), việc học thuật và việc riêng giao theo từng người. Các việc chuyên môn chưa làm từ hôm nay được tạo lại. Việc đã làm hoặc đã ghi chú giữ nguyên.', { okLabel: 'Áp phân công' })) await applyCmAssignment(); } }, 'Áp phân công chuyên môn theo file'),
             h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Dọn các việc đã sinh vào ngày cơ sở không có lớp (ví dụ thứ 2 ở Trung Hòa)? Việc hàng ngày chưa làm sẽ bị xóa, việc khác dời sang ngày có lớp kế tiếp. Việc đã làm hoặc đã ghi chú giữ nguyên.', { okLabel: 'Dọn' })) { try { const r = await cleanNonWorkDays(); toast(`Đã xóa ${r.removed} việc, dời ${r.moved} việc`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } } } }, 'Dọn việc ở ngày cơ sở không có lớp'),
             h('button', { class: 'btn ghost', type: 'button', title: 'Dùng khi hướng dẫn trong thẻ việc bị lệch sang việc khác', onClick: async () => { if (await confirmDlg('Rà các việc cũ của trợ giảng bị gắn nhầm hướng dẫn / mẫu việc khác và sửa lại cho đúng theo tên việc? (Chỉ đọc các việc thuộc mẫu số 81 trở lên.)', { okLabel: 'Sửa liên kết' })) { try { const r = await fixStaleTemplateLinks(); toast(`Đã rà ${r.checked} việc, sửa ${r.moved} việc`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } } } }, 'Sửa liên kết việc cũ bị lệch hướng dẫn'),
-            h('button', { class: 'btn ghost', type: 'button', onClick: async () => { if (await confirmDlg('Nạp lại toàn bộ mẫu việc, chuỗi việc và lịch lớp từ bảng gốc? Các chỉnh sửa mẫu bạn đã làm sẽ bị ghi đè.', { okLabel: 'Nạp lại', danger: true })) { await S.db.loadSeed(); toast('Đã nạp lại mẫu việc'); } } }, 'Nạp lại mẫu việc từ bảng gốc'),
+            h('button', { class: 'btn ghost', type: 'button', onClick: async () => { if (await confirmDlg('Nạp lại toàn bộ mẫu việc, chuỗi việc và lịch lớp từ bảng gốc? Các chỉnh sửa mẫu bạn đã làm sẽ bị ghi đè.', { okLabel: 'Nạp lại', danger: true })) { await S.db.loadSeed(); await new Promise((r) => setTimeout(r, 1500)); const m = await S.db.get('meta', 'schedules'); let n = 0; for (const f of S.facilities) { const r = await syncSchedule(f.id, 'report', (m && m.data) || {}); n += r.changed + r.added + r.removed; } toast(`Đã nạp lại mẫu việc, cập nhật ${n} việc báo cáo + soạn văn theo lịch mới`); } } }, 'Nạp lại mẫu việc từ bảng gốc'),
             !isFirebase && h('button', { class: 'btn ghost danger', type: 'button', onClick: async () => { if (await confirmDlg('Xóa toàn bộ dữ liệu chạy thử và bắt đầu lại?', { okLabel: 'Xóa hết', danger: true })) S.db.resetDemo(); } }, 'Xóa dữ liệu chạy thử'))))) : null);
   }
   render();

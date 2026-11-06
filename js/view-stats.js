@@ -1,4 +1,4 @@
-import { h, mount, toast, confirmDlg, fmtDM, fmtDMY, makeRedraw, sortBy } from './ui.js';
+import { h, mount, toast, confirmDlg, fmtDM, fmtDMY, makeRedraw, sortBy, fmtTs } from './ui.js';
 import { S, isMgr, facName, ROLE_LABEL } from './core.js';
 import { todayStr, addDays, dow, monthOf, pad, daysInMonth, isOpen, DOW_NAMES } from './rules.js';
 
@@ -60,8 +60,9 @@ export function viewStats(root) {
     const people = S.users.filter((u) => !u.disabled && (cmType ? (u.cmType === cmType) : (u.role === 'ta' || (withCM && (u.role === 'cm' || u.role === 'manager')))));
     const inRange = tasks.filter((t) => t.date >= from && t.date <= to && t.status !== 'na' && t.status !== 'partial');
     const rows = people.map((u) => {
-      const mine = inRange.filter((t) => t.assignee === u.id);
-      const done = mine.filter((t) => t.status === 'done').length;
+      const inv = (t) => t.assignee === u.id || (t.parts && t.parts[u.id]);
+      const mine = inRange.filter(inv);
+      const done = mine.filter((t) => t.status === 'done' || (t.parts && t.parts[u.id] && t.parts[u.id].done)).length;
       const rep = reports.filter((r) => r.uid === u.id && r.date >= from && r.date <= to).length;
       return {
         u, assigned: mine.length, done,
@@ -76,7 +77,7 @@ export function viewStats(root) {
 
     // theo ngày
     const days = []; for (let d = from; d <= to && days.length < 62; d = addDays(d, 1)) days.push(d);
-    const perDay = days.map((d) => ({ d, counts: people.map((u) => inRange.filter((t) => t.date === d && t.assignee === u.id && t.status === 'done').length) }));
+    const perDay = days.map((d) => ({ d, counts: people.map((u) => inRange.filter((t) => t.date === d && (t.assignee === u.id || (t.parts && t.parts[u.id])) && (t.status === 'done' || (t.parts && t.parts[u.id] && t.parts[u.id].done))).length) }));
 
     const sumT = h('table', { class: 'tbl stat' }, h('thead', null, h('tr', null,
       ['Người làm', 'Được giao', 'Đã xong', 'Hoàn thành', 'Chờ duyệt', 'Bị phản hồi/lỗi', 'Quá hạn', 'Báo cáo cuối ca'].map((x) => h('th', null, x)))),
@@ -129,7 +130,7 @@ export function viewStats(root) {
           h('label', { class: 'inline' }, 'Lọc xem', h('select', { onChange: (e) => { selTA = e.target.value; loadEvals(); } }, h('option', { value: '' }, 'Tất cả trợ giảng'), taOptions.map((u) => h('option', { value: u.id, selected: u.id === selTA }, u.name))))),
           evList.length ? evList.map((e) => h('div', { class: 'eval' },
             h('div', { class: 'eval-head' }, h('b', null, e.taName), e.rating ? h('span', { class: 'pill mid' }, e.rating + '/5') : null,
-              h('span', { class: 'muted small' }, `${e.authorName} · ${new Date(e.createdAt).toLocaleDateString('vi-VN')}`),
+              h('span', { class: 'muted small' }, `${e.authorName} · ${fmtTs(e.createdAt)}`),
               (e.authorUid === S.user.id || isMgr()) && h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Xóa ghi chú', onClick: async () => { if (await confirmDlg('Xóa ghi chú này?', { okLabel: 'Xóa', danger: true })) { await S.db.remove('evaluations', e.id); loadEvals(); } } }, '×')),
             h('p', null, e.text))) : h('p', { class: 'empty' }, 'Chưa có ghi chú nào.')))));
   }

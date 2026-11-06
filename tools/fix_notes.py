@@ -18,5 +18,25 @@ setc('t31', "Chuẩn bị họp phụ huynh (xem các bước trong mục Chuỗ
 setc('t32', "Dự trù nhân sự buổi họp + xếp phòng, báo LIME GIÁO VỤ; thay đổi phòng học (nếu có), nhờ Vận hành nhắc thêm giáo viên khi giáo viên đến. Lịch dạy trong buổi họp và test học sinh dự phòng nếu có học sinh không dự họp. Chi tiết các mốc trước giờ họp xem Chuỗi việc & sự kiện > Lớp chuyển cấp độ + họp phụ huynh.")
 setc('t92', "Mỗi sự kiện có timeline các đầu việc theo ngày; khi tải timeline lên thì việc tự đẩy về checklist từng đội. Dùng mục Chuỗi việc & sự kiện > Up timeline sự kiện (mẫu ví dụ: sự kiện Hồ Gươm).")
 setc('t39', name='Kiểm tra tình hình làm handout (circle time) + key của TG (thứ 2 hàng tuần)')
+# ---- Lịch test + báo cáo + soạn văn tháng 11/2026 (key 'report', riêng từng tháng: report@YYYY-MM) ----
+setc('t88', name='Test học sinh + báo cáo + soạn văn (theo lịch chia lớp trong tháng)')
+T['t88']['content'] = 'Làm theo lịch chia lớp của ngày hôm nay (ghi ở dòng bên dưới tên việc): test học sinh, báo cáo kiến thức (L1) hoặc báo cáo KT sách vở (L2), soạn văn. Các lớp còn thiếu thì hoàn thành nốt. Ghi rõ lớp nào đã xong, lớp nào còn thiếu vào ghi chú; gửi chuyên môn duyệt rồi gửi CSKH.'
+L1 = 'Test học sinh + Báo cáo kiến thức + soạn văn L1: '
+L2 = 'Test học sinh + Báo cáo KT sách vở + soạn văn L2: '
+def yh(day, lab, txt): return (str(day), lab + txt)
+yenhoa = {}
+w1 = {2: 'CLC A2E, DORY1M', 3: 'DORY0Y, CAM1T', 4: 'CAM2M, CAM1R', 5: 'DORY0X, GRAM1A', 6: 'DORY2H, CAM2N', 7: '(Sáng) CAM1S, (Tối) CLC A1F', 8: '(Sáng) DORY1K, (Chiều) CLC A2D, (Tối) CAM2P'}
+w2 = {9: 'PET B1 và các lớp còn thiếu', 10: 'CLC A1E, CAM2Q', 11: 'CLC A2G, FCE B2A', 12: 'CLC A1E và các lớp còn thiếu', 13: 'Các lớp còn thiếu', 14: 'Các lớp còn thiếu', 15: 'Các lớp còn thiếu'}
+for k, v in w1.items(): yenhoa[str(k)] = L1 + v; yenhoa[str(k + 14)] = L2 + v
+for k, v in w2.items(): yenhoa[str(k)] = L1 + v; yenhoa[str(k + 14)] = (L2.replace('Test học sinh + Báo cáo KT', 'Test học sinh + Hoàn thành các báo cáo KT') if k >= 13 else L2) + v
+trunghoa = {}
+bc = {5: ('L1', '3DORY2D, 3CAM1V'), 6: ('L1', 'FCE B2'), 7: ('L1', '3CLC A2H'), 8: ('L1', '3CLC A2F'), 10: ('L1', '3DORY0T'), 11: ('L1', '3DORY02R'), 12: ('L1', '3CLC A2K, 3CAM2F'), 13: ('L1', '3DORY0Z'), 14: ('L1', '3DORY02S'), 15: ('L1', '3DORY3B, 3CAM2E'),
+      19: ('L2', '3DORY2D, 3CAM1V'), 20: ('L2', 'FCE B2'), 21: ('L2', '3CLC A2H'), 22: ('L2', '3CLC A2F'), 24: ('L2', '3DORY0T'), 25: ('L2', '3DORY0Z, 3DORY02R'), 26: ('L2', '3CLC A2K, 3CAM2F'), 27: ('L2', '3DORY0Z'), 28: ('L2', '3DORY02S'), 29: ('L2', '3DORY3B, 3CAM2E')}
+for day in range(1, 31):
+    if day in (2, 9, 16, 23, 30): continue  # thứ 2: Trung Hòa không có lớp
+    if day in bc: lv, cl = bc[day]; trunghoa[str(day)] = f'Test học sinh + soạn văn + báo cáo {lv}: {cl}'
+    else: trunghoa[str(day)] = 'Test học sinh + soạn văn (hôm nay không có lớp báo cáo)'
+d['schedules']['yenhoa']['report@2026-11'] = yenhoa
+d['schedules']['trunghoa']['report@2026-11'] = trunghoa
 json.dump(d, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('ok')

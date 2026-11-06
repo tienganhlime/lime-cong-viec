@@ -114,6 +114,7 @@ export function taskCard(t, o = {}) {
     t.needsReview && h('span', { class: 'chip info' }, 'Cần CM duyệt'),
     t.sendCSKH && h('span', { class: 'chip info' }, 'Gửi CSKH'),
     t.status !== 'todo' && t.status !== 'done' && h('span', { class: 'chip st-' + t.status }, STATUS_TEXT[t.status]),
+    t.parts && Object.keys(t.parts).length ? h('span', { class: 'chip who' }, `${Object.keys(t.parts).length} người cùng làm`) : null,
     t.assignee ? h('span', { class: 'chip who' + (mine ? ' me' : '') }, mine ? 'Tôi' : t.assigneeName) : t.doneByName && t.status !== 'todo' ? h('span', { class: 'chip who' }, t.doneByName) : h('span', { class: 'chip ghost' }, 'Chưa có người nhận'),
   ];
 
@@ -146,6 +147,28 @@ export function taskCard(t, o = {}) {
     onChange: (e) => saveNote(t, e.target.value).then(() => toast('Đã lưu ghi chú')).catch((er) => toast(er.message, 'err')),
   });
   detail.append(h('label', { class: 'notelab' }, 'Ghi chú', note));
+
+  // nhiều người cùng làm một việc: mỗi người có ghi chú riêng (để thống kê KPI)
+  const parts = t.parts || {};
+  const myPart = parts[S.user.id];
+  const saveParts = (np) => S.db.update('tasks', t.id, { parts: np });
+  const partBox = h('div', { class: 'parts' }, h('div', { class: 'lab' }, 'Người cùng làm'));
+  Object.entries(parts).forEach(([uid, p]) => partBox.append(h('div', { class: 'part' },
+    h('b', null, p.name), p.done ? h('span', { class: 'chip st-done' }, 'Xong phần mình') : h('span', { class: 'chip' }, 'Đang làm'),
+    uid === S.user.id
+      ? h('textarea', { rows: 2, placeholder: 'Phần việc của bạn: làm lớp nào, kết quả…', value: p.note || '', onChange: (e) => run(() => saveParts({ ...parts, [uid]: { ...p, note: e.target.value } }), redraw) })
+      : (p.note ? h('p', { class: 'muted' }, p.note) : null))));
+  if (Object.keys(parts).length) detail.append(partBox);
+  const partRow = h('div', { class: 'actions' });
+  if (S.user.role !== 'admin' && t.status !== 'na') {
+    if (!myPart) partRow.append(h('button', { class: 'btn sm', type: 'button', onClick: act(() => saveParts({ ...parts, [S.user.id]: { name: S.user.name, note: '', done: false, at: Date.now() } })) }, 'Tham gia làm cùng'));
+    else {
+      if (!myPart.done) partRow.append(h('button', { class: 'btn sm primary', type: 'button', onClick: act(() => saveParts({ ...parts, [S.user.id]: { ...myPart, done: true, doneAt: Date.now() } })) }, 'Xong phần của tôi'));
+      else partRow.append(h('button', { class: 'btn sm ghost', type: 'button', onClick: act(() => saveParts({ ...parts, [S.user.id]: { ...myPart, done: false } })) }, 'Mở lại phần của tôi'));
+      partRow.append(h('button', { class: 'btn sm ghost', type: 'button', onClick: act(() => { const np = { ...parts }; delete np[S.user.id]; return saveParts(np); }) }, 'Rút khỏi việc này'));
+    }
+  }
+  if (partRow.children.length) detail.append(partRow);
 
   const btn = (label, kind, fn, dis) => h('button', { class: 'btn sm ' + (kind || ''), type: 'button', disabled: dis, onClick: act(fn) }, label);
   const row = h('div', { class: 'actions' });

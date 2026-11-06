@@ -1,6 +1,6 @@
-import { h, mount, toast, modal, confirmDlg, fmtDM, fmtDMY, makeRedraw, sortBy } from './ui.js';
+import { h, mount, toast, modal, confirmDlg, fmtDM, fmtDMY, makeRedraw, sortBy, fmtTs } from './ui.js';
 import { S, scoped, isCM, facName, notifyGroup, GROUP_LABEL } from './core.js';
-import { buildChainTasks, addDays, parseYmd, ymd, todayStr, monthOf } from './rules.js';
+import { buildChainTasks, addDays, parseYmd, ymd, todayStr, monthOf, dow, DOW_NAMES, workDows, isWorkDay } from './rules.js';
 
 const CARRY = (d) => ({ ...d, open: true, carry: true });
 const GROUP_PARSE = (s) => {
@@ -166,6 +166,44 @@ export function viewChains(root, params) {
     return el;
   }
 
+  /* Việc lặp theo giai đoạn: nhập một lần, tự sinh mỗi ngày trong khoảng, kết thúc bất kỳ lúc nào */
+  const pf = { name: '', desc: '', group: 'ta', from: todayStr(), to: '', facs: new Set([S.facility]), dows: new Set([1, 2, 3, 4, 5, 6, 7]) };
+  function periodForm() {
+    const el = h('div', { class: 'stack' });
+    const name = h('input', { type: 'text', placeholder: 'Ví dụ: Ôn thi học kỳ - kiểm tra bài ôn mỗi ngày', value: pf.name, onInput: (e) => { pf.name = e.target.value; } });
+    const desc = h('textarea', { rows: 3, placeholder: 'Nội dung làm mỗi ngày (không bắt buộc)', onInput: (e) => { pf.desc = e.target.value; } }, pf.desc);
+    const grp = h('select', { onChange: (e) => { pf.group = e.target.value; } }, [['ta', 'Trợ giảng'], ['cm', 'Chuyên môn'], ['both', 'Cả 2 đội']].map(([v, l]) => h('option', { value: v, selected: pf.group === v }, l)));
+    const from = h('input', { type: 'date', value: pf.from, onChange: (e) => { pf.from = e.target.value; } });
+    const to = h('input', { type: 'date', value: pf.to, onChange: (e) => { pf.to = e.target.value; } });
+    el.append(h('label', null, 'Tên công việc', name), h('label', null, 'Nội dung', desc),
+      h('div', { class: 'grid2' }, h('label', null, 'Đội', grp), h('label', null, 'Từ ngày', from)),
+      h('label', null, 'Đến ngày (để trống = chưa biết, hệ thống tạo trước 60 ngày, bấm "Kết thúc chuỗi" khi xong)', to),
+      h('div', null, h('div', { class: 'lab' }, 'Cơ sở'), h('div', { class: 'checks' }, S.facilities.map((f) => h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: pf.facs.has(f.id), onChange: (e) => { e.target.checked ? pf.facs.add(f.id) : pf.facs.delete(f.id); } }), f.name)))),
+      h('div', null, h('div', { class: 'lab' }, 'Các thứ trong tuần (ngày cơ sở không có lớp sẽ tự bỏ qua)'), h('div', { class: 'checks' }, [1, 2, 3, 4, 5, 6, 7].map((d) => h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: pf.dows.has(d), onChange: (e) => { e.target.checked ? pf.dows.add(d) : pf.dows.delete(d); } }), DOW_NAMES[d])))),
+      h('div', { class: 'row-actions' }, h('button', { class: 'btn primary', type: 'button', onClick: async (e) => {
+        if (!pf.name.trim()) return toast('Hãy nhập tên công việc', 'err');
+        if (!pf.facs.size) return toast('Chọn ít nhất một cơ sở', 'err');
+        if (!pf.from) return toast('Chọn ngày bắt đầu', 'err');
+        const end = pf.to || addDays(pf.from, 59);
+        if (end < pf.from) return toast('Ngày kết thúc phải sau ngày bắt đầu', 'err');
+        const evId = S.db.newId(); const ops = []; const facs = [...pf.facs]; let n = 0;
+        for (const fac of facs) {
+          const W = workDows(S.classes, fac);
+          for (let d = pf.from, i = 0; d <= end && i < 120; d = addDays(d, 1), i++) {
+            if (!pf.dows.has(dow(d)) || !isWorkDay(d, W)) continue;
+            ops.push({ op: 'set', col: 'tasks', id: `${evId}_${fac}_${d}`, data: { facility: fac, date: d, month: monthOf(d), title: pf.name.trim(), extra: '', time: '', desc: pf.desc.trim(), group: pf.group,
+              tplId: '', source: 'period', refId: evId, status: 'todo', open: true, carry: true, assignee: null, assigneeName: '', note: '', feedback: '', needsReview: false, sendCSKH: false, flagged: false, order: 60, createdBy: S.user.id, createdAt: Date.now() } });
+            n++;
+          }
+        }
+        if (!n) return toast('Không có ngày làm việc nào trong khoảng đã chọn', 'err');
+        e.currentTarget.disabled = true;
+        ops.push({ op: 'set', col: 'events', id: evId, data: { kind: 'period', name: pf.name.trim(), count: n, from: pf.from, to: pf.to || '', createdBy: S.user.id, createdByName: S.user.name, createdAt: Date.now(), facilities: facs } });
+        try { await S.db.batch(ops); toast(`Đã tạo ${n} việc, từ ${fmtDMY(pf.from)} đến ${fmtDMY(end)}`); pf.name = ''; pf.desc = ''; tab = 'hist'; render(); } catch (er) { toast(er.message, 'err'); render(); }
+      } }, 'Tạo việc lặp')));
+    return el;
+  }
+
   async function showEvent(e) {
     let ts = [];
     try { ts = await S.db.getAll('tasks', scoped([['refId', '==', e.id]])); } catch (er) { toast(er.message, 'err'); return; }
@@ -185,23 +223,26 @@ export function viewChains(root, params) {
     const list = sortBy(history, (e) => -(e.createdAt || 0));
     if (!list.length) return h('p', { class: 'empty' }, 'Chưa có chuỗi việc hoặc sự kiện nào.');
     return h('div', { class: 'stack' }, list.slice(0, 40).map((e) => h('div', { class: 'hist' },
-      h('div', { class: 'hist-main', role: 'button', tabindex: 0, style: { cursor: 'pointer' }, onClick: () => showEvent(e), onKeydown: (k) => { if (k.key === 'Enter') showEvent(e); } }, h('b', null, e.name, ' ›'), h('div', { class: 'muted small' }, `${e.kind === 'event' ? 'Sự kiện' : 'Chuỗi việc'} · ${e.count} việc · ${e.createdByName || ''} · ${new Date(e.createdAt).toLocaleDateString('vi-VN')}`)),
+      h('div', { class: 'hist-main', role: 'button', tabindex: 0, style: { cursor: 'pointer' }, onClick: () => showEvent(e), onKeydown: (k) => { if (k.key === 'Enter') showEvent(e); } }, h('b', null, e.name, ' ›'), h('div', { class: 'muted small' }, `${e.kind === 'event' ? 'Sự kiện' : e.kind === 'period' ? 'Việc lặp theo giai đoạn' + (e.ended ? ' (đã kết thúc)' : '') : 'Chuỗi việc'} · ${e.count} việc · ${e.createdByName || ''} · ${fmtTs(e.createdAt)}`)),
       isCM() && h('button', { class: 'btn ghost sm danger', type: 'button', onClick: async () => {
-        if (!(await confirmDlg(`Hủy "${e.name}"? Các việc chưa làm của nó sẽ bị xóa khỏi checklist, việc đã làm vẫn giữ lại.`, { okLabel: 'Hủy sự kiện', danger: true }))) return;
+        const per = e.kind === 'period';
+        if (per && e.ended) return toast('Chuỗi này đã kết thúc rồi', 'err');
+        if (!(await confirmDlg(per ? `Kết thúc "${e.name}"? Từ hôm nay trở đi các ngày chưa làm sẽ bị xóa khỏi checklist, các ngày đã qua và việc đã làm vẫn giữ lại.` : `Hủy "${e.name}"? Các việc chưa làm của nó sẽ bị xóa khỏi checklist, việc đã làm vẫn giữ lại.`, { okLabel: per ? 'Kết thúc chuỗi' : 'Hủy sự kiện', danger: true }))) return;
         const ts = await S.db.getAll('tasks', scoped([['refId', '==', e.id]]));
-        const del = ts.filter((t) => t.status === 'todo').map((t) => ({ op: 'delete', col: 'tasks', id: t.id }));
-        del.push({ op: 'delete', col: 'events', id: e.id });
+        const del = ts.filter((t) => t.status === 'todo' && (!per || t.date >= todayStr())).map((t) => ({ op: 'delete', col: 'tasks', id: t.id }));
+        if (per) del.push({ op: 'update', col: 'events', id: e.id, data: { ended: true, endedAt: Date.now() } });
+        else del.push({ op: 'delete', col: 'events', id: e.id });
         await S.db.batch(del); toast(`Đã xóa ${del.length - 1} việc chưa làm`);
-      } }, 'Hủy'))));
+      } }, e.kind === 'period' ? (e.ended ? 'Đã kết thúc' : 'Kết thúc chuỗi') : 'Hủy'))));
   }
 
   function render() {
     if (!cf.chainId && S.chains.length) loadChain(S.chains[0].id);
-    const tabs = [['chain', 'Tạo từ chuỗi việc'], ['event', 'Up timeline sự kiện'], ['hist', 'Đã tạo']];
+    const tabs = [['chain', 'Tạo từ chuỗi việc'], ['event', 'Up timeline sự kiện'], ['period', 'Việc lặp theo giai đoạn'], ['hist', 'Đã tạo']];
     mount(root, 
       h('div', { class: 'page-head' }, h('div', null, h('h2', null, 'Chuỗi việc & sự kiện'), h('p', { class: 'muted' }, 'Khai báo một lần, hệ thống tự đẩy các đầu việc về đúng ngày và đúng đội.'))),
       h('div', { class: 'seg tabs' }, tabs.map(([v, l]) => h('button', { class: 'seg-b' + (tab === v ? ' on' : ''), type: 'button', onClick: () => { tab = v; render(); } }, l))),
-      h('div', { class: 'panel' }, tab === 'chain' ? chainForm() : tab === 'event' ? eventForm() : historyList()));
+      h('div', { class: 'panel' }, tab === 'chain' ? chainForm() : tab === 'event' ? eventForm() : tab === 'period' ? periodForm() : historyList()));
   }
   render();
   return () => unsub();

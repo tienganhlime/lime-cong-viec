@@ -97,8 +97,21 @@ export function makeRedraw(root, fn) {
   return run;
 }
 
-export const fmtDM = (s) => `${s.slice(8)}/${s.slice(5, 7)}`;
-export const fmtDMY = (s) => `${s.slice(8)}/${s.slice(5, 7)}/${s.slice(0, 4)}`;
+/** Biến đường link trong văn bản thành link bấm được (mở tab mới), giữ nguyên phần chữ còn lại. */
+export function linkify(text) {
+  const out = []; const re = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g; let last = 0; let m;
+  const s = String(text || '');
+  while ((m = re.exec(s))) {
+    if (m.index > last) out.push(s.slice(last, m.index));
+    out.push(h('a', { href: m[0], target: '_blank', rel: 'noopener noreferrer', class: 'lnk' }, m[0].replace(/^https?:\/\/(www\.)?/, '').slice(0, 48) + (m[0].length > 60 ? '…' : '')));
+    last = m.index + m[0].length;
+  }
+  if (last < s.length) out.push(s.slice(last));
+  return out;
+}
+export const fmtDM = (s) => `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(2, 4)}`; // DD/MM/YY
+export const fmtDMY = fmtDM;
+export const fmtTs = (ms) => { const d = new Date(ms); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(2)}`; };
 export const initials = (name) => (name || '?').trim().split(/\s+/).slice(-1)[0].slice(0, 1).toUpperCase();
 export const uniq = (a) => [...new Set(a)];
 export const debounce = (fn, ms = 300) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };

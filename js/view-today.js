@@ -1,9 +1,18 @@
-import { h, mount, modal, toast, fmtDM, fmtDMY, makeRedraw, sortBy } from './ui.js';
+import { h, mount, modal, toast, fmtDM, fmtDMY, makeRedraw, sortBy, linkify } from './ui.js';
 import { S, scoped, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, isOverdue, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
 import { taskCard } from './taskui.js';
 import { reviewSection } from './view-students.js';
 import { moveOp } from './students.js';
-import { todayStr, addDays, isOpen, DOW_NAMES, dow, monthOf, addMonths, generateMonth } from './rules.js';
+import { todayStr, addDays, isOpen, DOW_NAMES, dow, monthOf, addMonths, generateMonth, workDows, nextWorkDay } from './rules.js';
+
+/** Việc bàn giao: sinh task thật (id cố định, không trùng) vào ngày làm việc kế tiếp của cơ sở. */
+export function handoverOp({ fac, date, uid, userName, note }) {
+  const next = nextWorkDay(addDays(date, 1), workDows(S.classes, fac));
+  return { op: 'set', col: 'tasks', id: `${fac}_${next}_handover_${date}_${uid}`, data: {
+    facility: fac, date: next, month: monthOf(next), title: `Bàn giao từ ca ${fmtDM(date)} (${userName})`, extra: note, time: '', desc: note, group: 'ta',
+    tplId: '', source: 'handover', refId: '', status: 'todo', open: true, carry: true, assignee: null, assigneeName: '', note: '', feedback: '',
+    needsReview: false, sendCSKH: false, flagged: false, order: 5, createdBy: uid, createdAt: Date.now() } };
+}
 
 /* ---------- Thêm việc phát sinh / định kỳ ---------- */
 export function addTaskModal({ date = todayStr(), onDone } = {}) {
@@ -129,6 +138,7 @@ function reportModal({ date, fac, mine, existing, revs = [] }) {
           op: 'set', col: 'reports', id: `${fac}_${date}_${S.user.id}`,
           data: { facility: fac, date, month: date.slice(0, 7), uid: S.user.id, userName: S.user.name, role: S.user.role, total, done, review, open: openT.length, reviewDone: revDone, reviewMoved: moveRev.checked ? revPend.length : 0, note: note.value.trim(), at: Date.now() },
         });
+        if (note.value.trim()) ops.push(handoverOp({ fac, date, uid: S.user.id, userName: S.user.name, note: note.value.trim() }));
         await S.db.batch(ops);
         toast('Đã nộp báo cáo cuối ca');
       },
@@ -211,7 +221,8 @@ export function viewToday(root, params) {
           h('button', { class: 'btn', type: 'button', onClick: () => addTaskModal({ date }) }, '+ Thêm việc'),
           S.user.role !== 'admin' && h('button', { class: 'btn primary', type: 'button', onClick: () => reportModal({ date, fac, mine: all.filter((t) => t.assignee === S.user.id && t.date === date || t.assignee === S.user.id && t.date < date), existing: myReport, revs }) }, myReport ? 'Cập nhật báo cáo cuối ca' : 'Kết thúc ca & báo cáo'))),
       myReport && h('div', { class: 'banner ok' }, `Bạn đã nộp báo cáo cuối ca lúc ${new Date(myReport.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}.`),
-      prev && h('div', { class: 'banner' }, h('b', null, `Bàn giao từ ca ngày ${fmtDM(prev.date)} (${prev.userName}): `), prev.note),
+      prev && h('div', { class: 'banner' }, h('b', null, `Bàn giao từ ca ngày ${fmtDM(prev.date)} (${prev.userName}): `), linkify(prev.note),
+        S.user.role !== 'admin' && h('button', { class: 'btn sm', type: 'button', style: { marginLeft: '8px' }, onClick: async () => { const o = handoverOp({ fac, date: prev.date, uid: prev.uid, userName: prev.userName, note: prev.note }); if (await S.db.get('tasks', o.id)) { toast('Việc bàn giao này đã có trong checklist'); return; } await S.db.batch([o]); toast('Đã tạo việc bàn giao trong checklist'); } }, 'Chuyển thành việc cần làm')),
       reviewSection(revs, date, redraw),
       mine.filter((t) => isOverdue(t)).length ? h('div', { class: 'banner bad' }, `⚠ Bạn còn ${mine.filter((t) => isOverdue(t)).length} việc quá hạn chưa làm`) : null,
       sec('Việc của tôi', mine.length, mine.length ? mine.map((t) => card(t)) : h('p', { class: 'empty' }, free.length ? 'Bạn chưa nhận việc nào. Chọn việc ở danh sách bên dưới rồi bấm Nhận, hoặc bấm Nhận tất cả.' : 'Chưa có việc nào.')),

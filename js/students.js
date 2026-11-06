@@ -91,7 +91,10 @@ export async function importReviews(items, fac, existingIds) {
     if (!it.cls) continue;
     const ck = normCode(it.cls.code);
     for (const st of it.students) {
-      const sid = `${fac}_${ck}_${slug(st.name)}`;
+      // tên đã được gộp (viết sai chính tả / thiếu họ) thì dùng đúng học sinh đã gộp vào
+      const al = (S.students || []).find((s) => s.classId === it.cls.id && (s.aliases || []).includes(slug(st.name)));
+      if (al) st = { ...st, name: al.name };
+      const sid = al ? al.id : `${fac}_${ck}_${slug(st.name)}`;
       const rid = reviewId(fac, it.date, ck, st.name);
       const dup = ops.find((o) => o.id === rid);
       if (dup) { if (it.content && !dup.data.content.includes(it.content)) dup.data.content = [dup.data.content, it.content].filter(Boolean).join('\n'); continue; }
@@ -109,6 +112,24 @@ export async function importReviews(items, fac, existingIds) {
   }
   await S.db.batch(ops);
   return { added, skipped };
+}
+
+/** Gộp học sinh `from` (tên sai / trùng) vào `into`: chuyển toàn bộ lịch sử ôn bù sang học sinh đúng, các lần dán sau tự nhận đúng tên. */
+export async function mergeStudents(from, into) {
+  const fr = await S.db.getAll('reviews', [['studentId', '==', from.id]]);
+  const ir = await S.db.getAll('reviews', [['studentId', '==', into.id]]);
+  const ops = [];
+  for (const r of fr) {
+    const twin = ['on', 'bu'].includes(r.kind) && ir.find((x) => x.date === r.date && x.kind === r.kind && x.classId === r.classId);
+    if (twin) {
+      if (r.content && !String(twin.content || '').includes(r.content)) ops.push({ op: 'update', col: 'reviews', id: twin.id, data: { content: [twin.content, r.content].filter(Boolean).join('\n') } });
+      ops.push({ op: 'update', col: 'reviews', id: r.id, data: { studentId: into.id, studentName: into.name, status: 'done', merged: true, note: `Đã gộp vào ${into.name}` } });
+    } else ops.push({ op: 'update', col: 'reviews', id: r.id, data: { studentId: into.id, studentName: into.name } });
+  }
+  ops.push({ op: 'update', col: 'students', id: into.id, data: { aliases: [...new Set([...(into.aliases || []), slug(from.name), ...(from.aliases || [])])], watch: !!(into.watch || from.watch) } });
+  ops.push({ op: 'update', col: 'students', id: from.id, data: { mergedInto: into.id, watch: false } });
+  await S.db.batch(ops);
+  return fr.length;
 }
 
 const histEntry = (date, result, note) => ({ date, result, note: note || '', by: S.user.id, byName: S.user.name, at: Date.now() });

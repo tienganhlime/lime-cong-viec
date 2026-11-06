@@ -221,3 +221,4 @@ label.inline input { width: auto; }
 .sch-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: center; }
 .matrix .dnote { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .matrix .cell.detail { min-width: 150px; max-width: 200px; }
+.rv-content a.lnk, .lnk { color: var(--accent, #2563eb); text-decoration: underline; word-break: break-all; }

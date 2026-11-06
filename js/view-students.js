@@ -1,9 +1,9 @@
-import { h, mount, modal, toast, confirmDlg, makeRedraw, fmtDM, fmtDMY, sortBy } from './ui.js';
+import { h, mount, modal, toast, confirmDlg, makeRedraw, fmtDM, fmtDMY, sortBy, linkify } from './ui.js';
 import { S, isCM, facName } from './core.js';
 import { todayStr, addDays, monthOf, DOW_NAMES, dow } from './rules.js';
 import {
   DOW_LABEL, classesOf, slotText, slotOn, parsePaste, importReviews, reviewDone, reviewReopen, reviewNote, reviewMove,
-  addTestScore, addStudentNote, summarize, normCode, reviewSession, reviewEnd, nextClassDate,
+  addTestScore, addStudentNote, mergeStudents, summarize, normCode, reviewSession, reviewEnd, nextClassDate,
 } from './students.js';
 
 /* ================= Khối "Ôn bài / bù bài" trong màn hình Hôm nay ================= */
@@ -33,7 +33,7 @@ export function reviewSection(list, date, redraw) {
       return h('div', { class: 'rv-row s-' + r.status },
         h('div', { class: 'rv-who' }, h('div', { class: 'rv-name' }, h('b', null, r.studentName), h('span', { class: 'chip ' + (r.kind === 'bu' ? 'warn' : '') }, r.kind === 'bu' ? 'Bù bài' : 'Ôn bài'), r.track ? h('span', { class: 'chip info', title: 'Theo dõi liên tục đến khi bấm Kết thúc theo dõi' }, 'Theo dõi') : null,
           late && h('span', { class: 'chip bad' }, `Từ ${fmtDM(r.date)}`), r.movedCount ? h('span', { class: 'muted' }, ` · đã lùi ${r.movedCount} lần`) : null),
-          !shared && r.content ? h('div', { class: 'rv-content sm' }, r.content) : null),
+          !shared && r.content ? h('div', { class: 'rv-content sm' }, linkify(r.content)) : null),
         r.status === 'done'
           ? h('div', { class: 'rv-acts' }, h('span', { class: 'ok-text' }, `✓ Đã ôn${r.doneByName ? ' · ' + r.doneByName : ''}`), r.note ? h('span', { class: 'muted' }, r.note) : null,
             h('button', { class: 'btn ghost sm', type: 'button', onClick: () => run(() => reviewReopen(r)) }, 'Mở lại'))
@@ -52,7 +52,7 @@ export function reviewSection(list, date, redraw) {
     return h('div', { class: 'rv-card band-' + (ci % 2 ? 'b' : 'a') },
       h('div', { class: 'rv-head' }, h('b', null, cls ? cls.code : rows[0].classCode), cls && h('span', { class: 'muted' }, ` · ${cls.teacher}`),
         slots.length ? h('span', { class: 'chip' }, slots.map((s) => `${s.start}-${s.end} P.${s.room}`).join(', ')) : null),
-      shared ? h('div', { class: 'rv-content' }, shared) : null, studentRows);
+      shared ? h('div', { class: 'rv-content' }, linkify(shared)) : null, studentRows);
   });
   return h('section', { class: 'sec' },
     h('div', { class: 'sec-head' }, h('h3', null, 'Ôn bài / bù bài', h('span', { class: 'count' }, `${done}/${list.length}`)),
@@ -67,7 +67,7 @@ export function viewStudents(root, params) {
   let q = ''; let clsFilter = ''; let onlyWatch = true;
   const unsubs = [];
   const redraw = makeRedraw(root, render);
-  unsubs.push(S.db.subscribe('students', [['facility', '==', fac]], (r) => { students = r; S.students = r; redraw(); }));
+  unsubs.push(S.db.subscribe('students', [['facility', '==', fac]], (r) => { students = r.filter((s) => !s.mergedInto); S.students = students; redraw(); }));
   // Chỉ nghe 2 tuần gần nhất (cộng 16 ngày tới, là các ngày đã dán danh sách). Bấm "Mở thêm" để xem thêm từng 2 tuần cũ hơn.
   const wins = []; let nWin = 0;
   const winDates = (k) => {
@@ -87,6 +87,23 @@ export function viewStudents(root, params) {
     return { done: rs.filter((r) => r.status === 'done').length, pending: rs.filter((r) => r.status === 'pending').length, moved: rs.reduce((a, r) => a + (r.movedCount || 0), 0) };
   };
 
+  function mergeModal(st) {
+    const others = sortBy(students.filter((s) => s.id !== st.id && !s.mergedInto && s.classId === st.classId), 'name');
+    if (!others.length) { toast('Lớp này chưa có học sinh nào khác để gộp', 'err'); return; }
+    const sel = h('select', null, h('option', { value: '' }, '— Chọn học sinh đúng —'), others.map((o) => h('option', { value: o.id }, o.name)));
+    modal({
+      title: 'Gộp học sinh trùng',
+      body: h('div', { class: 'stack' },
+        h('p', null, 'Toàn bộ nội dung ôn / bù, điểm test, nhận xét của ', h('b', null, st.name), ' sẽ được chuyển sang học sinh bạn chọn bên dưới. Các lần dán danh sách sau mà viết giống tên cũ sẽ tự nhận đúng học sinh.'),
+        h('label', null, 'Gộp vào (tên đúng)', sel)),
+      actions: [{ label: 'Hủy', kind: 'ghost' }, { label: 'Gộp', kind: 'primary', onClick: async () => {
+        const into = others.find((o) => o.id === sel.value);
+        if (!into) { toast('Hãy chọn học sinh đúng', 'err'); return false; }
+        try { const n = await mergeStudents(st, into); toast(`Đã gộp ${st.name} vào ${into.name} (${n} mục)`); document.querySelectorAll('.overlay').forEach((o) => o.remove()); } catch (e) { toast(e.message || 'Có lỗi', 'err'); return false; }
+      } }],
+    });
+  }
+
   async function profile(st) {
     // hồ sơ: đọc toàn bộ lịch sử của riêng học sinh này (chỉ khi mở hồ sơ)
     let all = reviews.filter((r) => r.studentId === st.id);
@@ -105,12 +122,13 @@ export function viewStudents(root, params) {
     modal({
       title: `${st.name} · ${st.classCode}`, wide: true,
       body: h('div', { class: 'stack' },
+        h('div', { class: 'row-actions' }, h('button', { class: 'btn sm', type: 'button', onClick: () => mergeModal(st) }, 'Gộp với học sinh khác (tên trùng / sai chính tả)')),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: st.watch, onChange: (e) => S.db.update('students', st.id, { watch: e.target.checked }) }), 'Đang theo dõi (học sinh yếu, test hàng tuần)'),
         h('div', { class: 'row-actions' }, nt, h('button', { class: 'btn sm', type: 'button', onClick: async () => { if (!nt.value.trim()) return; await addStudentNote(st, todayStr(), nt.value.trim()); nt.value = ''; toast('Đã lưu nhận xét'); } }, 'Lưu nhận xét')),
         h('div', { class: 'row-actions' }, sc, h('button', { class: 'btn sm', type: 'button', onClick: async () => { if (!sc.value.trim()) return; await addTestScore(st, todayStr(), sc.value.trim(), ''); sc.value = ''; toast('Đã ghi điểm test'); } }, 'Ghi điểm test hôm nay')),
         h('div', { class: 'rv-hist' }, hist.length ? hist.map((x) => h('div', { class: 'rv-h' },
           h('b', null, fmtDMY(x.date)), ' · ', x.text, x.by ? h('span', { class: 'muted' }, ` · ${x.by}`) : null,
-          x.note ? h('div', { class: 'muted' }, x.note) : null, x.content ? h('div', { class: 'rv-content sm' }, x.content.split('\n')[0].slice(0, 160)) : null))
+          x.note ? h('div', { class: 'muted' }, x.note) : null, x.content ? h('div', { class: 'rv-content sm' }, linkify(x.content.split('\n')[0].slice(0, 160))) : null))
           : h('p', { class: 'muted' }, 'Chưa có lịch sử.'))),
       actions: [{ label: 'Đóng', kind: 'primary' }],
     });
@@ -163,7 +181,7 @@ export function viewStudents(root, params) {
           const sl = it.cls ? slotOn(it.cls, it.date) : [];
           return h('div', { class: 'rv-card' }, h('div', { class: 'rv-head' }, h('b', null, `${DOW_NAMES[dow(it.date)]} ${fmtDM(it.date)}`), ' · ', it.classRaw, ' → ', sel,
             it.cls && !sl.length ? h('span', { class: 'chip warn' }, 'Lớp không học ngày này') : null),
-          h('div', null, it.students.map((s) => h('span', { class: 'chip' }, s.name + (s.tag ? ` (${s.tag})` : '')))), it.content ? h('div', { class: 'rv-content sm' }, it.content) : null); }),
+          h('div', null, it.students.map((s) => h('span', { class: 'chip' }, s.name + (s.tag ? ` (${s.tag})` : '')))), it.content ? h('div', { class: 'rv-content sm' }, linkify(it.content)) : null); }),
         h('button', { class: 'btn primary', type: 'button', disabled: !ok.length, onClick: async () => {
           const r = await importReviews(parsed, fac, existing);
           toast(`Đã thêm ${r.added} lượt ôn bài vào checklist${r.skipped ? `, bỏ qua ${r.skipped} lượt đã có` : ''}`); parsed = null; pasteText = ''; render();

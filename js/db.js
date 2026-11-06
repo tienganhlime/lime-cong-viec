@@ -21,20 +21,31 @@ export function errMsg(e) {
 
 const seedUrl = () => new URL('../data/seed.json', import.meta.url).href;
 
+const KEEP_TPL = ['assignees', 'assigneesByFac', 'perClass', 'rotate', 'weekendShifts']; // chỉnh sửa trong web được giữ khi nạp lại mẫu
 async function writeSeed(db) {
   const seed = await (await fetch(seedUrl(), { cache: 'no-store' })).json();
   const ops = [];
-  for (const t of seed.templates) ops.push({ op: 'set', col: 'templates', id: t.id, data: t });
+  // Nạp lại KHÔNG xóa dữ liệu đang dùng: mẫu việc cập nhật theo bảng gốc nhưng giữ phân công người; lịch lớp và lớp học đã có thì giữ nguyên, chỉ thêm phần còn thiếu
+  const oldT = new Map((await db.getAll('templates', [])).map((t) => [t.id, t]));
+  for (const t of seed.templates) {
+    const o = oldT.get(t.id) || {}; const keep = {};
+    for (const k of KEEP_TPL) if (o[k] !== undefined) keep[k] = o[k];
+    ops.push({ op: 'set', col: 'templates', id: t.id, data: { ...t, ...keep } });
+  }
   for (const c of seed.chains) ops.push({ op: 'set', col: 'chains', id: c.id, data: c });
-  ops.push({ op: 'set', col: 'meta', id: 'schedules', data: { data: seed.schedules, keys: seed.scheduleKeys } });
+  const meta = (await db.get('meta', 'schedules')) || {};
+  const data = JSON.parse(JSON.stringify(meta.data || {}));
+  for (const [fac, keys] of Object.entries(seed.schedules)) { data[fac] = data[fac] || {}; for (const [k, v] of Object.entries(keys)) if (!data[fac][k]) data[fac][k] = v; }
+  ops.push({ op: 'set', col: 'meta', id: 'schedules', data: { data, keys: { ...seed.scheduleKeys, ...(meta.keys || {}) } } });
   await db.batch(ops);
   await writeClasses(db);
   return seed;
 }
-async function writeClasses(db) {
+async function writeClasses(db, force = false) {
   try {
     const cls = await (await fetch(new URL('../data/classes.json', import.meta.url).href, { cache: 'no-store' })).json();
-    await db.batch(cls.map((c) => ({ op: 'set', col: 'classes', id: c.id, data: { facility: c.facility, code: c.code, teacher: c.teacher, slots: c.slots } })));
+    const have = new Set((await db.getAll('classes', [])).map((c) => c.id));
+    await db.batch(cls.filter((c) => force || !have.has(c.id)).map((c) => ({ op: 'set', col: 'classes', id: c.id, data: { facility: c.facility, code: c.code, teacher: c.teacher, slots: c.slots } })));
   } catch (e) { console.warn('Không nạp được thời khóa biểu mẫu', e); }
 }
 
@@ -133,7 +144,7 @@ function demoDb() {
       persist(); touched.forEach(fire);
     },
     async loadSeed() { return writeSeed(db); },
-    async loadClasses() { return writeClasses(db); },
+    async loadClasses() { return writeClasses(db, true); },
     async resetDemo() { try { localStorage.removeItem(KEY); sessionStorage.removeItem(SESSION); } catch (e) { /* bỏ qua */ } location.reload(); },
   };
   return db;
@@ -248,7 +259,7 @@ async function firebaseDb() {
       }
     },
     async loadSeed() { return writeSeed(db); },
-    async loadClasses() { return writeClasses(db); },
+    async loadClasses() { return writeClasses(db, true); },
   };
   return db;
 }

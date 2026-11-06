@@ -48,7 +48,10 @@ export function weekIndex(date) {
 // Lịch lớp theo cơ sở: schedules[facility][key] = { "1": "...", ... }
 export function scheduleText(tpl, fac, date, schedules) {
   if (!tpl.scheduleKey) return { skip: false, text: '' };
-  const s = schedules && schedules[fac] && schedules[fac][tpl.scheduleKey];
+  const fs = schedules && schedules[fac];
+  // lịch theo ngày trong tháng có thể nhập riêng cho từng tháng (khóa "key@YYYY-MM"), ưu tiên hơn lịch chung
+  const own = fs && tpl.scheduleMode === 'monthday' && fs[`${tpl.scheduleKey}@${date.slice(0, 7)}`];
+  const s = own && Object.keys(own).length ? own : (fs && fs[tpl.scheduleKey]);
   // cơ sở chưa nhập lịch lớp thì chưa sinh việc này (nhập ở mục Lịch lớp)
   if (!s || !Object.keys(s).length) return { skip: true, text: '' };
   const k = tpl.scheduleMode === 'monthday' ? String(Number(date.slice(8)))
