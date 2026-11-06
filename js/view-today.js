@@ -201,7 +201,7 @@ export function viewToday(root, params) {
     const sel = free.filter((t) => selected.has(t.id));
     const freeActions = h('div', { class: 'row-actions' },
       h('button', { class: 'btn sm', type: 'button', disabled: !sel.length, onClick: async () => { await claimMany(sel); selected.clear(); toast(`Đã nhận ${sel.length} việc`); } }, `Nhận việc đã chọn (${sel.length})`),
-      h('button', { class: 'btn sm primary', type: 'button', disabled: !free.length || S.user.role === 'admin', onClick: async () => { await claimMany(free); selected.clear(); toast(`Đã nhận ${free.length} việc vào checklist của bạn`); } }, 'Nhận tất cả'));
+      h('button', { class: 'btn sm primary', type: 'button', disabled: !free.length, onClick: async () => { await claimMany(free); selected.clear(); toast(`Đã nhận ${free.length} việc vào checklist của bạn`); } }, 'Nhận tất cả'));
 
     mount(root, 
       h('div', { class: 'page-head' },
@@ -219,10 +219,10 @@ export function viewToday(root, params) {
         h('div', { class: 'progress', title: `${doneN}/${relevantTotal.length} việc đã xong` }, h('div', { class: 'bar' }, h('span', { style: { width: pct + '%' } })), h('span', null, `${doneN}/${relevantTotal.length} xong`)),
         h('div', { class: 'row-actions' },
           h('button', { class: 'btn', type: 'button', onClick: () => addTaskModal({ date }) }, '+ Thêm việc'),
-          S.user.role !== 'admin' && h('button', { class: 'btn primary', type: 'button', onClick: () => reportModal({ date, fac, mine: all.filter((t) => t.assignee === S.user.id && t.date === date || t.assignee === S.user.id && t.date < date), existing: myReport, revs }) }, myReport ? 'Cập nhật báo cáo cuối ca' : 'Kết thúc ca & báo cáo'))),
+          h('button', { class: 'btn primary', type: 'button', onClick: () => reportModal({ date, fac, mine: all.filter((t) => t.assignee === S.user.id && t.date === date || t.assignee === S.user.id && t.date < date), existing: myReport, revs }) }, myReport ? 'Cập nhật báo cáo cuối ca' : 'Kết thúc ca & báo cáo'))),
       myReport && h('div', { class: 'banner ok' }, `Bạn đã nộp báo cáo cuối ca lúc ${new Date(myReport.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}.`),
       prev && h('div', { class: 'banner' }, h('b', null, `Bàn giao từ ca ngày ${fmtDM(prev.date)} (${prev.userName}): `), linkify(prev.note),
-        S.user.role !== 'admin' && h('button', { class: 'btn sm', type: 'button', style: { marginLeft: '8px' }, onClick: async () => { const o = handoverOp({ fac, date: prev.date, uid: prev.uid, userName: prev.userName, note: prev.note }); if (await S.db.get('tasks', o.id)) { toast('Việc bàn giao này đã có trong checklist'); return; } await S.db.batch([o]); toast('Đã tạo việc bàn giao trong checklist'); } }, 'Chuyển thành việc cần làm')),
+        h('button', { class: 'btn sm', type: 'button', style: { marginLeft: '8px' }, onClick: async () => { const o = handoverOp({ fac, date: prev.date, uid: prev.uid, userName: prev.userName, note: prev.note }); if (await S.db.get('tasks', o.id)) { toast('Việc bàn giao này đã có trong checklist'); return; } await S.db.batch([o]); toast('Đã tạo việc bàn giao trong checklist'); } }, 'Chuyển thành việc cần làm')),
       reviewSection(revs, date, redraw),
       mine.filter((t) => isOverdue(t)).length ? h('div', { class: 'banner bad' }, `⚠ Bạn còn ${mine.filter((t) => isOverdue(t)).length} việc quá hạn chưa làm`) : null,
       sec('Việc của tôi', mine.length, mine.length ? mine.map((t) => card(t)) : h('p', { class: 'empty' }, free.length ? 'Bạn chưa nhận việc nào. Chọn việc ở danh sách bên dưới rồi bấm Nhận, hoặc bấm Nhận tất cả.' : 'Chưa có việc nào.')),

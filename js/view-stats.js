@@ -59,6 +59,16 @@ export function viewStats(root) {
   function render() {
     const people = S.users.filter((u) => !u.disabled && (cmType ? (u.cmType === cmType) : (u.role === 'ta' || (withCM && (u.role === 'cm' || u.role === 'manager')))));
     const inRange = tasks.filter((t) => t.date >= from && t.date <= to && t.status !== 'na' && t.status !== 'partial');
+    // Người có mặt làm việc ở (cơ sở, ngày): có việc được giao/làm/tham gia hoặc nộp báo cáo cuối ca
+    const present = new Set();
+    for (const t of tasks) {
+      if (t.assignee) present.add(`${t.facility}|${t.date}|${t.assignee}`);
+      if (t.doneBy) present.add(`${t.facility}|${t.date}|${t.doneBy}`);
+      for (const k of Object.keys(t.parts || {})) present.add(`${t.facility}|${t.date}|${k}`);
+    }
+    for (const r of reports) present.add(`${r.facility}|${r.date}|${r.uid}`);
+    const teamMiss = (u) => inRange.filter((t) => isOpen(t) && t.date < today && present.has(`${t.facility}|${t.date}|${u.id}`)
+      && (t.group === 'both' || (u.role === 'ta' ? t.group === 'ta' : t.group === 'cm'))).length;
     const rows = people.map((u) => {
       const inv = (t) => t.assignee === u.id || (t.parts && t.parts[u.id]);
       const mine = inRange.filter(inv);
@@ -69,6 +79,7 @@ export function viewStats(root) {
         review: mine.filter((t) => t.status === 'review').length,
         fix: mine.filter((t) => t.flagged || t.status === 'fix').length,
         late: mine.filter((t) => isOpen(t) && t.date < today).length,
+        team: teamMiss(u), kGood: mine.filter((t) => t.kpi === 'good').length, kBad: mine.filter((t) => t.kpi === 'bad').length, kLate: mine.filter((t) => t.kpi === 'late').length,
         rep, pct: mine.length ? Math.round((done / mine.length) * 100) : 0,
       };
     });
@@ -80,13 +91,13 @@ export function viewStats(root) {
     const perDay = days.map((d) => ({ d, counts: people.map((u) => inRange.filter((t) => t.date === d && (t.assignee === u.id || (t.parts && t.parts[u.id])) && (t.status === 'done' || (t.parts && t.parts[u.id] && t.parts[u.id].done))).length) }));
 
     const sumT = h('table', { class: 'tbl stat' }, h('thead', null, h('tr', null,
-      ['Người làm', 'Được giao', 'Đã xong', 'Hoàn thành', 'Chờ duyệt', 'Bị phản hồi/lỗi', 'Quá hạn', 'Báo cáo cuối ca'].map((x) => h('th', null, x)))),
+      ['Người làm', 'Được giao', 'Đã xong', 'Hoàn thành', 'Chờ duyệt', 'Bị phản hồi/lỗi', 'Quá hạn', 'Việc cả ca chưa xong (tính chung)', 'CM chấm: Đạt', 'CM chấm: Trễ', 'CM chấm: Chưa đạt', 'Báo cáo cuối ca'].map((x) => h('th', null, x)))),
       h('tbody', null, rows.map((r) => h('tr', null,
         h('td', null, h('b', null, r.u.name), h('div', { class: 'muted small' }, ROLE_LABEL[r.u.role])),
         h('td', null, r.assigned, h('div', { class: 'mini' }, h('span', { style: { width: (r.assigned / maxA) * 100 + '%' } }))),
         h('td', null, r.done),
         h('td', null, h('span', { class: 'pill ' + (r.pct >= 90 ? 'good' : r.pct >= 60 ? 'mid' : 'low') }, r.pct + '%')),
-        h('td', null, r.review), h('td', null, r.fix), h('td', null, r.late ? h('span', { class: 'chip bad inl' }, r.late) : 0), h('td', null, r.rep)))));
+        h('td', null, r.review), h('td', null, r.fix), h('td', null, r.late ? h('span', { class: 'chip bad inl' }, r.late) : 0), h('td', null, r.team ? h('span', { class: 'chip bad inl' }, r.team) : 0), h('td', null, r.kGood), h('td', null, r.kLate), h('td', null, r.kBad), h('td', null, r.rep)))));
 
     const dayT = h('div', { class: 'scroll' }, h('table', { class: 'tbl stat compact' }, h('thead', null, h('tr', null, h('th', null, 'Ngày'), people.map((u) => h('th', null, u.name.split(' ').slice(-1)[0])))),
       h('tbody', null, perDay.map((r) => h('tr', null, h('td', null, `${DOW_NAMES[dow(r.d)]} ${fmtDM(r.d)}`), r.counts.map((c) => h('td', { class: c ? '' : 'muted' }, c)))))));

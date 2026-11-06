@@ -21,9 +21,9 @@ export const myGroups = () => (isTA() ? ['ta', 'both'] : ['cm', 'both']);
 // Người nhận việc theo nhóm
 export function usersOfGroup(g) {
   const act = S.users.filter((u) => !u.disabled);
-  if (g === 'ta') return act.filter((u) => u.role === 'ta');
-  if (g === 'cm') return act.filter((u) => u.role === 'cm' || u.role === 'manager');
-  return act.filter((u) => u.role !== 'admin');
+  if (g === 'ta') return act.filter((u) => u.role === 'ta' || u.role === 'admin');
+  if (g === 'cm') return act.filter((u) => u.role === 'cm' || u.role === 'manager' || u.role === 'admin');
+  return act;
 }
 
 // Những người có thể được giao một việc
@@ -118,9 +118,19 @@ export async function requestFix(t, feedback, flag = false) {
 export const removeTask = (t) => S.db.remove('tasks', t.id);
 export const saveNote = (t, note) => S.db.update('tasks', t.id, { note });
 
-export const taskKey = (t) => `${t.time || 'zz'}|${String(t.order || 0).padStart(5, '0')}|${t.title}`;
+/** Thứ tự theo thời gian: "Đầu ca/đầu ngày" lên trước, giờ cụ thể theo giờ, việc không ghi giờ ở giữa, "Cuối ca/cuối ngày" xuống cuối. */
+export function timeRank(time) {
+  const x = String(time || '').toLowerCase().trim();
+  if (!x) return 5000;
+  if (/đầu/.test(x)) return 0;
+  if (/cuối/.test(x)) return 9000;
+  const m = x.match(/(\d{1,2})\s*[h:g]\s*(\d{0,2})/);
+  if (m) return 100 + Number(m[1]) * 60 + Number(m[2] || 0);
+  return 5000;
+}
+export const taskKey = (t) => `${String(timeRank(t.time)).padStart(5, '0')}|${String(t.order || 0).padStart(5, '0')}|${t.title}`;
 export function taskSort(a, b) {
-  return (a.time || 'zz').localeCompare(b.time || 'zz') || (a.order || 0) - (b.order || 0) || a.title.localeCompare(b.title);
+  return timeRank(a.time) - timeRank(b.time) || (a.order || 0) - (b.order || 0) || a.title.localeCompare(b.title);
 }
 
 /** Mẫu việc của một việc. Đối chiếu theo tên để không lấy nhầm hướng dẫn của mẫu khác khi mã mẫu bị đánh số lại. */

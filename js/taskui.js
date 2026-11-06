@@ -160,7 +160,7 @@ export function taskCard(t, o = {}) {
       : (p.note ? h('p', { class: 'muted' }, p.note) : null))));
   if (Object.keys(parts).length) detail.append(partBox);
   const partRow = h('div', { class: 'actions' });
-  if (S.user.role !== 'admin' && t.status !== 'na') {
+  if (t.status !== 'na') {
     if (!myPart) partRow.append(h('button', { class: 'btn sm', type: 'button', onClick: act(() => saveParts({ ...parts, [S.user.id]: { name: S.user.name, note: '', done: false, at: Date.now() } })) }, 'Tham gia làm cùng'));
     else {
       if (!myPart.done) partRow.append(h('button', { class: 'btn sm primary', type: 'button', onClick: act(() => saveParts({ ...parts, [S.user.id]: { ...myPart, done: true, doneAt: Date.now() } })) }, 'Xong phần của tôi'));
@@ -189,6 +189,14 @@ export function taskCard(t, o = {}) {
   if (allowed || isCM()) row.append(h('button', { class: 'btn sm ghost', type: 'button', onClick: () => editModal(t, redraw) }, 'Sửa'));
   detail.append(row);
 
+  // CM chấm lại để tính KPI (không phụ thuộc trạng thái, kể cả khi trợ giảng làm trễ do việc phát sinh)
+  if (isCM()) {
+    const ksel = h('select', { class: 'sel-sm', onChange: (e) => run(() => S.db.update('tasks', t.id, { kpi: e.target.value, kpiBy: S.user.name, kpiAt: Date.now() }), redraw) },
+      [['', 'Chưa chấm'], ['good', 'Đạt'], ['late', 'Hoàn thành nhưng trễ (có lý do)'], ['bad', 'Chưa đạt']].map(([v, l]) => h('option', { value: v, selected: (t.kpi || '') === v }, l)));
+    const knote = h('input', { type: 'text', placeholder: 'Lý do chấm lại (vd: nhiều việc phát sinh nên không kịp)', value: t.kpiNote || '', onChange: (e) => run(() => S.db.update('tasks', t.id, { kpiNote: e.target.value }), redraw) });
+    detail.append(h('div', { class: 'assign' }, h('span', { class: 'muted' }, 'CM chấm KPI'), ksel, knote, t.kpiBy ? h('span', { class: 'muted small' }, `(${t.kpiBy})`) : null));
+  }
+
   // phân công
   const cands = assignCandidates(t);
   const sel = h('select', {
@@ -197,7 +205,7 @@ export function taskCard(t, o = {}) {
   }, h('option', { value: '' }, '— Chưa có người nhận —'), cands.map((u) => h('option', { value: u.id }, u.name + (u.id === S.user.id ? ' (tôi)' : ''))));
   sel.value = t.assignee || '';
   const arow = h('div', { class: 'assign' }, h('span', { class: 'muted' }, 'Giao cho'), sel);
-  if (!t.assignee && S.user.role !== 'admin') arow.append(btn('Nhận việc này', 'sm', () => claim(t)));
+  if (!t.assignee) arow.append(btn('Nhận việc này', 'sm', () => claim(t)));
   if (t.assignee === S.user.id) arow.append(btn('Trả lại', 'ghost', () => unclaim(t)));
   detail.append(arow);
 

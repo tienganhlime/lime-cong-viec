@@ -87,19 +87,28 @@ export function viewStudents(root, params) {
     return { done: rs.filter((r) => r.status === 'done').length, pending: rs.filter((r) => r.status === 'pending').length, moved: rs.reduce((a, r) => a + (r.movedCount || 0), 0) };
   };
 
-  function mergeModal(st) {
-    const others = sortBy(students.filter((s) => s.id !== st.id && !s.mergedInto && s.classId === st.classId), 'name');
-    if (!others.length) { toast('Lớp này chưa có học sinh nào khác để gộp', 'err'); return; }
-    const sel = h('select', null, h('option', { value: '' }, '— Chọn học sinh đúng —'), others.map((o) => h('option', { value: o.id }, o.name)));
+  function mergeModal(st0) {
+    const live = students.filter((s) => !s.mergedInto);
+    const classes = [...new Map(live.map((s) => [s.classId, s.classCode])).entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+    if (live.length < 2) { toast('Chưa đủ học sinh để gộp', 'err'); return; }
+    const clsS = h('select', { disabled: !!st0 }, classes.map(([id, code]) => h('option', { value: id, selected: st0 ? id === st0.classId : false }, code)));
+    const wrongS = h('select'); const rightS = h('select');
+    const fill = () => {
+      const list = sortBy(live.filter((s) => s.classId === clsS.value), 'name');
+      wrongS.replaceChildren(h('option', { value: '' }, '— Chọn tên sai / bị trùng —'), ...list.map((o) => h('option', { value: o.id, selected: st0 ? o.id === st0.id : false }, o.name)));
+      rightS.replaceChildren(h('option', { value: '' }, '— Chọn tên đúng —'), ...list.map((o) => h('option', { value: o.id }, o.name)));
+    };
+    clsS.addEventListener('change', fill); fill();
     modal({
       title: 'Gộp học sinh trùng',
       body: h('div', { class: 'stack' },
-        h('p', null, 'Toàn bộ nội dung ôn / bù, điểm test, nhận xét của ', h('b', null, st.name), ' sẽ được chuyển sang học sinh bạn chọn bên dưới. Các lần dán danh sách sau mà viết giống tên cũ sẽ tự nhận đúng học sinh.'),
-        h('label', null, 'Gộp vào (tên đúng)', sel)),
+        h('p', null, 'Toàn bộ nội dung ôn / bù, điểm test, nhận xét của học sinh "tên sai" sẽ chuyển sang học sinh "tên đúng". Các lần dán danh sách sau mà viết giống tên sai sẽ tự nhận đúng học sinh.'),
+        h('label', null, 'Lớp', clsS), h('label', null, 'Học sinh tên sai / thiếu họ (sẽ được gộp đi)', wrongS), h('label', null, 'Học sinh tên đúng (giữ lại)', rightS)),
       actions: [{ label: 'Hủy', kind: 'ghost' }, { label: 'Gộp', kind: 'primary', onClick: async () => {
-        const into = others.find((o) => o.id === sel.value);
-        if (!into) { toast('Hãy chọn học sinh đúng', 'err'); return false; }
-        try { const n = await mergeStudents(st, into); toast(`Đã gộp ${st.name} vào ${into.name} (${n} mục)`); document.querySelectorAll('.overlay').forEach((o) => o.remove()); } catch (e) { toast(e.message || 'Có lỗi', 'err'); return false; }
+        const from = live.find((o) => o.id === wrongS.value); const into = live.find((o) => o.id === rightS.value);
+        if (!from || !into) { toast('Hãy chọn đủ 2 học sinh', 'err'); return false; }
+        if (from.id === into.id) { toast('Hai học sinh phải khác nhau', 'err'); return false; }
+        try { const n = await mergeStudents(from, into); toast(`Đã gộp ${from.name} vào ${into.name} (${n} mục)`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); return false; }
       } }],
     });
   }
@@ -158,7 +167,8 @@ export function viewStudents(root, params) {
       h('div', { class: 'toolbar wrap' },
         h('select', { onChange: (e) => { clsFilter = e.target.value; render(); } }, h('option', { value: '' }, 'Tất cả lớp'), cls.map((c) => h('option', { value: c.id, selected: c.id === clsFilter }, c.code))),
         h('input', { type: 'search', class: 'search', placeholder: 'Tìm học sinh…', value: q, onInput: (e) => { q = e.target.value; redraw(); } }),
-        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: onlyWatch, onChange: (e) => { onlyWatch = e.target.checked; render(); } }), 'Chỉ học sinh đang theo dõi'), reportBtn),
+        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: onlyWatch, onChange: (e) => { onlyWatch = e.target.checked; render(); } }), 'Chỉ học sinh đang theo dõi'),
+        h('button', { class: 'btn', type: 'button', onClick: () => mergeModal(null) }, 'Gộp học sinh trùng / sai tên'), reportBtn),
       rows.length ? h('div', { class: 'matrix-wrap' }, h('table', { class: 'tbl' },
         h('thead', null, h('tr', null, ['Học sinh', 'Lớp', 'Đã ôn', 'Đang chờ', 'Lần lùi buổi', ''].map((t) => h('th', null, t)))),
         h('tbody', null, rows.map((s, i) => { const x = stats(s.id); if (i === 0 || rows[i - 1].classId !== s.classId) band = 1 - band; return h('tr', { class: 'clickable band-' + (band ? 'a' : 'b'), tabindex: 0, onClick: () => profile(s), onKeydown: (e) => { if (e.key === 'Enter') profile(s); } },

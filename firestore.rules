@@ -38,7 +38,7 @@ service cloud.firestore {
       allow update: if isCM() || (active()
                     && resource.data.group in ['ta', 'both'] && request.resource.data.group in ['ta', 'both']
                     && request.resource.data.status != 'approved'
-                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['flagged', 'feedback']));
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['flagged', 'feedback', 'kpi', 'kpiNote', 'kpiBy', 'kpiAt']));
       allow delete: if isCM();
     }
 
