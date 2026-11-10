@@ -66,6 +66,7 @@ export async function assignTo(t, uid) {
 
 export async function complete(t) {
   const base = { doneAt: Date.now(), doneBy: S.user.id, doneByName: S.user.name };
+  if (t.status === 'fix') base.taLog = [...(t.taLog || []), fbEntry('resubmit', 'Làm lại và gửi duyệt')];
   if (!t.assignee) { base.assignee = S.user.id; base.assigneeName = S.user.name; }
   if (t.status === 'approved') return patchTask(t, { ...base, status: 'done' });
   if (t.needsReview || t.flagged) {
@@ -108,9 +109,12 @@ export async function approve(t) {
   const to = t.doneBy || t.assignee;
   if (to) await notify([to], t.sendCSKH ? `Chuyên môn đã duyệt, hãy gửi CSKH: ${t.title}` : `Chuyên môn đã duyệt: ${t.title}`, `#/today?date=${t.date}&fac=${t.facility}`);
 }
+/** Lịch sử phản hồi: chuyên môn ghi vào feedbackLog, trợ giảng ghi vào taLog (để biết phản hồi được sửa trước hay sau khi trợ giảng làm). */
+export const fbEntry = (action, text) => ({ at: Date.now(), by: S.user.id, byName: S.user.name, action, text: text || '' });
+
 export async function requestFix(t, feedback, flag = false) {
   const to = t.doneBy || t.assignee;
-  const p = { status: 'fix', feedback: `${S.user.name}: ${feedback}`, flagged: true };
+  const p = { status: 'fix', feedback: `${S.user.name}: ${feedback}`, flagged: true, feedbackLog: [...(t.feedbackLog || []), fbEntry(flag ? 'flag' : 'request', feedback)] };
   if (!t.assignee && to) { p.assignee = to; p.assigneeName = userName(to); }
   await patchTask(t, p);
   if (to) await notify([to], `${flag ? 'Công tác bị đánh dấu lỗi' : 'Cần sửa lại'}: ${t.title}. ${feedback}`, `#/today?date=${t.date}&fac=${t.facility}`);

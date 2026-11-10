@@ -1,6 +1,6 @@
 // Thẻ công việc dùng chung cho các màn hình
-import { h, modal, toast, confirmDlg, fmtDM } from './ui.js';
-import { S, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, reopen, markNA, moveDate, approve, requestFix,
+import { h, modal, toast, confirmDlg, fmtDM, fmtTs } from './ui.js';
+import { S, fbEntry, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, reopen, markNA, moveDate, approve, requestFix,
   removeTask, tplOf, saveNote, postpone, unclaim, assignTo, claim, isOverdue } from './core.js';
 import { todayStr, addDays } from './rules.js';
 import { linksFor, linkUrl } from './links.js';
@@ -134,7 +134,24 @@ export function taskCard(t, o = {}) {
   const tpl = tplOf(t);
   const text = t.desc || (tpl && tpl.content) || '';
   if (text) detail.append(h('div', { class: 'desc' }, text));
-  if (t.feedback) detail.append(h('div', { class: 'feedback' }, h('b', null, 'Phản hồi: '), t.feedback));
+  // Phản hồi dạng dòng thời gian: mỗi lần phản hồi thêm một dòng mới, dòng cũ giữ nguyên, cả trợ giảng và chuyên môn đều thấy
+  const flog = [...(t.feedbackLog || []), ...(t.taLog || [])].sort((a, b) => a.at - b.at);
+  if (flog.length || t.feedback) {
+    const AL = { request: 'yêu cầu sửa', flag: 'đánh dấu lỗi', comment: 'phản hồi thêm', edit: 'sửa phản hồi thành', clear: 'xóa phản hồi', resubmit: 'trợ giảng làm lại và gửi duyệt' };
+    const tm = (e) => `${fmtTs(e.at)} ${new Date(e.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+    const box = h('div', { class: 'feedback' }, h('b', null, 'Phản hồi'));
+    if (!(t.feedbackLog || []).length && t.feedback) box.append(h('div', { class: 'small' }, t.feedback, h('span', { class: 'muted' }, ' (phản hồi cũ)')));
+    flog.forEach((e) => box.append(h('div', { class: 'small fb-line' + (e.action === 'resubmit' ? ' fb-ta' : '') },
+      h('span', { class: 'muted' }, tm(e) + ' · '), h('b', null, e.byName), `: ${AL[e.action] || e.action}`, e.action === 'resubmit' ? '' : ` — ${e.text}`)));
+    detail.append(box);
+  }
+  if (isCM()) {
+    const nf = h('input', { type: 'text', placeholder: 'Thêm phản hồi mới (các phản hồi cũ vẫn giữ nguyên)…', class: 'fb-in' });
+    detail.append(h('div', { class: 'assign' }, nf, h('button', { class: 'btn sm', type: 'button', onClick: () => {
+      const v = nf.value.trim(); if (!v) return toast('Hãy nhập nội dung phản hồi', 'err');
+      run(() => S.db.update('tasks', t.id, { feedback: `${S.user.name}: ${v}`, feedbackLog: [...(t.feedbackLog || []), fbEntry('comment', v)] }).then(() => toast('Đã thêm phản hồi')), redraw);
+    } }, 'Thêm phản hồi')));
+  }
   detail.append(h('div', { class: 'meta' },
     `Nhóm: ${GROUP_LABEL[t.group] || t.group} · Ngày: ${fmtDM(t.date)} · ${facName(t.facility)}`,
     t.doneByName && t.status !== 'todo' ? ` · Làm: ${t.doneByName}${t.assignee && t.doneBy && t.doneBy !== t.assignee ? ' (làm thay ' + (t.assigneeName || '') + ')' : ''}` : ''));

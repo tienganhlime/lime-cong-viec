@@ -38,7 +38,7 @@ service cloud.firestore {
       allow update: if isCM() || (active()
                     && resource.data.group in ['ta', 'both'] && request.resource.data.group in ['ta', 'both']
                     && request.resource.data.status != 'approved'
-                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['flagged', 'feedback', 'kpi', 'kpiNote', 'kpiBy', 'kpiAt']));
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['flagged', 'feedback', 'kpi', 'kpiNote', 'kpiBy', 'kpiAt', 'feedbackLog', 'feedbackEditedBy', 'feedbackEditedAt']));
       allow delete: if isCM();
     }
 
@@ -50,7 +50,13 @@ service cloud.firestore {
 
     match /classes/{id}  { allow read: if active(); allow write: if isCM(); }
     match /students/{id} { allow read, create, update: if active(); allow delete: if isCM(); }
-    match /reviews/{id}  { allow read, create, update: if active(); allow delete: if isCM(); }
+    match /reviews/{id}  {
+      allow read, create: if active();
+      // Trợ giảng không được đánh dấu xóa dòng ôn bài; chỉ Chuyên môn / Admin
+      allow update: if isCM() || (active() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['removedBy', 'removedAt'])
+                    && request.resource.data.get('status', '') != 'removed');
+      allow delete: if isCM();
+    }
 
     match /chains/{id}   { allow read: if active(); allow write: if isCM(); }
     match /events/{id}   { allow read: if active(); allow create, update, delete: if isCM(); }

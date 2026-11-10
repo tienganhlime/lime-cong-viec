@@ -178,7 +178,7 @@ export function viewToday(root, params) {
   function revList() {
     const ids = new Set(dayRev.map((r) => r.id));
     const late = date >= todayStr() ? pendRev.filter((r) => r.date < date && !ids.has(r.id)) : [];
-    return [...dayRev.filter((r) => r.kind === 'on' || r.kind === 'bu'), ...late];
+    return [...dayRev.filter((r) => (r.kind === 'on' || r.kind === 'bu') && r.status !== 'removed'), ...late];
   }
 
   function render() {

@@ -16,6 +16,7 @@ export function reviewSection(list, date, redraw) {
     if (!byClass.has(r.classId)) byClass.set(r.classId, []);
     byClass.get(r.classId).push(r);
   }
+  list = list.filter((r) => r.status !== 'removed');
   const done = list.filter((r) => r.status === 'done').length;
   const run = async (fn) => { try { await fn(); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } if (redraw) redraw(); };
   const cards = [...byClass.entries()].map(([cid, rows], ci) => {
@@ -41,6 +42,7 @@ export function reviewSection(list, date, redraw) {
             r.track
               ? h('button', { class: 'btn primary sm', type: 'button', title: 'Ghi đã ôn buổi này, tiếp tục theo dõi ở buổi học sau', onClick: () => run(async () => { const d = await reviewSession(r, date, note.value); toast(`${r.studentName}: đã ôn buổi này, theo dõi tiếp ${fmtDM(d)}`); }) }, '✓ Đã ôn buổi này')
               : h('button', { class: 'btn primary sm', type: 'button', onClick: () => run(async () => { await reviewDone(r, note.value); toast('Đã ghi: ' + r.studentName + ' đã ôn'); }) }, '✓ Đã ôn'),
+            isCM() && h('button', { class: 'btn ghost sm', type: 'button', title: 'Xóa dòng bị trùng / nhập nhầm khỏi checklist', onClick: () => run(async () => { if (await confirmDlg(`Xóa dòng ôn / bù của ${r.studentName} (${fmtDM(r.date)}) vì bị trùng hoặc nhập nhầm?`, { okLabel: 'Xóa dòng này', danger: true })) { await S.db.update('reviews', r.id, { status: 'removed', removedBy: S.user.name, removedAt: Date.now() }); toast('Đã xóa dòng trùng'); } }) }, 'Xóa dòng trùng'),
             r.track ? h('button', { class: 'btn sm', type: 'button', title: 'Học sinh đã ôn / bù đủ, dừng theo dõi', onClick: () => run(async () => { if (await confirmDlg(`Kết thúc theo dõi ${r.studentName}? Sẽ không còn xuất hiện ở các buổi sau.`, { okLabel: 'Kết thúc theo dõi' })) { await reviewEnd(r, note.value); toast('Đã kết thúc theo dõi ' + r.studentName); } }) }, 'Kết thúc theo dõi') : null,
             h('button', { class: 'btn sm', type: 'button', title: 'Chuyển sang buổi học kế tiếp của lớp', onClick: () => run(async () => {
               const d = await reviewMove(r, date, 'moved', note.value); toast(`${r.studentName} chuyển sang ${fmtDM(d)}`);
@@ -83,7 +85,7 @@ export function viewStudents(root, params) {
   let pasteText = ''; let pasteDate = todayStr(); let parsed = null;
 
   const stats = (sid) => {
-    const rs = reviews.filter((r) => r.studentId === sid && (r.kind === 'on' || r.kind === 'bu'));
+    const rs = reviews.filter((r) => r.studentId === sid && (r.kind === 'on' || r.kind === 'bu') && r.status !== 'removed');
     return { done: rs.filter((r) => r.status === 'done').length, pending: rs.filter((r) => r.status === 'pending').length, moved: rs.reduce((a, r) => a + (r.movedCount || 0), 0) };
   };
 
