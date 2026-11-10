@@ -80,11 +80,57 @@ export function parsePaste(text, defDate, fac) {
   return items.filter((i) => i.students.length);
 }
 
+/** Tách nội dung "A // 4/11 B // 5/11 C" thành từng ngày: mỗi ngày một nội dung. Đoạn đầu không ghi ngày lấy ngày mặc định. */
+export function splitByDate(content, defDate) {
+  const segs = String(content || '').split(/\s+\/\/\s+/).map((x) => x.trim()).filter(Boolean);
+  if (segs.length < 2) return [{ date: defDate, content: String(content || '').trim() }];
+  const out = [];
+  segs.forEach((sg, i) => {
+    const m = sg.match(/^(?:thứ\s*\d\s*)?\(?(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{2,4}))?\)?\s*[:\-–]?\s+([\s\S]+)$/i);
+    if (m) {
+      const y = m[3] ? (m[3].length === 2 ? '20' + m[3] : m[3]) : defDate.slice(0, 4);
+      out.push({ date: `${y}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`, content: m[4].trim() });
+    } else if (i === 0 || !out.length) out.push({ date: defDate, content: sg });
+    else out[out.length - 1].content += ' // ' + sg;
+  });
+  const merged = [];
+  for (const o of out) { const f = merged.find((x) => x.date === o.date); if (f) f.content += '\n' + o.content; else merged.push(o); }
+  return merged;
+}
+
+/** Tách các lượt ôn bài cũ (một dòng chứa nhiều ngày) thành từng ngày riêng. */
+export async function splitExistingReviews(fac) {
+  const all = await S.db.getAll('reviews', [['facility', '==', fac], ['status', '==', 'pending']]);
+  const have = new Set(all.map((r) => r.id)); const ops = []; let n = 0;
+  for (const r of all) {
+    if (!['on', 'bu'].includes(r.kind) || !r.content || r.track) continue;
+    const parts = splitByDate(r.content, r.date);
+    if (parts.length < 2) continue;
+    const ck = normCode(r.classCode);
+    parts.forEach((pt, i) => {
+      if (i === 0) { ops.push({ op: 'update', col: 'reviews', id: r.id, data: { date: pt.date, content: pt.content } }); return; }
+      const rid = reviewId(fac, pt.date, ck, r.studentName);
+      if (have.has(rid)) { const ex = ops.find((o) => o.id === rid); if (ex && ex.op === 'set') ex.data.content += '\n' + pt.content; return; }
+      have.add(rid); n++;
+      ops.push({ op: 'set', col: 'reviews', id: rid, data: { ...r, id: undefined, date: pt.date, content: pt.content, history: [], movedCount: 0, createdAt: Date.now(), createdBy: S.user.id, createdByName: S.user.name } });
+    });
+  }
+  ops.forEach((o) => { if (o.data && 'id' in o.data) delete o.data.id; });
+  if (ops.length) await S.db.batch(ops);
+  return n;
+}
+
 /* ------------ Ghi dữ liệu ------------ */
 const kindOf = (content) => (/\bbù\b|\bbvn\b|\bbtvn\b/i.test(content || '') ? 'bu' : 'on');
 export const reviewId = (fac, date, classKey, name) => `${fac}_${date}_${classKey}_${slug(name)}`;
 
 export async function importReviews(items, fac, existingIds) {
+  // mỗi ngày một nội dung riêng (nội dung tồn ngày trước nằm ở dòng riêng, ôn trước)
+  items = items.flatMap((it) => {
+    const k = it.kind || kindOf(it.content);
+    if (it.track || !it.content || k === 'test' || k === 'note') return [it];
+    return splitByDate(it.content, it.date).map((pt) => ({ ...it, date: pt.date, content: pt.content, kind: it.kind || kindOf(pt.content) }));
+  });
   const ops = []; let added = 0; let skipped = 0;
   const studentIds = new Set((S.students || []).map((s) => s.id));
   for (const it of items) {

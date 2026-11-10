@@ -3,7 +3,7 @@ import { S, isCM, facName } from './core.js';
 import { todayStr, addDays, monthOf, DOW_NAMES, dow } from './rules.js';
 import {
   DOW_LABEL, classesOf, slotText, slotOn, parsePaste, importReviews, reviewDone, reviewReopen, reviewNote, reviewMove,
-  addTestScore, addStudentNote, mergeStudents, summarize, normCode, reviewSession, reviewEnd, nextClassDate,
+  addTestScore, addStudentNote, mergeStudents, splitExistingReviews, summarize, normCode, reviewSession, reviewEnd, nextClassDate,
 } from './students.js';
 
 /* ================= Khối "Ôn bài / bù bài" trong màn hình Hôm nay ================= */
@@ -12,7 +12,7 @@ export function reviewSection(list, date, redraw) {
   if (!list.length) return h('section', { class: 'sec' }, h('div', { class: 'sec-head' }, h('h3', null, 'Ôn bài / bù bài', h('span', { class: 'count' }, '0')), addBtn), h('p', { class: 'empty' }, 'Hôm nay chưa có học sinh ôn / bù bài. Bấm "Thêm" hoặc dán danh sách ở tab Học sinh.'));
   const today = todayStr();
   const byClass = new Map();
-  for (const r of sortBy(list, 'classCode', 'studentName')) {
+  for (const r of sortBy(list, 'classCode', 'studentName', 'date')) {
     if (!byClass.has(r.classId)) byClass.set(r.classId, []);
     byClass.get(r.classId).push(r);
   }
@@ -168,6 +168,7 @@ export function viewStudents(root, params) {
         h('select', { onChange: (e) => { clsFilter = e.target.value; render(); } }, h('option', { value: '' }, 'Tất cả lớp'), cls.map((c) => h('option', { value: c.id, selected: c.id === clsFilter }, c.code))),
         h('input', { type: 'search', class: 'search', placeholder: 'Tìm học sinh…', value: q, onInput: (e) => { q = e.target.value; redraw(); } }),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: onlyWatch, onChange: (e) => { onlyWatch = e.target.checked; render(); } }), 'Chỉ học sinh đang theo dõi'),
+        isCM() && h('button', { class: 'btn', type: 'button', title: 'Dữ liệu cũ có nhiều ngày trong một dòng (…// 4/11 …) sẽ được tách thành từng ngày', onClick: async () => { const n = await splitExistingReviews(fac); toast(n ? `Đã tách thêm ${n} dòng theo ngày` : 'Không có nội dung nào cần tách'); } }, 'Tách nội dung ôn theo ngày'),
         h('button', { class: 'btn', type: 'button', onClick: () => mergeModal(null) }, 'Gộp học sinh trùng / sai tên'), reportBtn),
       rows.length ? h('div', { class: 'matrix-wrap' }, h('table', { class: 'tbl' },
         h('thead', null, h('tr', null, ['Học sinh', 'Lớp', 'Đã ôn', 'Đang chờ', 'Lần lùi buổi', ''].map((t) => h('th', null, t)))),
