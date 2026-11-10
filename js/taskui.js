@@ -1,6 +1,6 @@
 // Thẻ công việc dùng chung cho các màn hình
 import { h, modal, toast, confirmDlg, fmtDM, fmtTs } from './ui.js';
-import { S, fbEntry, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, reopen, markNA, moveDate, approve, requestFix,
+import { S, fbEntry, fbBase, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, reopen, markNA, moveDate, approve, requestFix,
   removeTask, tplOf, saveNote, postpone, unclaim, assignTo, claim, isOverdue } from './core.js';
 import { todayStr, addDays } from './rules.js';
 import { linksFor, linkUrl } from './links.js';
@@ -141,7 +141,8 @@ export function taskCard(t, o = {}) {
     const tm = (e) => `${fmtTs(e.at)} ${new Date(e.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
     const box = h('div', { class: 'feedback' }, h('b', null, 'Phản hồi'));
     if (!(t.feedbackLog || []).length && t.feedback) box.append(h('div', { class: 'small' }, t.feedback, h('span', { class: 'muted' }, ' (phản hồi cũ)')));
-    flog.forEach((e) => box.append(h('div', { class: 'small fb-line' + (e.action === 'resubmit' ? ' fb-ta' : '') },
+    flog.filter((e) => e.action === 'legacy').forEach((e) => box.append(h('div', { class: 'small' }, e.text, h('span', { class: 'muted' }, ' (phản hồi cũ)'))));
+    flog.filter((e) => e.action !== 'legacy').forEach((e) => box.append(h('div', { class: 'small fb-line' + (e.action === 'resubmit' ? ' fb-ta' : '') },
       h('span', { class: 'muted' }, tm(e) + ' · '), h('b', null, e.byName), `: ${AL[e.action] || e.action}`, e.action === 'resubmit' ? '' : ` — ${e.text}`)));
     detail.append(box);
   }
@@ -149,7 +150,7 @@ export function taskCard(t, o = {}) {
     const nf = h('input', { type: 'text', placeholder: 'Thêm phản hồi mới (các phản hồi cũ vẫn giữ nguyên)…', class: 'fb-in' });
     detail.append(h('div', { class: 'assign' }, nf, h('button', { class: 'btn sm', type: 'button', onClick: () => {
       const v = nf.value.trim(); if (!v) return toast('Hãy nhập nội dung phản hồi', 'err');
-      run(() => S.db.update('tasks', t.id, { feedback: `${S.user.name}: ${v}`, feedbackLog: [...(t.feedbackLog || []), fbEntry('comment', v)] }).then(() => toast('Đã thêm phản hồi')), redraw);
+      run(() => S.db.update('tasks', t.id, { feedback: `${S.user.name}: ${v}`, feedbackLog: [...fbBase(t), fbEntry('comment', v)] }).then(() => toast('Đã thêm phản hồi')), redraw);
     } }, 'Thêm phản hồi')));
   }
   detail.append(h('div', { class: 'meta' },

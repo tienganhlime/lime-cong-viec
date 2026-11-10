@@ -112,9 +112,12 @@ export async function approve(t) {
 /** Lịch sử phản hồi: chuyên môn ghi vào feedbackLog, trợ giảng ghi vào taLog (để biết phản hồi được sửa trước hay sau khi trợ giảng làm). */
 export const fbEntry = (action, text) => ({ at: Date.now(), by: S.user.id, byName: S.user.name, action, text: text || '' });
 
+/** Nhật ký phản hồi hiện có; phản hồi cũ (chưa có nhật ký) được đưa vào làm dòng đầu để không bị mất. */
+export const fbBase = (t) => (t.feedbackLog && t.feedbackLog.length ? t.feedbackLog : (t.feedback ? [{ at: 1, by: '', byName: 'Phản hồi cũ', action: 'legacy', text: t.feedback }] : []));
+
 export async function requestFix(t, feedback, flag = false) {
   const to = t.doneBy || t.assignee;
-  const p = { status: 'fix', feedback: `${S.user.name}: ${feedback}`, flagged: true, feedbackLog: [...(t.feedbackLog || []), fbEntry(flag ? 'flag' : 'request', feedback)] };
+  const p = { status: 'fix', feedback: `${S.user.name}: ${feedback}`, flagged: true, feedbackLog: [...fbBase(t), fbEntry(flag ? 'flag' : 'request', feedback)] };
   if (!t.assignee && to) { p.assignee = to; p.assigneeName = userName(to); }
   await patchTask(t, p);
   if (to) await notify([to], `${flag ? 'Công tác bị đánh dấu lỗi' : 'Cần sửa lại'}: ${t.title}. ${feedback}`, `#/today?date=${t.date}&fac=${t.facility}`);
