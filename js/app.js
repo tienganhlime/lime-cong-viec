@@ -9,7 +9,7 @@ import { viewReview } from './view-review.js';
 import { viewChains } from './view-chains.js';
 import { viewStats } from './view-stats.js';
 import { viewStudents } from './view-students.js';
-import { viewTemplates, viewSchedules, viewUsers, generateFor } from './view-admin.js';
+import { viewTemplates, viewSchedules, viewUsers, generateFor, cleanNonWorkDays } from './view-admin.js';
 
 const root = document.getElementById('app');
 let cleanup = null;
@@ -77,7 +77,11 @@ function start(user) {
   sub('users', [], (r) => { S.users = r; });
   sub('templates', [], (r) => { S.templates = sortBy(r, 'order'); loaded.templates = true; autoGen(); });
   sub('chains', [], (r) => { S.chains = sortBy(r, 'id'); });
-  sub('classes', [], (r) => { S.classes = r; });
+  sub('classes', [], (r) => {
+    S.classes = r;
+    // admin: mỗi phiên tự dọn một lần các việc sinh nhầm vào ngày cơ sở không có lớp (ví dụ thứ 2 Trung Hòa)
+    if (S.user && S.user.role === 'admin' && r.length && !S._cleaned) { S._cleaned = true; setTimeout(() => cleanNonWorkDays().catch(() => {}), 3000); }
+  });
   sub('meta', [], (r) => {
     const sch = r.find((x) => x.id === 'schedules');
     S.schedules = sch ? sch.data || {} : {}; S.scheduleKeys = sch ? sch.keys || {} : {};

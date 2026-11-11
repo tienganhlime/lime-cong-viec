@@ -1,5 +1,5 @@
 import { h, mount, modal, makeRedraw, fmtDM, sortBy, uniq } from './ui.js';
-import { S, scoped, isCM, facName, GROUP_LABEL, isOverdue, taskKey } from './core.js';
+import { S, scoped, isCM, facName, GROUP_LABEL, isOverdue, isGhost, taskKey, tplOf } from './core.js';
 import { taskModal } from './taskui.js';
 import { todayStr, addMonths, daysInMonth, pad, dow, DOW_NAMES, monthOf, isOpen } from './rules.js';
 
@@ -12,7 +12,7 @@ export function viewMonth(root, params) {
   let groupFilter = 'all'; let onlyOpen = false; let q = ''; let who = ''; let detail = false;
   const unsubs = [];
   const redraw = makeRedraw(root, render);
-  unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['month', '==', ym]]), (r) => { tasks = r; redraw(); }));
+  unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['month', '==', ym]]), (r) => { tasks = r.filter((t) => !isGhost(t)); redraw(); }));
   unsubs.push(S.db.subscribe('reports', [['facility', '==', fac], ['month', '==', ym]], (r) => { reports = r; redraw(); }));
   taskModal.live = (id) => tasks.find((t) => t.id === id);
   const nav = (m) => S.navigate(`#/month?m=${m}`);
@@ -28,7 +28,8 @@ export function viewMonth(root, params) {
       if (q && !(t.title + ' ' + (t.extra || '')).toLowerCase().includes(q.toLowerCase())) continue;
       // việc chuyên môn giao theo người: mỗi người một dòng riêng để bảng gọn và nhìn được toàn cảnh
       const perPerson = t.group === 'cm' && t.assignee && t.tplId && t.source === 'template';
-      const key = (t.tplId || 'x:' + t.title) + (perPerson ? '|' + t.assignee : '');
+      const tp = tplOf(t);
+      const key = (tp ? tp.id : (t.tplId || 'x:' + t.title)) + (perPerson ? '|' + t.assignee : '');
       const nick = perPerson ? ((S.users.find((u) => u.id === t.assignee) || {}).nick || t.assigneeName) : '';
       if (!rowsMap.has(key)) rowsMap.set(key, { key, title: (perPerson ? `${t.title.replace(/ \(ca (sáng|chiều|tối)\)$/, '')} · ${nick}` : t.title), group: t.group, order: t.order || 0, byDay: {} });
       const r = rowsMap.get(key);

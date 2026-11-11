@@ -1,5 +1,5 @@
 import { h, mount, modal, toast, fmtDM, fmtDMY, makeRedraw, sortBy, linkify } from './ui.js';
-import { S, scoped, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, isOverdue, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
+import { S, scoped, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, isOverdue, isGhost, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
 import { taskCard } from './taskui.js';
 import { reviewSection } from './view-students.js';
 import { moveOp } from './students.js';
@@ -129,6 +129,8 @@ function reportModal({ date, fac, mine, existing, revs = [] }) {
           if (t.status === 'approved') continue;
           const d = dates.get(t.id) || (t.carry ? '' : next);
           const pr = (prog.get(t.id) || '').trim();
+          // ghi dấu bàn giao cho từng việc chưa xong để CM / admin kiểm tra được sau này
+          ops.push({ op: 'update', col: 'tasks', id: t.id, data: { handover: { at: Date.now(), by: S.user.id, byName: S.user.name, toDate: d || (t.carry ? '' : next), progress: pr } } });
           if (!d && !pr) continue;
           if (!t.carry || d) await postpone(t, d || t.date, pr);
           else await S.db.update('tasks', t.id, { note: [t.note, `[${date.slice(8)}/${date.slice(5, 7)} · ${S.user.name}] ${pr}`].filter(Boolean).join('\n') });
@@ -161,7 +163,7 @@ export function viewToday(root, params) {
   const subscribe = () => {
     unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac], ['date', '==', date]], (r) => { dayRev = r; redraw(); }));
     unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac], ['status', '==', 'pending']], (r) => { pendRev = r; redraw(); }));
-    unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['date', '==', date]]), (r) => { dayTasks = r; redraw(); }));
+    unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['date', '==', date]]), (r) => { dayTasks = r.filter((t) => !isGhost(t)); redraw(); }));
     unsubs.push(S.db.subscribe('tasks', scoped([['facility', '==', fac], ['carry', '==', true], ['open', '==', true]]), (r) => { carry = r; redraw(); }));
     const m = monthOf(date);
     unsubs.push(S.db.subscribe('reports', [['facility', '==', fac], ['month', 'in', [m, addMonths(m, -1)]]], (r) => { reports = r; redraw(); }));

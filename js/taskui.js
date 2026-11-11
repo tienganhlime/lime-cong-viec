@@ -1,8 +1,8 @@
 // Thẻ công việc dùng chung cho các màn hình
 import { h, modal, toast, confirmDlg, fmtDM, fmtTs } from './ui.js';
-import { S, fbEntry, fbBase, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, reopen, markNA, moveDate, approve, requestFix,
+import { S, fbEntry, fbBase, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, patchTask, reopen, markNA, moveDate, approve, requestFix,
   removeTask, tplOf, saveNote, postpone, unclaim, assignTo, claim, isOverdue } from './core.js';
-import { todayStr, addDays } from './rules.js';
+import { todayStr, addDays, isOpen } from './rules.js';
 import { linksFor, linkUrl } from './links.js';
 
 export const expanded = new Set();
@@ -192,6 +192,8 @@ export function taskCard(t, o = {}) {
   const row = h('div', { class: 'actions' });
   const finishLabel = t.status === 'approved' ? 'Đã gửi CSKH, hoàn tất' : (t.needsReview || t.flagged) ? 'Xong, gửi chuyên môn duyệt' : 'Hoàn thành';
   if ((t.status === 'todo' || t.status === 'fix' || t.status === 'approved') && allowed) row.append(btn(finishLabel, 'primary', () => complete(t)));
+  if ((t.status === 'todo' || t.status === 'fix') && allowed && !t.needsReview && !t.flagged && t.group !== 'cm' && !isCM())
+    row.append(btn('Xong, nhờ CM check', '', async () => { await patchTask(t, { needsReview: true }); await complete({ ...t, needsReview: true }); }));
   if (t.status === 'review' && isCM()) {
     row.append(btn('Duyệt', 'primary', () => approve(t)));
     row.append(h('button', { class: 'btn sm danger', type: 'button', onClick: () => feedbackModal(t, { onDone: redraw }) }, 'Yêu cầu sửa'));
@@ -206,6 +208,15 @@ export function taskCard(t, o = {}) {
   if (t.status === 'na' && allowed) row.append(btn('Mở lại', 'ghost', () => reopen(t)));
   if (allowed || isCM()) row.append(h('button', { class: 'btn sm ghost', type: 'button', onClick: () => editModal(t, redraw) }, 'Sửa'));
   detail.append(row);
+
+  // Kiểm tra bàn giao: việc chưa xong thì CM / admin thấy nhân sự đã bàn giao cho ca sau hay chưa
+  if (isCM() && (t.handover || (isOpen(t) && t.date < todayStr()))) {
+    const hv = t.handover;
+    const when = hv ? `${fmtTs(hv.at)} ${new Date(hv.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : '';
+    detail.append(h('div', { class: 'handover ' + (hv ? 'ok' : 'bad') }, hv
+      ? [h('b', null, 'Đã bàn giao: '), `${hv.byName} lúc ${when}`, hv.toDate ? ` · làm tiếp ngày ${fmtDM(hv.toDate)}` : ' · việc tự chuyển tiếp', hv.progress ? ` · tiến độ: ${hv.progress}` : ' · chưa ghi tiến độ']
+      : [h('b', null, 'Chưa thấy bàn giao: '), 'việc quá hạn nhưng nhân sự chưa nộp báo cáo cuối ca / chưa ghi bàn giao cho việc này.']));
+  }
 
   // CM chấm lại để tính KPI (không phụ thuộc trạng thái, kể cả khi trợ giảng làm trễ do việc phát sinh)
   if (isCM()) {

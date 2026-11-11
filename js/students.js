@@ -108,16 +108,21 @@ export async function splitExistingReviews(fac) {
   const all = await S.db.getAll('reviews', [['facility', '==', fac], ['status', '==', 'pending']]);
   const have = new Set(all.map((r) => r.id)); const ops = []; let n = 0;
   for (const r of all) {
-    if (!['on', 'bu'].includes(r.kind) || !r.content || r.track) continue;
+    if (!['on', 'bu'].includes(r.kind) || r.track) continue;
+    if (!r.content) { if (r.kind === 'on' && r.track === undefined && !r.fromSchedule) ops.push({ op: 'update', col: 'reviews', id: r.id, data: { track: true } }); continue; }
     const parts = splitByDate(r.content, r.date);
-    if (parts.length < 2) continue;
+    if (parts.length < 2) {
+      // ôn bài không có lịch ngày: chuyển sang theo dõi liên tục
+      if (r.kind === 'on' && r.track === undefined && !r.fromSchedule && !r.ended) ops.push({ op: 'update', col: 'reviews', id: r.id, data: { track: true } });
+      continue;
+    }
     const ck = normCode(r.classCode);
     parts.forEach((pt, i) => {
-      if (i === 0) { ops.push({ op: 'update', col: 'reviews', id: r.id, data: { date: pt.date, content: pt.content } }); return; }
+      if (i === 0) { ops.push({ op: 'update', col: 'reviews', id: r.id, data: { date: pt.date, content: pt.content, fromSchedule: true } }); return; }
       const rid = reviewId(fac, pt.date, ck, r.studentName);
       if (have.has(rid)) { const ex = ops.find((o) => o.id === rid); if (ex && ex.op === 'set') ex.data.content += '\n' + pt.content; return; }
       have.add(rid); n++;
-      ops.push({ op: 'set', col: 'reviews', id: rid, data: { ...r, id: undefined, date: pt.date, content: pt.content, history: [], movedCount: 0, createdAt: Date.now(), createdBy: S.user.id, createdByName: S.user.name } });
+      ops.push({ op: 'set', col: 'reviews', id: rid, data: { ...r, id: undefined, fromSchedule: true, date: pt.date, content: pt.content, history: [], movedCount: 0, createdAt: Date.now(), createdBy: S.user.id, createdByName: S.user.name } });
     });
   }
   ops.forEach((o) => { if (o.data && 'id' in o.data) delete o.data.id; });
@@ -134,7 +139,10 @@ export async function importReviews(items, fac, existingIds) {
   items = items.flatMap((it) => {
     const k = it.kind || kindOf(it.content);
     if (it.track || !it.content || k === 'test' || k === 'note') return [it];
-    return splitByDate(it.content, it.date).map((pt) => ({ ...it, date: pt.date, content: pt.content, kind: it.kind || kindOf(pt.content) }));
+    const parts = splitByDate(it.content, it.date);
+    // Ôn bài (học sinh yếu) mặc định là theo dõi liên tục đến khi bấm kết thúc; có lịch ghi rõ từng ngày thì đi theo lịch; bù bài chỉ 1-2 buổi
+    const single = parts.length === 1 && parts[0].date === it.date;
+    return parts.map((pt) => { const kind = it.kind || kindOf(pt.content); return { ...it, date: pt.date, content: pt.content, kind, track: it.track !== undefined ? it.track : (single && kind === 'on'), sched: !single }; });
   });
   const ops = []; let added = 0; let skipped = 0;
   const studentIds = new Set((S.students || []).map((s) => s.id));
@@ -155,7 +163,7 @@ export async function importReviews(items, fac, existingIds) {
         ops.push({ op: 'set', col: 'students', id: sid, data: { facility: fac, classId: it.cls.id, classCode: it.cls.code, name: st.name, tag: st.tag, watch: true, createdAt: Date.now(), createdBy: S.user.id } });
       }
       ops.push({ op: 'set', col: 'reviews', id: rid, data: {
-        facility: fac, date: it.date, classId: it.cls.id, classCode: it.cls.code, studentId: sid, studentName: st.name, kind: it.kind || kindOf(it.content), ...(it.track ? { track: true } : {}),
+        facility: fac, date: it.date, classId: it.cls.id, classCode: it.cls.code, studentId: sid, studentName: st.name, kind: it.kind || kindOf(it.content), ...(it.track ? { track: true } : {}), ...(it.sched ? { fromSchedule: true } : {}),
         content: it.content || '', status: 'pending', note: '', history: [], createdBy: S.user.id, createdByName: S.user.name, createdAt: Date.now(),
       } });
       existingIds.add(rid); added++;

@@ -1,5 +1,5 @@
 import { h, mount, toast, modal, confirmDlg, makeRedraw, sortBy, fmtDM } from './ui.js';
-import { S, isMgr, isCM, ROLE_LABEL, GROUP_LABEL, facName } from './core.js';
+import { S, tplOf, isMgr, isCM, ROLE_LABEL, GROUP_LABEL, facName } from './core.js';
 import { generateMonth, workDows, isWorkDay, nextWorkDay, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth } from './rules.js';
 import { PEOPLE, LEFT, tplPlan } from './assign.js';
 import { USERNAME_RE, normUsername, errMsg, isFirebase } from './db.js';
@@ -75,6 +75,24 @@ export async function cleanNonWorkDays() {
   return { removed, moved };
 }
 
+/** Dọn việc trùng: cùng cơ sở + ngày + tên việc + mẫu, việc thừa chưa ai đụng tới (chưa làm, không ghi chú, không người nhận) thì xóa, giữ lại việc có tiến độ. */
+export async function cleanDuplicateTasks() {
+  const ym = monthOf(todayStr()); const ops = []; let removed = 0;
+  for (const f of S.facilities) for (const m of [ym, addMonths(ym, 1)]) {
+    const ts = await S.db.getAll('tasks', [['facility', '==', f.id], ['month', '==', m]]);
+    const groups = new Map();
+    for (const t of ts) { const k = `${t.date}|${t.title}|${t.group}|${t.source}|${t.shift || ''}|${t.assignee || ''}`; (groups.get(k) || groups.set(k, []).get(k)).push(t); }
+    const rank = (t) => (t.status !== 'todo' ? 3 : 0) + (t.note ? 2 : 0) + (t.assignee ? 1 : 0) + (t.parts && Object.keys(t.parts).length ? 2 : 0);
+    for (const list of groups.values()) {
+      if (list.length < 2) continue;
+      list.sort((a, b) => rank(b) - rank(a));
+      for (const t of list.slice(1)) if (t.status === 'todo' && !t.note && !(t.parts && Object.keys(t.parts).length)) { ops.push({ op: 'delete', col: 'tasks', id: t.id }); removed++; }
+    }
+  }
+  if (ops.length) await S.db.batch(ops);
+  return removed;
+}
+
 /** Sửa các việc cũ bị gắn nhầm mẫu (do mã mẫu bị đánh số lại): đối chiếu theo tên việc, chuyển về đúng mẫu. */
 export async function fixStaleTemplateLinks() {
   const ids = S.templates.map((t) => t.id).filter((id) => Number(id.slice(1)) >= 81);
@@ -128,6 +146,7 @@ export async function syncSchedule(fac, key, schedules) {
   const months = new Set();
   for (const t of tpls) {
     for (const o of olds.filter((x) => x.tplId === t.id && x.date >= from)) {
+      if (tplOf(o) !== t) continue; // việc cũ bị gắn nhầm mẫu (lệch số): không đụng, chờ "Sửa liên kết"
       months.add(o.month);
       const sc = scheduleText(t, fac, o.date, schedules);
       if (o.title !== t.name && o.status !== 'na' && !o.shift) ops.push({ op: 'update', col: 'tasks', id: o.id, data: { title: t.name } }); // mẫu đã đổi tên
@@ -418,6 +437,7 @@ export function viewUsers(root) {
           h('div', { class: 'row-actions' },
             h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Áp phân công chuyên môn mới? Hồng nghỉ: khóa tài khoản và xóa việc chưa làm của Hồng. Việc hành chính mỗi cơ sở 1 người (Yên Hòa: Liễu, Trung Hòa: Mai Phương), việc học thuật và việc riêng giao theo từng người. Các việc chuyên môn chưa làm từ hôm nay được tạo lại. Việc đã làm hoặc đã ghi chú giữ nguyên.', { okLabel: 'Áp phân công' })) await applyCmAssignment(); } }, 'Áp phân công chuyên môn theo file'),
             h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Dọn các việc đã sinh vào ngày cơ sở không có lớp (ví dụ thứ 2 ở Trung Hòa)? Việc hàng ngày chưa làm sẽ bị xóa, việc khác dời sang ngày có lớp kế tiếp. Việc đã làm hoặc đã ghi chú giữ nguyên.', { okLabel: 'Dọn' })) { try { const r = await cleanNonWorkDays(); toast(`Đã xóa ${r.removed} việc, dời ${r.moved} việc`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } } } }, 'Dọn việc ở ngày cơ sở không có lớp'),
+            h('button', { class: 'btn', type: 'button', onClick: async () => { if (await confirmDlg('Tìm các việc bị trùng (cùng cơ sở, ngày, tên) trong tháng này và tháng sau, xóa bản thừa chưa ai làm / chưa ghi chú? Việc có tiến độ luôn được giữ lại.', { okLabel: 'Dọn' })) { try { toast(`Đã xóa ${await cleanDuplicateTasks()} việc trùng`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } } } }, 'Dọn việc bị trùng'),
             h('button', { class: 'btn ghost', type: 'button', title: 'Dùng khi hướng dẫn trong thẻ việc bị lệch sang việc khác', onClick: async () => { if (await confirmDlg('Rà các việc cũ của trợ giảng bị gắn nhầm hướng dẫn / mẫu việc khác và sửa lại cho đúng theo tên việc? (Chỉ đọc các việc thuộc mẫu số 81 trở lên.)', { okLabel: 'Sửa liên kết' })) { try { const r = await fixStaleTemplateLinks(); toast(`Đã rà ${r.checked} việc, sửa ${r.moved} việc`); } catch (e) { toast(e.message || 'Có lỗi', 'err'); } } } }, 'Sửa liên kết việc cũ bị lệch hướng dẫn'),
             h('button', { class: 'btn ghost', type: 'button', onClick: async () => { if (await confirmDlg('Nạp lại toàn bộ mẫu việc, chuỗi việc và lịch lớp từ bảng gốc? Các chỉnh sửa mẫu bạn đã làm sẽ bị ghi đè.', { okLabel: 'Nạp lại', danger: true })) { await S.db.loadSeed(); await new Promise((r) => setTimeout(r, 1500)); const m = await S.db.get('meta', 'schedules'); let n = 0; for (const f of S.facilities) { const r = await syncSchedule(f.id, 'report', (m && m.data) || {}); n += r.changed + r.added + r.removed; } toast(`Đã nạp lại mẫu việc, cập nhật ${n} việc báo cáo + soạn văn theo lịch mới`); } } }, 'Nạp lại mẫu việc từ bảng gốc'),
             !isFirebase && h('button', { class: 'btn ghost danger', type: 'button', onClick: async () => { if (await confirmDlg('Xóa toàn bộ dữ liệu chạy thử và bắt đầu lại?', { okLabel: 'Xóa hết', danger: true })) S.db.resetDemo(); } }, 'Xóa dữ liệu chạy thử'))))) : null);
