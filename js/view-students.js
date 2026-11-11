@@ -82,6 +82,12 @@ export function viewStudents(root, params) {
     unsubs.push(S.db.subscribe('reviews', [['facility', '==', fac], ['date', 'in', winDates(k)]], (r) => { wins[k] = r; reviews = wins.flat(); redraw(); }));
   };
   openWindow();
+  // Chuyên môn / admin mở trang này lần đầu trong phiên: tự tách các dòng cũ có nhiều ngày thành từng ngày
+  S._splitDone = S._splitDone || {};
+  if (isCM() && !S._splitDone[fac]) {
+    S._splitDone[fac] = true;
+    splitExistingReviews(fac).then((n) => { if (n) toast(`Đã tự tách ${n} nội dung ôn bài theo ngày`); }).catch(() => {});
+  }
   let pasteText = ''; let pasteDate = todayStr(); let parsed = null;
 
   const stats = (sid) => {
@@ -201,7 +207,7 @@ export function viewStudents(root, params) {
         } }, 'Thêm vào checklist theo ngày lớp học'));
     }
     return h('div', { class: 'stack' },
-      h('p', { class: 'muted' }, 'Cuối tuần xin danh sách ôn bài / bù bài của từng lớp rồi dán vào đây. Học sinh sẽ hiện trong checklist ngày đúng ngày lớp học.'),
+      h('p', { class: 'muted' }, 'Cuối tuần xin danh sách ôn bài / bù bài của từng lớp rồi dán vào đây. Học sinh sẽ hiện trong checklist ngày đúng ngày lớp học. Nội dung có nhiều ngày (ví dụ "…; 14/11: …; 15/11: …" hoặc "… // 4/11 …") sẽ tự tách thành từng ngày, ngày tồn xếp trước.'),
       h('label', null, 'Ngày mặc định (khi dòng dán không ghi ngày)', dateIn), ta,
       h('div', { class: 'row-actions' }, h('button', { class: 'btn', type: 'button', onClick: () => { parsed = parsePaste(pasteText, pasteDate, fac); if (!parsed.length) toast('Chưa nhận ra dòng nào. Kiểm tra lại cột lớp và tên học sinh.', 'err'); render(); } }, 'Phân tích danh sách')),
       preview);

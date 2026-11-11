@@ -82,16 +82,21 @@ export function parsePaste(text, defDate, fac) {
 
 /** Tách nội dung "A // 4/11 B // 5/11 C" thành từng ngày: mỗi ngày một nội dung. Đoạn đầu không ghi ngày lấy ngày mặc định. */
 export function splitByDate(content, defDate) {
-  const segs = String(content || '').split(/\s+\/\/\s+/).map((x) => x.trim()).filter(Boolean);
-  if (segs.length < 2) return [{ date: defDate, content: String(content || '').trim() }];
+  const txt = String(content || '').trim();
+  // Điểm tách: "//" hoặc ";" hoặc xuống dòng, NGAY TRƯỚC một ngày hợp lệ dạng "14/11" "14/11:" "thứ 6 14/11"
+  const DATE_AT = '(?:thứ\\s*\\d\\s*|cn\\s*)?\\(?\\d{1,2}\\s*\\/\\s*\\d{1,2}(?:\\s*\\/\\s*\\d{2,4})?\\)?\\s*[:\\-–]?\\s+\\S';
+  const splitter = new RegExp('\\s*(?:\\s\\/\\/\\s|;\\s|\\n)\\s*(?=' + DATE_AT + ')', 'i');
+  const segs = txt.split(splitter).map((x) => x.trim()).filter(Boolean);
+  if (segs.length < 2 && !new RegExp('^' + DATE_AT, 'i').test(txt)) return [{ date: defDate, content: txt }];
+  const head = new RegExp('^(?:thứ\\s*\\d\\s*|cn\\s*)?\\(?(\\d{1,2})\\s*\\/\\s*(\\d{1,2})(?:\\s*\\/\\s*(\\d{2,4}))?\\)?\\s*[:\\-–]?\\s+([\\s\\S]+)$', 'i');
   const out = [];
-  segs.forEach((sg, i) => {
-    const m = sg.match(/^(?:thứ\s*\d\s*)?\(?(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{2,4}))?\)?\s*[:\-–]?\s+([\s\S]+)$/i);
-    if (m) {
+  segs.forEach((sg) => {
+    const m = sg.match(head);
+    if (m && Number(m[1]) >= 1 && Number(m[1]) <= 31 && Number(m[2]) >= 1 && Number(m[2]) <= 12) {
       const y = m[3] ? (m[3].length === 2 ? '20' + m[3] : m[3]) : defDate.slice(0, 4);
       out.push({ date: `${y}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`, content: m[4].trim() });
-    } else if (i === 0 || !out.length) out.push({ date: defDate, content: sg });
-    else out[out.length - 1].content += ' // ' + sg;
+    } else if (!out.length) out.push({ date: defDate, content: sg });
+    else out[out.length - 1].content += ' ; ' + sg;
   });
   const merged = [];
   for (const o of out) { const f = merged.find((x) => x.date === o.date); if (f) f.content += '\n' + o.content; else merged.push(o); }
