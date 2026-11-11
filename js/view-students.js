@@ -207,7 +207,7 @@ export function viewStudents(root, params) {
         } }, 'Thêm vào checklist theo ngày lớp học'));
     }
     return h('div', { class: 'stack' },
-      h('p', { class: 'muted' }, 'Cuối tuần xin danh sách ôn bài / bù bài của từng lớp rồi dán vào đây. Học sinh sẽ hiện trong checklist ngày đúng ngày lớp học. Nội dung có nhiều ngày (ví dụ "…; 14/11: …; 15/11: …" hoặc "… // 4/11 …") sẽ tự tách thành từng ngày, ngày tồn xếp trước.'),
+      h('p', { class: 'muted' }, 'Đầu tuần xin danh sách ôn bài (học sinh yếu cần theo dõi) của từng lớp rồi dán vào đây. Học sinh bù bài (nghỉ học) thì thêm tay bằng nút "+ Thêm học sinh ôn / bù bài". Học sinh sẽ hiện trong checklist ngày đúng ngày lớp học. Nội dung có nhiều ngày (ví dụ "…; 14/11: …; 15/11: …" hoặc "… // 4/11 …") sẽ tự tách thành từng ngày, ngày tồn xếp trước.'),
       h('label', null, 'Ngày mặc định (khi dòng dán không ghi ngày)', dateIn), ta,
       h('div', { class: 'row-actions' }, h('button', { class: 'btn', type: 'button', onClick: () => { parsed = parsePaste(pasteText, pasteDate, fac); if (!parsed.length) toast('Chưa nhận ra dòng nào. Kiểm tra lại cột lớp và tên học sinh.', 'err'); render(); } }, 'Phân tích danh sách')),
       preview);
@@ -273,7 +273,7 @@ export function addReviewModal({ date, fac, onDone }) {
   const clsSel = h('select', null, h('option', { value: '' }, '— Chọn lớp —'), classes.map((c) => h('option', { value: c.id }, `${c.code} · ${c.teacher || ''}`)));
   const names = h('textarea', { rows: 3, placeholder: 'Tên học sinh, ngăn cách bằng dấu phẩy hoặc xuống dòng' });
   const known = h('div', { class: 'checks' });
-  const kind = h('select', null, h('option', { value: 'on' }, 'Ôn bài'), h('option', { value: 'bu' }, 'Bù bài'));
+  const kind = h('select', null, h('option', { value: 'bu' }, 'Bù bài (học sinh nghỉ học, 1–2 buổi)'), h('option', { value: 'on' }, 'Ôn bài (học sinh yếu, theo dõi)'));
   const content = h('textarea', { rows: 2, placeholder: 'Nội dung cần ôn / bù (không bắt buộc)' });
   const mode = h('select', null, h('option', { value: 'dates' }, 'Theo ngày cụ thể (chọn các buổi học)'), h('option', { value: 'track' }, 'Theo dõi liên tục đến khi bấm "Kết thúc theo dõi"'));
   const datesBox = h('div', { class: 'checks' });
@@ -292,6 +292,7 @@ export function addReviewModal({ date, fac, onDone }) {
   };
   const syncMode = () => datesBox.parentElement && datesBox.parentElement.classList.toggle('hidden', mode.value === 'track');
   clsSel.addEventListener('change', drawDates); mode.addEventListener('change', syncMode);
+  kind.addEventListener('change', () => { mode.value = kind.value === 'on' ? 'track' : 'dates'; syncMode(); });
   modal({
     title: 'Thêm học sinh ôn / bù bài', wide: true,
     body: h('div', { class: 'stack' },

@@ -131,7 +131,8 @@ export async function splitExistingReviews(fac) {
 }
 
 /* ------------ Ghi dữ liệu ------------ */
-const kindOf = (content) => (/\bbù\b|\bbvn\b|\bbtvn\b/i.test(content || '') ? 'bu' : 'on');
+// Danh sách dán đầu tuần luôn là ôn bài (học sinh yếu cần theo dõi). Bù bài (học sinh nghỉ học) được thêm tay từng buổi, chọn loại "Bù bài".
+const kindOf = () => 'on';
 export const reviewId = (fac, date, classKey, name) => `${fac}_${date}_${classKey}_${slug(name)}`;
 
 export async function importReviews(items, fac, existingIds) {
