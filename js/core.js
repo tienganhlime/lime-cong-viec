@@ -116,11 +116,30 @@ export async function postpone(t, date, progress = '', uid) {
 }
 
 export async function approve(t) {
-  const next = t.sendCSKH ? 'approved' : 'done';
   const own = !t.assignee && t.doneBy ? { assignee: t.doneBy, assigneeName: t.doneByName || userName(t.doneBy) } : {};
-  await patchTask(t, { status: next, flagged: false, feedback: '', ...own });
-  const to = t.doneBy || t.assignee;
-  if (to) await notify([to], t.sendCSKH ? `Chuyên môn đã duyệt, hãy gửi CSKH: ${t.title}` : `Chuyên môn đã duyệt: ${t.title}`, `#/today?date=${t.date}&fac=${t.facility}`);
+  if (!t.sendCSKH) {
+    await patchTask(t, { status: 'done', flagged: false, feedback: '', ...own });
+    const to = t.doneBy || t.assignee;
+    if (to) await notify([to], `Chuyên môn đã duyệt: ${t.title}`, `#/today?date=${t.date}&fac=${t.facility}`);
+    return;
+  }
+  // Việc cần gửi CSKH: duyệt xong thì việc gốc hoàn thành, đồng thời sinh việc "Gửi CSKH" vào checklist của ngày làm việc hôm nay (chưa giao ai)
+  const W = workDows(S.classes, t.facility);
+  const day = nextWorkDay(todayStr(), W);
+  const id = `${t.id}_cskh`;
+  const doer = t.doneBy || t.assignee || null;
+  const ops = [
+    { op: 'update', col: 'tasks', id: t.id, data: { status: 'done', flagged: false, feedback: '', cskhTask: id, approvedAt: Date.now(), approvedByName: S.user.name, ...own } },
+    { op: 'set', col: 'tasks', id, data: {
+      facility: t.facility, date: day, month: day.slice(0, 7), title: `Gửi CSKH: ${t.title}`, extra: t.extra || '', time: '', group: 'ta',
+      desc: `Chuyên môn (${S.user.name}) đã duyệt việc "${t.title}" ngày ${t.date.slice(8)}/${t.date.slice(5, 7)}. Gửi kết quả cho CSKH rồi bấm hoàn thành.`,
+      tplId: '', source: 'cskh', refId: t.id, status: 'todo', open: true, carry: true, assignee: null, assigneeName: '', note: '', feedback: '',
+      needsReview: false, sendCSKH: false, flagged: false, order: 3,
+      ...(doer ? { origAssignee: doer, origAssigneeName: t.doneByName || t.assigneeName || userName(doer) } : {}),
+      createdBy: S.user.id, createdAt: Date.now(),
+    } },
+  ];
+  await S.db.batch(ops);
 }
 /** Lịch sử phản hồi: chuyên môn ghi vào feedbackLog, trợ giảng ghi vào taLog (để biết phản hồi được sửa trước hay sau khi trợ giảng làm). */
 export const fbEntry = (action, text) => ({ at: Date.now(), by: S.user.id, byName: S.user.name, action, text: text || '' });
