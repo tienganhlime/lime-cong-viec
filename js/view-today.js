@@ -1,13 +1,15 @@
 import { h, mount, modal, toast, fmtDM, fmtDMY, makeRedraw, sortBy, linkify } from './ui.js';
-import { S, scoped, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, isOverdue, isGhost, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
+import { S, rollOver, scoped, isCM, isMgr, isTA, myGroups, facName, usersOfGroup, claimMany, postpone, isOverdue, isGhost, patchTask, notify, notifyGroup, taskKey, GROUP_LABEL } from './core.js';
 import { taskCard } from './taskui.js';
 import { reviewSection } from './view-students.js';
 import { moveOp } from './students.js';
 import { todayStr, addDays, isOpen, DOW_NAMES, dow, monthOf, addMonths, generateMonth, workDows, nextWorkDay } from './rules.js';
 
 /** Việc bàn giao: sinh task thật (id cố định, không trùng) vào ngày làm việc kế tiếp của cơ sở. */
-export function handoverOp({ fac, date, uid, userName, note }) {
-  const next = nextWorkDay(addDays(date, 1), workDows(S.classes, fac));
+export function handoverOp({ fac, date, uid, userName, note, late = false }) {
+  const W = workDows(S.classes, fac);
+  // bàn giao cũ chuyển muộn: đặt vào ngày làm việc từ hôm nay để người trực thấy ngay
+  const next = nextWorkDay(late && addDays(date, 1) < todayStr() ? todayStr() : addDays(date, 1), W);
   return { op: 'set', col: 'tasks', id: `${fac}_${next}_handover_${date}_${uid}`, data: {
     facility: fac, date: next, month: monthOf(next), title: `Bàn giao từ ca ${fmtDM(date)} (${userName})`, extra: note, time: '', desc: note, group: 'ta',
     tplId: '', source: 'handover', refId: '', status: 'todo', open: true, carry: true, assignee: null, assigneeName: '', note: '', feedback: '',
@@ -140,7 +142,7 @@ function reportModal({ date, fac, mine, existing, revs = [] }) {
           op: 'set', col: 'reports', id: `${fac}_${date}_${S.user.id}`,
           data: { facility: fac, date, month: date.slice(0, 7), uid: S.user.id, userName: S.user.name, role: S.user.role, total, done, review, open: openT.length, reviewDone: revDone, reviewMoved: moveRev.checked ? revPend.length : 0, note: note.value.trim(), at: Date.now() },
         });
-        if (note.value.trim()) ops.push(handoverOp({ fac, date, uid: S.user.id, userName: S.user.name, note: note.value.trim() }));
+        if (note.value.trim()) { const ho = handoverOp({ fac, date, uid: S.user.id, userName: S.user.name, note: note.value.trim() }); ops.push(ho); ops.find((o) => o.col === 'reports').data.handoverTask = ho.id; }
         await S.db.batch(ops);
         toast('Đã nộp báo cáo cuối ca');
       },
@@ -169,6 +171,12 @@ export function viewToday(root, params) {
     unsubs.push(S.db.subscribe('reports', [['facility', '==', fac], ['month', 'in', [m, addMonths(m, -1)]]], (r) => { reports = r; redraw(); }));
   };
   subscribe();
+  // Đầu ngày: việc hôm trước chưa xong tự chuyển sang hôm nay ở dạng chưa giao ai (kể cả khi quên bấm kết thúc ca)
+  if (date === todayStr() && !S._rolling) {
+    S._rolling = true;
+    const tryRoll = (n = 0) => (S.classes && S.classes.length ? rollOver(fac).then((k) => { if (k) toast(`Đã chuyển ${k} việc chưa xong từ hôm trước sang hôm nay (chưa giao ai)`); }) : (n < 10 ? setTimeout(() => tryRoll(n + 1), 1000) : null));
+    Promise.resolve().then(() => tryRoll()).catch(() => {}).finally(() => { S._rolling = false; });
+  }
 
   function list() {
     const ids = new Set(dayTasks.map((t) => t.id));
@@ -224,7 +232,14 @@ export function viewToday(root, params) {
           h('button', { class: 'btn primary', type: 'button', onClick: () => reportModal({ date, fac, mine: all.filter((t) => t.assignee === S.user.id && t.date === date || t.assignee === S.user.id && t.date < date), existing: myReport, revs }) }, myReport ? 'Cập nhật báo cáo cuối ca' : 'Kết thúc ca & báo cáo'))),
       myReport && h('div', { class: 'banner ok' }, `Bạn đã nộp báo cáo cuối ca lúc ${new Date(myReport.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}.`),
       prev && h('div', { class: 'banner' }, h('b', null, `Bàn giao từ ca ngày ${fmtDM(prev.date)} (${prev.userName}): `), linkify(prev.note),
-        h('button', { class: 'btn sm', type: 'button', style: { marginLeft: '8px' }, onClick: async () => { const o = handoverOp({ fac, date: prev.date, uid: prev.uid, userName: prev.userName, note: prev.note }); if (await S.db.get('tasks', o.id)) { toast('Việc bàn giao này đã có trong checklist'); return; } await S.db.batch([o]); toast('Đã tạo việc bàn giao trong checklist'); } }, 'Chuyển thành việc cần làm')),
+        prev.handoverTask
+          ? h('span', { class: 'chip st-done', style: { marginLeft: '8px' } }, `✓ Đã chuyển thành việc ngày ${fmtDM(prev.handoverTask.split('_')[1])}`)
+          : h('button', { class: 'btn sm', type: 'button', style: { marginLeft: '8px' }, onClick: async () => {
+            const o = handoverOp({ fac, date: prev.date, uid: prev.uid, userName: prev.userName, note: prev.note, late: true });
+            if (!(await S.db.get('tasks', o.id))) await S.db.batch([o]);
+            await S.db.update('reports', prev.id || `${prev.facility}_${prev.date}_${prev.uid}`, { handoverTask: o.id });
+            toast(`Đã tạo việc bàn giao ở ngày ${fmtDM(o.data.date)}`);
+          } }, 'Chuyển thành việc cần làm')),
       reviewSection(revs, date, redraw),
       mine.filter((t) => isOverdue(t)).length ? h('div', { class: 'banner bad' }, `⚠ Bạn còn ${mine.filter((t) => isOverdue(t)).length} việc quá hạn chưa làm`) : null,
       sec('Việc của tôi', mine.length, mine.length ? mine.map((t) => card(t)) : h('p', { class: 'empty' }, free.length ? 'Bạn chưa nhận việc nào. Chọn việc ở danh sách bên dưới rồi bấm Nhận, hoặc bấm Nhận tất cả.' : 'Chưa có việc nào.')),

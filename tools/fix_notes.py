@@ -40,3 +40,11 @@ d['schedules']['yenhoa']['report@2026-11'] = yenhoa
 d['schedules']['trunghoa']['report@2026-11'] = trunghoa
 json.dump(d, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('ok')
+
+
+# Lịch test Trung Hòa: bỏ 3CAM3A, đổi 3DORY0S -> 3DORY02S
+import json as _j
+_d=_j.load(open(__import__('sys').argv[1]))
+_t=_d['schedules']['trunghoa']['test']
+_t.pop('5',None); _t['6']='3DORY02S, 3DORY0T'
+_j.dump(_d,open(__import__('sys').argv[1],'w'),ensure_ascii=False,indent=1)

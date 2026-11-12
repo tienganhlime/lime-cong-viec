@@ -1,6 +1,6 @@
 import { h, mount, toast, modal, confirmDlg, makeRedraw, sortBy, fmtDM } from './ui.js';
 import { S, tplOf, isMgr, isCM, ROLE_LABEL, GROUP_LABEL, facName } from './core.js';
-import { generateMonth, workDows, isWorkDay, nextWorkDay, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth } from './rules.js';
+import { generateMonth, workDows, isWorkDay, nextWorkDay, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth, dow } from './rules.js';
 import { PEOPLE, LEFT, tplPlan } from './assign.js';
 import { USERNAME_RE, normUsername, errMsg, isFirebase } from './db.js';
 
@@ -324,6 +324,33 @@ function scheduleBox(getKey) {
   return { box, draw };
 }
 
+/** Đối chiếu mọi lịch lớp (test, báo cáo…) với thời khóa biểu: lớp có học đúng thứ của ngày đó không, mã lớp có tồn tại không. Chỉ dùng dữ liệu đã tải, không tốn lượt đọc. */
+export function checkSchedules() {
+  const norm = (s) => String(s).replace(/\s+/g, '').toUpperCase();
+  const out = [];
+  for (const f of S.facilities) {
+    const cls = (S.classes || []).filter((c) => c.facility === f.id);
+    const known = new Map(cls.map((c) => [norm(c.code), c]));
+    for (const [skey, tbl] of Object.entries((S.schedules || {})[f.id] || {})) {
+      const [base, ym0] = skey.split('@'); const mode = (S.scheduleKeys[base] || {}).mode;
+      if (mode === 'weekidx') continue;
+      const label = (S.scheduleKeys[base] || {}).label || base;
+      for (const [k, text] of Object.entries(tbl || {})) {
+        let dw; let when;
+        if (mode === 'monthday') { const ym = ym0 || monthOf(todayStr()); const date = `${ym}-${String(k).padStart(2, '0')}`; dw = dow(date); when = fmtDM(date); }
+        else { dw = Number(k); when = DOW_NAMES[dw]; }
+        const t = norm(text);
+        // chỉ lịch gắn với ngày học của lớp (test, chấm video) mới phải trùng buổi học; lịch báo cáo / hỗ trợ / ôn bù là phân công nên không bắt buộc
+        if (['test', 'video'].includes(base)) for (const c of cls) if (t.includes(norm(c.code)) && !(c.slots || []).some((s) => s.dow === dw))
+          out.push(`${f.name} · ${label} · ${when} (${DOW_NAMES[dw]}): lớp ${c.code} không có buổi học ngày này (lớp học ${(c.slots || []).map((s) => DOW_NAMES[s.dow]).join(', ')})`);
+        for (const m of String(text).matchAll(/\b3?(?:CLC|CAM|DORY|GRAM|PET|FCE)\s?[A-Z]?\d[A-Z0-9]*\b/gi))
+          if (![...known.keys()].some((kk) => kk.includes(norm(m[0])) || norm(m[0]).includes(kk))) out.push(`${f.name} · ${label} · ${when}: mã lớp "${m[0]}" không có trong thời khóa biểu`);
+      }
+    }
+  }
+  return [...new Set(out)];
+}
+
 export function viewSchedules(root) {
   let fac = S.facility; let key = Object.keys(S.scheduleKeys)[0];
   let draft = null; let scope = ''; // '' = mọi tháng; 'YYYY-MM' = chỉ riêng tháng đó (lịch theo ngày trong tháng)
@@ -349,6 +376,7 @@ export function viewSchedules(root) {
     mount(root, 
       h('div', { class: 'page-head' }, h('div', null, h('h2', null, 'Lịch lớp'), h('p', { class: 'muted' }, 'Danh sách lớp theo thứ hoặc theo ngày của từng cơ sở. Hệ thống dùng lịch này để tự điền lớp vào các việc như test, chấm video, đếm Limevoice, báo cáo + soạn văn.'))),
       h('div', { class: 'toolbar wrap' },
+        h('button', { class: 'btn', type: 'button', onClick: () => { const r = checkSchedules(); modal({ title: 'Kiểm tra lịch lớp với thời khóa biểu', wide: true, body: r.length ? h('div', { class: 'stack' }, h('p', null, `Có ${r.length} chỗ cần xem lại:`), h('ul', null, r.map((x) => h('li', null, x)))) : h('p', null, 'Tất cả lớp trong các lịch đều có buổi học đúng ngày và mã lớp đều có trong thời khóa biểu.'), actions: [{ label: 'Đóng', kind: 'primary' }] }); } }, 'Kiểm tra lịch với thời khóa biểu'),
         h('select', { onChange: (e) => { fac = e.target.value; load(); render(); } }, S.facilities.map((f) => h('option', { value: f.id, selected: f.id === fac }, f.name))),
         h('select', { onChange: (e) => { key = e.target.value; scope = ''; load(); render(); } }, Object.entries(S.scheduleKeys).map(([id, v]) => h('option', { value: id, selected: id === key }, v.label))),
         k.mode === 'monthday' ? h('select', { title: 'Lịch này áp dụng cho', onChange: (e) => { scope = e.target.value; load(); render(); } }, scopeOpts().map((m) => h('option', { value: m, selected: m === scope }, m ? `Riêng tháng ${m.slice(5)}/${m.slice(0, 4)}` : 'Mọi tháng'))) : null),

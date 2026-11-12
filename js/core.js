@@ -78,16 +78,28 @@ export async function complete(t) {
 }
 export const reopen = (t) => patchTask(t, { status: 'todo', doneAt: null });
 export const markNA = (t) => patchTask(t, { status: 'na' });
-export const moveDate = (t, date) => patchTask(t, { date });
+/** Dời ngày = làm trễ deadline: giữ ngày gốc (origDate) để việc vẫn bị bôi đỏ cho chuyên môn kiểm tra. */
+/** Người nhận khi dời ngày: undefined = giữ nguyên; '' = để trống cho người làm hôm sau (KPI ngày cũ vẫn tính người cũ); uid = giao cho người đó. */
+function reassign(t, uid) {
+  if (uid === undefined) return {};
+  const who = uid ? { assignee: uid, assigneeName: userName(uid) } : { assignee: null, assigneeName: '' };
+  const prev = t.assignee || t.doneBy || null;
+  return { ...who, ...(prev && prev !== uid ? { origAssignee: t.origAssignee || prev, origAssigneeName: t.origAssigneeName || userName(prev) || t.assigneeName || '' } : {}) };
+}
+export const moveDate = (t, date, uid) => patchTask(t, { ...reassign(t, uid), date, month: date.slice(0, 7), origDate: t.origDate || t.date,
+  moveLog: [...(t.moveLog || []), { from: t.date, to: date, by: S.user.id, byName: S.user.name, at: Date.now() }] });
+/** Sửa ngày = việc bị sinh sai ngày (chuyên môn sửa, kể cả ngày đã qua): không tính trễ, xóa mốc ngày gốc. */
+export const fixDate = (t, date) => S.db.update('tasks', t.id, { date, month: date.slice(0, 7), origDate: null,
+  dateFix: [...(t.dateFix || []), { from: t.date, to: date, by: S.user.id, byName: S.user.name, at: Date.now() }] });
 
 /* Làm dở / chưa kịp làm: ghi tiến độ và chuyển sang ngày khác.
    - Việc đang tự chuyển tiếp (carry): giữ nguyên 1 việc, dời ngày, nối tiến độ vào ghi chú.
    - Việc hàng ngày (không tự chuyển tiếp): đóng việc hôm nay ở trạng thái "partial", tạo việc "Làm bù" ở ngày mới. */
-export async function postpone(t, date, progress = '') {
+export async function postpone(t, date, progress = '', uid) {
   const d = t.date;
   const line = progress.trim() ? `[${d.slice(8)}/${d.slice(5, 7)} · ${S.user.name}] ${progress.trim()}` : '';
   const note = [t.note, line].filter(Boolean).join('\n');
-  if (t.carry) return patchTask(t, { date, note, assignee: t.assignee || S.user.id, assigneeName: t.assignee ? t.assigneeName : S.user.name });
+  if (t.carry) return patchTask(t, { ...(uid === undefined ? { assignee: t.assignee || S.user.id, assigneeName: t.assignee ? t.assigneeName : S.user.name } : reassign(t, uid)), origDate: t.origDate || t.date, date, month: date.slice(0, 7), note });
   const id = S.db.newId();
   const { id: _omit, ...rest } = t;
   await S.db.batch([
@@ -96,7 +108,8 @@ export async function postpone(t, date, progress = '') {
       ...rest, title: t.title.startsWith('Làm bù: ') ? t.title : `Làm bù: ${t.title}`, date, month: date.slice(0, 7), tplId: '', source: 'makeup', refId: t.id,
       status: 'todo', open: true, carry: true, note: line ? `Từ ${d.slice(8)}/${d.slice(5, 7)}: ${progress.trim()}` : `Chưa kịp làm ngày ${d.slice(8)}/${d.slice(5, 7)}`,
       feedback: '', flagged: false, doneAt: null, doneBy: null, doneByName: '', movedTo: null,
-      assignee: t.assignee || S.user.id, assigneeName: t.assignee ? t.assigneeName : S.user.name,
+      ...(uid === undefined ? { assignee: t.assignee || S.user.id, assigneeName: t.assignee ? t.assigneeName : S.user.name }
+        : { assignee: uid || null, assigneeName: uid ? userName(uid) : '', origAssignee: t.assignee || S.user.id, origAssigneeName: t.assignee ? t.assigneeName : S.user.name }),
       createdBy: S.user.id, createdAt: Date.now(),
     } },
   ]);
@@ -160,9 +173,49 @@ export function isGhost(t) {
 }
 export function isOverdue(t) {
   if (isGhost(t)) return false;
+  // việc đã bị dời ngày vì làm trễ: vẫn đỏ theo ngày gốc cho tới khi xong
+  if (isOpen(t) && t.origDate && t.origDate < todayStr() && nextWorkDay(t.origDate, workDows(S.classes, t.facility)) < todayStr()) return true;
   if (!isOpen(t) || t.date >= todayStr()) return false;
   // ngày cơ sở không có lớp: việc làm ở ngày có lớp kế tiếp, chỉ quá hạn khi ngày đó đã qua
   const W = workDows(S.classes, t.facility);
   return nextWorkDay(t.date, W) < todayStr();
+}
+/** Tự đẩy việc chưa xong của các ngày trước sang ngày làm việc hôm nay, ở dạng CHƯA GIAO AI (không cần trợ giảng bấm kết thúc ca).
+ *  Người hôm trước vẫn được ghi (origAssignee + origDate) để tính KPI / bôi đỏ. Chạy tối đa 1 lần/ngày/thiết bị, chỉ đọc vài truy vấn theo ngày. */
+export async function rollOver(fac) {
+  const today = todayStr();
+  const W = workDows(S.classes, fac);
+  if (!W || !W.has(dow(today))) return 0;
+  const grp = isCM() ? 'cm' : 'ta';
+  const mk = `lime_roll_${fac}_${grp}`;
+  let last = ''; try { last = localStorage.getItem(mk) || ''; } catch { /* không có localStorage */ }
+  if (last === today) return 0;
+  let from = last ? addDays(last, 1) : addDays(today, -1);
+  if (from < addDays(today, -7)) from = addDays(today, -7);
+  const ops = []; const seen = new Set();
+  for (let d = from; d < today; d = addDays(d, 1)) {
+    const ts = await S.db.getAll('tasks', scoped([['facility', '==', fac], ['date', '==', d]]));
+    for (const t of ts) {
+      if (seen.has(t.id) || t.status !== 'todo' || isGhost(t) || (t.origDate && t.origDate < addDays(today, -14))) continue;
+      seen.add(t.id);
+      const prev = t.assignee || null;
+      ops.push({ op: 'update', col: 'tasks', id: t.id, data: {
+        assignee: null, assigneeName: '', date: today, month: today.slice(0, 7), rolled: true, open: true, carry: true,
+        origDate: t.origDate || t.date,
+        ...(prev ? { origAssignee: t.origAssignee || prev, origAssigneeName: t.origAssigneeName || t.assigneeName || userName(prev) } : {}),
+        moveLog: [...(t.moveLog || []), { from: t.date, to: today, by: 'auto', byName: 'Tự động chuyển cuối ngày', at: Date.now() }],
+      } });
+    }
+  }
+  // việc tự chuyển tiếp (carry) cũ hơn cửa sổ: cũng bỏ người nhận cũ, giữ tên để tính KPI
+  const carryOld = await S.db.getAll('tasks', scoped([['facility', '==', fac], ['carry', '==', true], ['open', '==', true]]));
+  for (const t of carryOld) {
+    if (seen.has(t.id) || t.status !== 'todo' || t.date >= today || !t.assignee || isGhost(t)) continue;
+    ops.push({ op: 'update', col: 'tasks', id: t.id, data: { assignee: null, assigneeName: '', origAssignee: t.origAssignee || t.assignee, origAssigneeName: t.origAssigneeName || t.assigneeName,
+      origDate: t.origDate || t.date, rolled: true } });
+  }
+  if (ops.length) await S.db.batch(ops);
+  try { localStorage.setItem(mk, today); } catch { /* bỏ qua */ }
+  return ops.length;
 }
 export function tomorrow() { return addDays(todayStr(), 1); }

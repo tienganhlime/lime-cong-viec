@@ -94,7 +94,7 @@ export function viewMonth(root, params) {
           return h('td', {
             class: `cell s-${t.status}${od ? ' late' : ''}${t.flagged ? ' flag' : ''}${detail ? ' detail' : ''}`, tabindex: 0, role: 'button',
             title: ts.length > 1 ? ts.map((x) => `${x.assigneeName || 'Chưa có người'}: ${SYMBOL[x.status] || ''}${x.shift ? ' (ca ' + x.shift + ')' : ''}`).join('\n') : `${t.assigneeName || 'Chưa có người nhận'}${t.extra ? ' · ' + t.extra : ''}`,
-            onClick: () => taskModal(t), onKeydown: (e) => { if (e.key === 'Enter') taskModal(t); },
+            onClick: () => taskModal(t, sorted), onKeydown: (e) => { if (e.key === 'Enter') taskModal(t, sorted); },
           }, detail ? lines : (od && t.status === 'todo' ? '✗' : SYMBOL[t.status]));
         }),
         h('td', { class: 'sumcol' }, `${doneN}/${all.length}`)));

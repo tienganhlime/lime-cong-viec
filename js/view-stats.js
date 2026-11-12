@@ -1,5 +1,5 @@
 import { h, mount, toast, confirmDlg, fmtDM, fmtDMY, makeRedraw, sortBy, fmtTs } from './ui.js';
-import { S, isMgr, facName, ROLE_LABEL } from './core.js';
+import { S, isMgr, facName, ROLE_LABEL, isOverdue } from './core.js';
 import { todayStr, addDays, dow, monthOf, pad, daysInMonth, isOpen, DOW_NAMES } from './rules.js';
 
 function monthsBetween(a, b) {
@@ -70,15 +70,16 @@ export function viewStats(root) {
     const teamMiss = (u) => inRange.filter((t) => isOpen(t) && t.date < today && present.has(`${t.facility}|${t.date}|${u.id}`)
       && (t.group === 'both' || (u.role === 'ta' ? t.group === 'ta' : t.group === 'cm'))).length;
     const rows = people.map((u) => {
-      const inv = (t) => t.assignee === u.id || (t.parts && t.parts[u.id]);
+      // người cũ (origAssignee) vẫn bị tính việc trễ dù đã giao lại; việc xong chỉ tính cho người đang nhận / người làm
+      const inv = (t) => t.assignee === u.id || t.origAssignee === u.id || (t.parts && t.parts[u.id]);
       const mine = inRange.filter(inv);
-      const done = mine.filter((t) => t.status === 'done' || (t.parts && t.parts[u.id] && t.parts[u.id].done)).length;
+      const done = mine.filter((t) => (t.status === 'done' && (t.assignee === u.id || (!t.assignee && t.doneBy === u.id))) || (t.parts && t.parts[u.id] && t.parts[u.id].done)).length;
       const rep = reports.filter((r) => r.uid === u.id && r.date >= from && r.date <= to).length;
       return {
         u, assigned: mine.length, done,
         review: mine.filter((t) => t.status === 'review').length,
         fix: mine.filter((t) => t.flagged || t.status === 'fix').length,
-        late: mine.filter((t) => isOpen(t) && t.date < today).length,
+        late: mine.filter((t) => (t.origAssignee === u.id && t.origDate) || (isOverdue(t) && t.assignee === u.id)).length,
         team: teamMiss(u), kGood: mine.filter((t) => t.kpi === 'good').length, kBad: mine.filter((t) => t.kpi === 'bad').length, kLate: mine.filter((t) => t.kpi === 'late').length,
         rep, pct: mine.length ? Math.round((done / mine.length) * 100) : 0,
       };

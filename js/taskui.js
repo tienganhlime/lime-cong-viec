@@ -1,6 +1,6 @@
 // Thẻ công việc dùng chung cho các màn hình
 import { h, modal, toast, confirmDlg, fmtDM, fmtTs } from './ui.js';
-import { S, fbEntry, fbBase, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, patchTask, reopen, markNA, moveDate, approve, requestFix,
+import { S, fbEntry, fbBase, isCM, canAct, assignCandidates, GROUP_LABEL, facName, complete, patchTask, fixDate, reopen, markNA, moveDate, approve, requestFix,
   removeTask, tplOf, saveNote, postpone, unclaim, assignTo, claim, isOverdue } from './core.js';
 import { todayStr, addDays, isOpen } from './rules.js';
 import { linksFor, linkUrl } from './links.js';
@@ -34,15 +34,25 @@ export function feedbackModal(t, { flag = false, onDone } = {}) {
   });
 }
 
+/** Chọn người nhận khi dời ngày: mặc định để trống cho người làm hôm sau (checklist đầu ngày), KPI ngày cũ vẫn tính người cũ. */
+function whoSelect(t) {
+  const cands = assignCandidates(t);
+  return h('select', null,
+    h('option', { value: '' }, 'Người làm hôm sau (chưa giao ai, hiện ở checklist đầu ngày)'),
+    S.user && t.assignee !== S.user.id && cands.some((u) => u.id === S.user.id) ? h('option', { value: S.user.id }, 'Giao lại cho chính tôi') : null,
+    cands.map((u) => h('option', { value: u.id }, u.name + (u.id === t.assignee ? ' (người đang nhận)' : ''))));
+}
+
 function moveModal(t, redraw) {
   const inp = h('input', { type: 'date', value: addDays(todayStr(), 1), min: todayStr() });
+  const who = whoSelect(t);
   modal({
     title: 'Dời sang ngày khác',
-    body: h('div', { class: 'stack' }, h('p', { class: 'muted' }, t.title), h('label', null, 'Ngày cần làm', inp),
-      h('p', { class: 'hint' }, 'Việc sẽ hiện trong checklist ngày đó để người đi làm không bỏ sót.')),
+    body: h('div', { class: 'stack' }, h('p', { class: 'muted' }, t.title), h('label', null, 'Ngày cần làm', inp), h('label', null, 'Người nhận việc', who),
+      h('p', { class: 'hint' }, 'Dời ngày = làm trễ hạn: việc vẫn bị đánh dấu quá hạn (đỏ) theo ngày gốc cho chuyên môn kiểm tra. Nếu việc chỉ bị sinh sai ngày, dùng nút Sửa để sửa ngày, không bị tính trễ.')),
     actions: [{ label: 'Hủy', kind: 'ghost' }, {
       label: 'Dời việc', kind: 'primary',
-      onClick: async () => { if (!inp.value) return false; await moveDate(t, inp.value); redraw && redraw(); toast('Đã dời việc sang ' + fmtDM(inp.value)); },
+      onClick: async () => { if (!inp.value) return false; await moveDate(t, inp.value, who.value); redraw && redraw(); toast('Đã dời việc sang ' + fmtDM(inp.value)); },
     }],
   });
 }
@@ -51,16 +61,18 @@ export function editModal(t, redraw) {
   const title = h('input', { type: 'text', value: t.title, disabled: !isCM() });
   const extra = h('textarea', { rows: 2, value: t.extra || '', placeholder: 'Danh sách lớp / ghi chú đi kèm (ví dụ các lớp test hôm nay)' });
   const time = h('input', { type: 'text', value: t.time || '', placeholder: 'Thời gian làm' });
+  const dateIn = h('input', { type: 'date', value: t.date });
   const desc = h('textarea', { rows: 4, value: t.desc || '', placeholder: 'Hướng dẫn / nội dung chi tiết (để trống = dùng nội dung của mẫu việc)' });
   modal({
     title: 'Sửa việc này', body: h('div', { class: 'stack' },
-      h('label', null, 'Tên việc', title), h('label', null, 'Lớp / ghi chú đi kèm', extra), h('label', null, 'Thời gian', time), h('label', null, 'Nội dung chi tiết', desc),
+      h('label', null, 'Tên việc', title), isCM() && h('label', null, 'Sửa ngày (việc bị sinh sai ngày; chọn được cả ngày đã qua, không bị tính trễ)', dateIn), h('label', null, 'Lớp / ghi chú đi kèm', extra), h('label', null, 'Thời gian', time), h('label', null, 'Nội dung chi tiết', desc),
       h('p', { class: 'hint' }, 'Chỉ sửa việc của ngày này. Muốn sửa cho các ngày sau, sửa ở Mẫu việc hoặc Lịch lớp.')),
     actions: [{ label: 'Hủy', kind: 'ghost' }, {
       label: 'Lưu', kind: 'primary',
       onClick: async () => {
         const p = { extra: extra.value.trim(), time: time.value.trim(), desc: desc.value.trim() };
         if (isCM() && title.value.trim()) p.title = title.value.trim();
+        if (isCM() && dateIn.value && dateIn.value !== t.date) { await fixDate(t, dateIn.value); }
         await S.db.update('tasks', t.id, p); redraw && redraw(); toast('Đã sửa việc');
       },
     }],
@@ -69,17 +81,18 @@ export function editModal(t, redraw) {
 
 export function postponeModal(t, redraw) {
   const inp = h('input', { type: 'date', value: addDays(todayStr(), 1), min: todayStr() });
-  const ta = h('textarea', { rows: 4, placeholder: 'Đã làm được gì, còn lại gì, cần lưu ý gì (ví dụ: đã check 5/8 lớp, còn CAM1T, CAM2M, FCE B2A)…' });
+  const ta = h('textarea', { rows: 4, placeholder: '(Không bắt buộc) Đã làm được gì, còn lại gì, cần lưu ý gì (ví dụ: đã check 5/8 lớp, còn CAM1T, CAM2M, FCE B2A)…' });
+  const who = whoSelect(t);
   modal({
     title: 'Làm dở / chưa kịp làm: chuyển sang ngày khác',
-    body: h('div', { class: 'stack' }, h('p', { class: 'muted' }, t.title), h('label', null, 'Đã làm được đến đâu', ta), h('label', null, 'Làm tiếp ngày', inp),
+    body: h('div', { class: 'stack' }, h('p', { class: 'muted' }, t.title), h('label', null, 'Đã làm được đến đâu', ta), h('label', null, 'Làm tiếp ngày', inp), h('label', null, 'Người nhận việc', who),
       h('p', { class: 'hint' }, t.carry ? 'Việc được dời sang ngày đó, kèm ghi chú tiến độ để người sau làm tiếp.'
         : 'Việc hàng ngày hôm nay sẽ được đóng lại là "làm dở", và tạo một việc "Làm bù" ở ngày đã chọn kèm ghi chú tiến độ.')),
     actions: [{ label: 'Hủy', kind: 'ghost' }, {
       label: 'Chuyển việc', kind: 'primary',
       onClick: async () => {
         if (!inp.value) return false;
-        await postpone(t, inp.value, ta.value); redraw && redraw(); toast('Đã chuyển sang ' + fmtDM(inp.value));
+        await postpone(t, inp.value, ta.value, who.value); redraw && redraw(); toast('Đã chuyển sang ' + fmtDM(inp.value));
       },
     }],
   });
@@ -110,6 +123,8 @@ export function taskCard(t, o = {}) {
     showFac && h('span', { class: 'chip' }, facName(t.facility)),
     showDate && h('span', { class: 'chip' }, fmtDM(t.date)),
     carried && h('span', { class: 'chip warn' }, 'Tồn từ ' + fmtDM(t.date)),
+    t.origDate && t.origDate !== t.date ? h('span', { class: 'chip bad' }, 'Dời từ ' + fmtDM(t.origDate)) : null,
+    t.origAssigneeName && !t.assignee ? h('span', { class: 'chip warn' }, `Chưa xong của ${t.origAssigneeName} · hỏi tiến độ`) : null,
     overdue && !carried && h('span', { class: 'chip bad' }, 'Quá hạn'),
     t.needsReview && h('span', { class: 'chip info' }, 'Cần CM duyệt'),
     t.sendCSKH && h('span', { class: 'chip info' }, 'Gửi CSKH'),
@@ -201,9 +216,7 @@ export function taskCard(t, o = {}) {
   if (t.status === 'done' && isCM()) row.append(h('button', { class: 'btn sm danger', type: 'button', onClick: () => feedbackModal(t, { flag: true, onDone: redraw }) }, 'Đánh dấu lỗi / gửi feedback'));
   if (t.status === 'done' && allowed) row.append(btn('Mở lại', 'ghost', () => reopen(t)));
   if ((t.status === 'todo' || t.status === 'fix') && allowed) {
-    row.append(h('button', { class: 'btn sm', type: 'button', onClick: () => postponeModal(t, redraw) }, 'Làm dở / chuyển ngày'));
-    row.append(h('button', { class: 'btn sm ghost', type: 'button', onClick: () => moveModal(t, redraw) }, 'Dời ngày'));
-    row.append(btn('Không áp dụng', 'ghost', () => markNA(t)));
+    row.append(h('button', { class: 'btn sm', type: 'button', title: 'Chưa làm kịp hoặc làm dở: ghi tiến độ (không bắt buộc) và chuyển sang ngày khác', onClick: () => postponeModal(t, redraw) }, 'Làm dở / chuyển ngày'));
   }
   if (t.status === 'na' && allowed) row.append(btn('Mở lại', 'ghost', () => reopen(t)));
   if (allowed || isCM()) row.append(h('button', { class: 'btn sm ghost', type: 'button', onClick: () => editModal(t, redraw) }, 'Sửa'));
@@ -249,15 +262,14 @@ export function taskCard(t, o = {}) {
 }
 
 // Mở thẻ việc trong cửa sổ (dùng ở checklist tháng, duyệt…)
-export function taskModal(t) {
-  const holder = h('div');
-  const m = modal({ title: t.title, body: holder, wide: true });
+export function taskModal(t, siblings) {
+  const holder = h('div', { class: 'stack' });
+  const list = siblings && siblings.length > 1 ? siblings : [t]; // ô có nhiều việc (nhiều người / nhiều ca): hiện đủ tất cả
+  const m = modal({ title: list.length > 1 ? `${t.title} · ${fmtDM(t.date)} (${list.length} việc)` : t.title, body: holder, wide: true });
   const draw = () => {
-    const fresh = (taskModal.live && taskModal.live(t.id)) || t;
-    holder.replaceChildren(taskCard(fresh, { redraw: draw, showDate: true, showFac: true }));
-    expanded.add(fresh.id);
+    holder.replaceChildren(...list.map((x) => { const fresh = (taskModal.live && taskModal.live(x.id)) || x; expanded.add(fresh.id); return taskCard(fresh, { redraw: draw, showDate: true, showFac: true }); }));
   };
-  expanded.add(t.id);
+  list.forEach((x) => expanded.add(x.id));
   draw();
   return { ...m, redraw: draw };
 }
