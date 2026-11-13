@@ -80,7 +80,11 @@ function start(user) {
   sub('classes', [], (r) => {
     S.classes = r;
     // admin: mỗi phiên tự dọn một lần các việc sinh nhầm vào ngày cơ sở không có lớp (ví dụ thứ 2 Trung Hòa)
-    if (S.user && S.user.role === 'admin' && r.length && !S._cleaned) { S._cleaned = true; setTimeout(() => cleanNonWorkDays().catch(() => {}), 3000); }
+    if (S.user && S.user.role === 'admin' && r.length && !S._cleaned) {
+      S._cleaned = true;
+      let ran = ''; try { ran = localStorage.getItem('lime_clean_day') || ''; } catch { /* bỏ qua */ }
+      if (ran !== todayStr()) { try { localStorage.setItem('lime_clean_day', todayStr()); } catch { /* bỏ qua */ } setTimeout(() => cleanNonWorkDays(true).catch(() => {}), 3000); }
+    }
   });
   sub('meta', [], (r) => {
     const sch = r.find((x) => x.id === 'schedules');

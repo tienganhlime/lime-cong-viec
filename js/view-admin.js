@@ -1,6 +1,6 @@
 import { h, mount, toast, modal, confirmDlg, makeRedraw, sortBy, fmtDM } from './ui.js';
 import { S, tplOf, isMgr, isCM, ROLE_LABEL, GROUP_LABEL, facName } from './core.js';
-import { generateMonth, workDows, isWorkDay, nextWorkDay, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth, dow } from './rules.js';
+import { generateMonth, addDays, workDows, isWorkDay, nextWorkDay, scheduleText, todayStr, monthOf, addMonths, DOW_NAMES, daysInMonth, dow } from './rules.js';
 import { PEOPLE, LEFT, tplPlan } from './assign.js';
 import { USERNAME_RE, normUsername, errMsg, isFirebase } from './db.js';
 
@@ -54,8 +54,8 @@ export async function applyCmAssignment() {
 }
 
 /** Dọn việc đã sinh vào ngày cơ sở không có lớp (từ đầu tháng trước đến hết tháng sau): việc hàng ngày chưa làm thì xóa, việc khác dời sang ngày có lớp kế tiếp. */
-export async function cleanNonWorkDays() {
-  const today = todayStr(); const from = `${addMonths(monthOf(today), -1)}-01`; const to = `${addMonths(monthOf(today), 1)}-31`;
+export async function cleanNonWorkDays(narrow = false) {
+  const today = todayStr(); const from = narrow ? addDays(today, -7) : `${addMonths(monthOf(today), -1)}-01`; const to = narrow ? addDays(today, 14) : `${addMonths(monthOf(today), 1)}-31`;
   let removed = 0; let moved = 0; const ops = [];
   for (const f of S.facilities) {
     const W = workDows(S.classes, f.id);

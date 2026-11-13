@@ -84,8 +84,9 @@ export function viewStudents(root, params) {
   openWindow();
   // Chuyên môn / admin mở trang này lần đầu trong phiên: tự tách các dòng cũ có nhiều ngày thành từng ngày
   S._splitDone = S._splitDone || {};
-  if (isCM() && !S._splitDone[fac]) {
-    S._splitDone[fac] = true;
+  let splitRan = ''; try { splitRan = localStorage.getItem('lime_split_' + fac) || ''; } catch { /* bỏ qua */ }
+  if (isCM() && !S._splitDone[fac] && splitRan !== todayStr()) {
+    S._splitDone[fac] = true; try { localStorage.setItem('lime_split_' + fac, todayStr()); } catch { /* bỏ qua */ }
     splitExistingReviews(fac).then((n) => { if (n) toast(`Đã tự tách ${n} nội dung ôn bài theo ngày`); }).catch(() => {});
   }
   let pasteText = ''; let pasteDate = todayStr(); let parsed = null;

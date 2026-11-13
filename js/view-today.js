@@ -150,6 +150,9 @@ function reportModal({ date, fac, mine, existing, revs = [] }) {
   });
 }
 
+const hoId = (r) => handoverOp({ fac: r.facility, date: r.date, uid: r.uid, userName: r.userName, note: r.note, late: true }).id;
+const hoDone = (r) => { try { return !!localStorage.getItem('lime_ho_' + hoId(r)); } catch { return false; } };
+
 /* ---------- Màn hình Hôm nay ---------- */
 export function viewToday(root, params) {
   const fac = S.facility;
@@ -232,13 +235,18 @@ export function viewToday(root, params) {
           h('button', { class: 'btn primary', type: 'button', onClick: () => reportModal({ date, fac, mine: all.filter((t) => t.assignee === S.user.id && t.date === date || t.assignee === S.user.id && t.date < date), existing: myReport, revs }) }, myReport ? 'Cập nhật báo cáo cuối ca' : 'Kết thúc ca & báo cáo'))),
       myReport && h('div', { class: 'banner ok' }, `Bạn đã nộp báo cáo cuối ca lúc ${new Date(myReport.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}.`),
       prev && h('div', { class: 'banner' }, h('b', null, `Bàn giao từ ca ngày ${fmtDM(prev.date)} (${prev.userName}): `), linkify(prev.note),
-        prev.handoverTask
-          ? h('span', { class: 'chip st-done', style: { marginLeft: '8px' } }, `✓ Đã chuyển thành việc ngày ${fmtDM(prev.handoverTask.split('_')[1])}`)
+        (prev.handoverTask || hoDone(prev))
+          ? h('span', { class: 'chip st-done', style: { marginLeft: '8px' } }, `✓ Đã chuyển thành việc ngày ${fmtDM((prev.handoverTask || hoId(prev)).split('_')[1])}`)
           : h('button', { class: 'btn sm', type: 'button', style: { marginLeft: '8px' }, onClick: async () => {
             const o = handoverOp({ fac, date: prev.date, uid: prev.uid, userName: prev.userName, note: prev.note, late: true });
-            if (!(await S.db.get('tasks', o.id))) await S.db.batch([o]);
-            await S.db.update('reports', prev.id || `${prev.facility}_${prev.date}_${prev.uid}`, { handoverTask: o.id });
+            try {
+              if (!(await S.db.get('tasks', o.id))) await S.db.batch([o]);
+            } catch (e) { toast(e.message || 'Không tạo được việc bàn giao', 'err'); return; }
+            try { localStorage.setItem('lime_ho_' + o.id, '1'); } catch { /* bỏ qua */ }
+            // đánh dấu trên báo cáo để mọi người cùng thấy; nếu luật Firebase chưa cho phép thì vẫn nhớ trên máy này
+            try { await S.db.update('reports', prev.id || `${prev.facility}_${prev.date}_${prev.uid}`, { handoverTask: o.id }); } catch { /* bỏ qua */ }
             toast(`Đã tạo việc bàn giao ở ngày ${fmtDM(o.data.date)}`);
+            redraw();
           } }, 'Chuyển thành việc cần làm')),
       reviewSection(revs, date, redraw),
       mine.filter((t) => isOverdue(t)).length ? h('div', { class: 'banner bad' }, `⚠ Bạn còn ${mine.filter((t) => isOverdue(t)).length} việc quá hạn chưa làm`) : null,

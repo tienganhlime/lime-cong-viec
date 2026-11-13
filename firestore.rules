@@ -60,7 +60,13 @@ service cloud.firestore {
 
     match /chains/{id}   { allow read: if active(); allow write: if isCM(); }
     match /events/{id}   { allow read: if active(); allow create, update, delete: if isCM(); }
-    match /reports/{id}  { allow read: if active(); allow create, update: if active() && request.resource.data.uid == request.auth.uid; allow delete: if isCM(); }
+    match /reports/{id}  { allow read: if active(); 
+      allow create: if active() && request.resource.data.uid == request.auth.uid;
+      // chủ báo cáo sửa thoải mái; chuyên môn/admin sửa được; ai cũng được đánh dấu "đã chuyển bàn giao thành việc"
+      allow update: if active() && (request.resource.data.uid == request.auth.uid || isCM()
+                    || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['handoverTask']));
+      allow delete: if isCM();
+    }
     match /evaluations/{id} { allow read, write: if isCM(); }
 
     match /notifications/{id} {
